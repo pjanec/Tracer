@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "dgSpecHash": "aFbEHX8jnzI/vLp2Z/7kjqkeuRQe39jfncBwOLa2gUe2qHwekscV3j4LngpmYHj38Eyg2uHLPStYoUSX9e0cfw==",
+  "success": true,
+  "projectFilePath": "D:\\Work\\Tracer\\src\\Tracer.TestHarness\\Tracer.TestHarness.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\petr.janecek\\.nuget\\packages\\duckdb.net.bindings\\1.0.2\\duckdb.net.bindings.1.0.2.nupkg.sha512",
+    "C:\\Users\\petr.janecek\\.nuget\\packages\\duckdb.net.bindings.full\\1.0.2\\duckdb.net.bindings.full.1.0.2.nupkg.sha512",
+    "C:\\Users\\petr.janecek\\.nuget\\packages\\duckdb.net.data\\1.0.2\\duckdb.net.data.1.0.2.nupkg.sha512",
+    "C:\\Users\\petr.janecek\\.nuget\\packages\\fluentassertions\\6.12.0\\fluentassertions.6.12.0.nupkg.sha512",
+    "C:\\Users\\petr.janecek\\.nuget\\packages\\microsoft.extensions.dependencyinjection.abstractions\\8.0.0\\microsoft.extensions.dependencyinjection.abstractions.8.0.0.nupkg.sha512",
+    "C:\\Users\\petr.janecek\\.nuget\\packages\\microsoft.extensions.logging.abstractions\\8.0.0\\microsoft.extensions.logging.abstractions.8.0.0.nupkg.sha512",
+    "C:\\Users\\petr.janecek\\.nuget\\packages\\system.configuration.configurationmanager\\4.4.0\\system.configuration.configurationmanager.4.4.0.nupkg.sha512",
+    "C:\\Users\\petr.janecek\\.nuget\\packages\\system.security.cryptography.protecteddata\\4.4.0\\system.security.cryptography.protecteddata.4.4.0.nupkg.sha512"
+  ],
+  "logs": []
+}

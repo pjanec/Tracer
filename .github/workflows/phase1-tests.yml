@@ -1,0 +1,34 @@
+name: Phase 1 Tests
+
+on:
+  push:
+    branches: [ "main", "dev/**" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  test:
+    name: Build & Test (Phase 1)
+    runs-on: windows-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Run Phase 1 tests
+        shell: pwsh
+        run: .\scripts\run-tests.ps1 -Phase 1 -KeepArtifacts
+
+      - name: Upload test results on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-phase1
+          path: .test-results/
+          retention-days: 7

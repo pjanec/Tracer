@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <AssemblyName>Tracer.Core</AssemblyName>
+  </PropertyGroup>
+
+</Project>

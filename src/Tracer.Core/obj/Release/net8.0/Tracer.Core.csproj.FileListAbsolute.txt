@@ -1,0 +1,11 @@
+D:\Work\Tracer\src\Tracer.Core\bin\Release\net8.0\Tracer.Core.deps.json
+D:\Work\Tracer\src\Tracer.Core\bin\Release\net8.0\Tracer.Core.dll
+D:\Work\Tracer\src\Tracer.Core\bin\Release\net8.0\Tracer.Core.pdb
+D:\Work\Tracer\src\Tracer.Core\obj\Release\net8.0\Tracer.Core.GeneratedMSBuildEditorConfig.editorconfig
+D:\Work\Tracer\src\Tracer.Core\obj\Release\net8.0\Tracer.Core.AssemblyInfoInputs.cache
+D:\Work\Tracer\src\Tracer.Core\obj\Release\net8.0\Tracer.Core.AssemblyInfo.cs
+D:\Work\Tracer\src\Tracer.Core\obj\Release\net8.0\Tracer.Core.csproj.CoreCompileInputs.cache
+D:\Work\Tracer\src\Tracer.Core\obj\Release\net8.0\Tracer.Core.dll
+D:\Work\Tracer\src\Tracer.Core\obj\Release\net8.0\refint\Tracer.Core.dll
+D:\Work\Tracer\src\Tracer.Core\obj\Release\net8.0\Tracer.Core.pdb
+D:\Work\Tracer\src\Tracer.Core\obj\Release\net8.0\ref\Tracer.Core.dll

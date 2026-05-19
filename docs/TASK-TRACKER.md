@@ -14,12 +14,12 @@
 
 **Phase success criteria:** All phase 1 success conditions from [tracer_phase1_design.md §1.3](./tracer_phase1_design.md#13-success-criteria) are met AND all Phase 1 integration tests pass.
 
-- [ ] **TRC-P1-001** Solution & Project Scaffold — [details](./TASK-DETAIL.md#trc-p1-001--solution--project-scaffold)
-- [ ] **TRC-P1-002** Tracer.Core: Domain Types — [details](./TASK-DETAIL.md#trc-p1-002--tracercore-domain-types)
-- [ ] **TRC-P1-003** Tracer.Core: Abstractions & Error Types — [details](./TASK-DETAIL.md#trc-p1-003--tracercore-abstractions--error-types)
-- [ ] **TRC-P1-004** Tracer.Core: Query Model — [details](./TASK-DETAIL.md#trc-p1-004--tracercore-query-model)
-- [ ] **TRC-P1-005** Tracer.Storage.DuckDB: Schema & Appenders — [details](./TASK-DETAIL.md#trc-p1-005--tracerstorageduckdb-schema--appenders)
-- [ ] **TRC-P1-006** Tracer.Storage.DuckDB: Query Layer — [details](./TASK-DETAIL.md#trc-p1-006--tracerstorageduckdb-query-layer)
+- [x] **TRC-P1-001** Solution & Project Scaffold — [details](./TASK-DETAIL.md#trc-p1-001--solution--project-scaffold)
+- [x] **TRC-P1-002** Tracer.Core: Domain Types — [details](./TASK-DETAIL.md#trc-p1-002--tracercore-domain-types)
+- [x] **TRC-P1-003** Tracer.Core: Abstractions & Error Types — [details](./TASK-DETAIL.md#trc-p1-003--tracercore-abstractions--error-types)
+- [x] **TRC-P1-004** Tracer.Core: Query Model — [details](./TASK-DETAIL.md#trc-p1-004--tracercore-query-model)
+- [⚠️] **TRC-P1-005** Tracer.Storage.DuckDB: Schema & Appenders — [details](./TASK-DETAIL.md#trc-p1-005--tracerstorageduckdb-schema--appenders) *test fixes needed (see BATCH-01-REVIEW)*
+- [⚠️] **TRC-P1-006** Tracer.Storage.DuckDB: Query Layer — [details](./TASK-DETAIL.md#trc-p1-006--tracerstorageduckdb-query-layer) *test fixes needed (see BATCH-01-REVIEW)*
 - [ ] **TRC-P1-007** Tracer.Adapters.Mock: MockDataSource & SimulatedClock — [details](./TASK-DETAIL.md#trc-p1-007--traceradaptersmock-mockdatasource--simulatedclock)
 - [ ] **TRC-P1-008** Tracer.Adapters.Mock: Scenario System — [details](./TASK-DETAIL.md#trc-p1-008--traceradaptersmock-scenario-system)
 - [ ] **TRC-P1-009** Tracer.TestHarness — [details](./TASK-DETAIL.md#trc-p1-009--tracertestharness)
@@ -125,5 +125,24 @@
 <!-- PHASE 5 TRACKER END -->
 
 <!-- PHASE 6 TRACKER BEGIN -->
+
+## Phase 6 — Causal Tree View, Trace Walking, Cross-View Navigation
+
+**Goal:** [tracer_phase6_design.md §1](./tracer_phase6_design.md#1-phase-6-scope-and-goals)
+
+**Phase success criteria:** All conditions from [tracer_phase6_design.md §1.3](./tracer_phase6_design.md#13-success-criteria) AND all Phase 1–6 integration tests pass.
+
+- [ ] **TRC-P6-001** Schema Extension: parent_event_id Index [details](./TASK-DETAIL.md#trc-p6-001--schema-extension-parent_event_id-partial-index)
+- [ ] **TRC-P6-002** Trace Walking Backend [details](./TASK-DETAIL.md#trc-p6-002--trace-walking-backend)
+- [ ] **TRC-P6-003** Trace DTOs [details](./TASK-DETAIL.md#trc-p6-003--trace-dtos)
+- [ ] **TRC-P6-004** Trace API Endpoints [details](./TASK-DETAIL.md#trc-p6-004--trace-api-endpoints)
+- [ ] **TRC-P6-005** DAG Layout Algorithm [details](./TASK-DETAIL.md#trc-p6-005--dag-layout-algorithm)
+- [ ] **TRC-P6-006** Causal Tree Canvas Renderer [details](./TASK-DETAIL.md#trc-p6-006--causal-tree-canvas-renderer-and-hit-test)
+- [ ] **TRC-P6-007** CausalTreeView Vue Component [details](./TASK-DETAIL.md#trc-p6-007--causaltreeview-vue-component)
+- [ ] **TRC-P6-008** Causal Tree Composables & Store [details](./TASK-DETAIL.md#trc-p6-008--causal-tree-composables-and-store)
+- [ ] **TRC-P6-009** Cross-View Navigation [details](./TASK-DETAIL.md#trc-p6-009--cross-view-navigation)
+- [ ] **TRC-P6-010** Shareable URL for Causal View [details](./TASK-DETAIL.md#trc-p6-010--shareable-url-for-causal-view)
+- [ ] **TRC-P6-011** Backend Unit & Integration Tests [details](./TASK-DETAIL.md#trc-p6-011--backend-unit-and-integration-tests)
+- [ ] **TRC-P6-012** Frontend Tests [details](./TASK-DETAIL.md#trc-p6-012--frontend-tests)
 
 <!-- PHASE 6 TRACKER END -->

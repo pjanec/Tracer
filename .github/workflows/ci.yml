@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-test:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Check Tracer.Core has no third-party PackageReferences
+        shell: pwsh
+        run: |
+          $csproj = Get-Content "src/Tracer.Core/Tracer.Core.csproj" -Raw
+          if ($csproj -match '<PackageReference') {
+            Write-Error "Tracer.Core.csproj contains a third-party PackageReference. This violates the core purity rule."
+            exit 1
+          }
+          Write-Host "Tracer.Core purity check passed."
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Test
+        run: dotnet test --no-build --configuration Release --logger trx
+
+      - uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: Tests
+          path: '**/*.trx'
+          reporter: dotnet-trx

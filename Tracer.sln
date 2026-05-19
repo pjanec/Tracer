@@ -1,0 +1,64 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{FE41F639-B667-4ABE-9046-6868B8702FE2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tracer.Core", "src\Tracer.Core\Tracer.Core.csproj", "{246EF103-28A8-4F5B-9D41-1C3191EF1825}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tracer.Storage.DuckDB", "src\Tracer.Storage.DuckDB\Tracer.Storage.DuckDB.csproj", "{7615CC1B-3874-47BA-94CF-17CB6663BA4A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tracer.Adapters.Mock", "src\Tracer.Adapters.Mock\Tracer.Adapters.Mock.csproj", "{7EF838F1-8D59-44C4-91FC-0CFCB0C2FE75}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tracer.TestHarness", "src\Tracer.TestHarness\Tracer.TestHarness.csproj", "{05E0A3B1-9090-458A-87CF-6DE2B1257E09}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{C37341BF-493B-458E-A471-AF4E873267BD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tracer.Tests.Unit", "tests\Tracer.Tests.Unit\Tracer.Tests.Unit.csproj", "{9C5751CC-2A45-41A0-B8C5-73E212655E4D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tracer.Tests.Integration", "tests\Tracer.Tests.Integration\Tracer.Tests.Integration.csproj", "{9027F1ED-0C42-4B83-99E5-89A2526E14E3}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{246EF103-28A8-4F5B-9D41-1C3191EF1825}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{246EF103-28A8-4F5B-9D41-1C3191EF1825}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{246EF103-28A8-4F5B-9D41-1C3191EF1825}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{246EF103-28A8-4F5B-9D41-1C3191EF1825}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7615CC1B-3874-47BA-94CF-17CB6663BA4A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7615CC1B-3874-47BA-94CF-17CB6663BA4A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7615CC1B-3874-47BA-94CF-17CB6663BA4A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7615CC1B-3874-47BA-94CF-17CB6663BA4A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7EF838F1-8D59-44C4-91FC-0CFCB0C2FE75}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7EF838F1-8D59-44C4-91FC-0CFCB0C2FE75}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7EF838F1-8D59-44C4-91FC-0CFCB0C2FE75}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7EF838F1-8D59-44C4-91FC-0CFCB0C2FE75}.Release|Any CPU.Build.0 = Release|Any CPU
+		{05E0A3B1-9090-458A-87CF-6DE2B1257E09}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{05E0A3B1-9090-458A-87CF-6DE2B1257E09}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{05E0A3B1-9090-458A-87CF-6DE2B1257E09}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{05E0A3B1-9090-458A-87CF-6DE2B1257E09}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9C5751CC-2A45-41A0-B8C5-73E212655E4D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9C5751CC-2A45-41A0-B8C5-73E212655E4D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9C5751CC-2A45-41A0-B8C5-73E212655E4D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9C5751CC-2A45-41A0-B8C5-73E212655E4D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9027F1ED-0C42-4B83-99E5-89A2526E14E3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9027F1ED-0C42-4B83-99E5-89A2526E14E3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9027F1ED-0C42-4B83-99E5-89A2526E14E3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9027F1ED-0C42-4B83-99E5-89A2526E14E3}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{246EF103-28A8-4F5B-9D41-1C3191EF1825} = {FE41F639-B667-4ABE-9046-6868B8702FE2}
+		{7615CC1B-3874-47BA-94CF-17CB6663BA4A} = {FE41F639-B667-4ABE-9046-6868B8702FE2}
+		{7EF838F1-8D59-44C4-91FC-0CFCB0C2FE75} = {FE41F639-B667-4ABE-9046-6868B8702FE2}
+		{05E0A3B1-9090-458A-87CF-6DE2B1257E09} = {FE41F639-B667-4ABE-9046-6868B8702FE2}
+		{9C5751CC-2A45-41A0-B8C5-73E212655E4D} = {C37341BF-493B-458E-A471-AF4E873267BD}
+		{9027F1ED-0C42-4B83-99E5-89A2526E14E3} = {C37341BF-493B-458E-A471-AF4E873267BD}
+	EndGlobalSection
+EndGlobal

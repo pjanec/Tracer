@@ -1875,4 +1875,246 @@ Vitest unit tests cover the three pure rendering modules (`timelineRenderer`, `t
 
 <!-- PHASE 6 TASKS BEGIN -->
 
+## TRC-P6-001 — Schema extension: parent_event_id partial index
+
+**Design:** [tracer_phase6_design.md §3](./tracer_phase6_design.md#3-schema-extension-parent_event_id-index)
+
+Adds a partial index on `parent_event_id` in the events table by extending the `SchemaV1.CreateIndexes` constant in `Tracer.Storage.DuckDB`. The `WHERE parent_event_id != 0` clause excludes root events, halving index size with no impact on query semantics. Because all three write paths (Agent, Observer, Aggregator) consume the same constant, the addition propagates automatically to every new interval and bundle. Existing pre-Phase 6 intervals remain unindexed but queryable; retention evicts them within hours (Option A).
+
+**Success conditions:**
+1. `SchemaV1Tests.CreateIndexes_ContainsPartialIndexOnParentEventId` (in `Tracer.Tests.Unit/Storage/`) asserts the `CreateIndexes` string contains the literal clause `idx_events_parent_event_id ON events (parent_event_id) WHERE parent_event_id != 0`.
+2. `SchemaAppliedTests.NewInterval_ParentEventIdIndexExists` (in `Tracer.Tests.Integration/`) creates a fresh DuckDB interval via the Agent writer, issues `PRAGMA index_list('events')`, and asserts an entry named `idx_events_parent_event_id` is present.
+3. `SchemaAppliedTests.DescendantQuery_ExplainPlanReferencesParentEventIdIndex` runs `EXPLAIN SELECT * FROM events WHERE parent_event_id = 42` against a freshly created interval and asserts the explain output contains `idx_events_parent_event_id`.
+4. All Phase 1–6 integration tests pass.
+
+**Dependencies:** TRC-P5-001
+
+---
+
+## TRC-P6-002 — Trace walking backend
+
+**Design:** [tracer_phase6_design.md §4](./tracer_phase6_design.md#4-trace-walking-backend)
+
+Implements `TraceWalker` (static class with `WalkAncestorsAsync` and `WalkDescendantsAsync`) and `TraceQueryService` (singleton with `GetTraceTreeAsync`, `GetTraceTreeForEventAsync`, `GetAncestorTreeAsync`, and `GetDescendantTreeAsync`). Ancestor walks climb the parent pointer chain via primary-key lookups with a visited-set cycle guard; descendant walks use BFS with batched `IN`-clause children queries against the new `parent_event_id` index. When event count exceeds `maxEvents` (default 1 000, hard cap 5 000), the result is truncated and `TraceSummary.Truncated` is set to `true`.
+
+**Success conditions:**
+1. `TraceWalkerTests.WalkAncestors_ThreeGenerationChain_ReturnsChainFromStartToRoot` asserts a 3-deep parent chain is returned in leaf-first order ending at the root.
+2. `TraceWalkerTests.WalkAncestors_MaxDepthReached_StopsAtLimitAndReturnsPartialChain` asserts that with `maxDepth=2` on a 5-deep chain exactly 2 events are returned and no exception is thrown.
+3. `TraceWalkerTests.WalkAncestors_CycleInParentPointers_TerminatesViaCycleGuard` constructs a synthetic parent cycle and asserts the walk terminates without infinite recursion.
+4. `TraceWalkerTests.WalkDescendants_BinaryFanout_ReturnsAllNodesInBfsOrder` inserts a root with 2 children and 4 grandchildren and asserts all 6 descendant nodes are returned in breadth-first order.
+5. `TraceWalkerTests.WalkDescendants_MaxNodesReached_TruncatesWithoutException` inserts 200 descendants and asserts that with `maxNodes=10` exactly 10 nodes are returned.
+6. `TraceQueryServiceTests.GetTraceTree_NormalTrace_ReturnsNodesEdgesAndSummary` pushes 10 events sharing one `trace_id` into a mock interval and asserts the `TraceTree` has 10 nodes, 9 edges, correct root and leaf counts, and `Truncated = false`.
+7. `TraceQueryServiceTests.GetTraceTree_ExceedsMaxEvents_ReturnsTruncatedResultWithFlagSet` inserts 6 000 events on a single trace, calls `GetTraceTreeAsync(maxEvents: 5000)`, and asserts `Truncated = true` and `Nodes.Count == 5000`.
+8. `TraceQueryServiceTests.GetTraceTreeForEvent_EventWithTraceId_ReturnsSameResultAsDirectTraceCall` asserts the tree returned via `GetTraceTreeForEventAsync` is equivalent to the tree returned by `GetTraceTreeAsync` with the event's `trace_id`.
+9. `TraceQueryServiceTests.GetTraceTreeForEvent_EventWithZeroTraceId_ReturnsSingletonTree` asserts that an event with `trace_id=0` yields a 1-node tree, 0 edges, and `Truncated = false`.
+10. All Phase 1–6 integration tests pass.
+
+**Dependencies:** TRC-P6-001, TRC-P5-001, TRC-P5-002
+
+---
+
+## TRC-P6-003 — Trace DTOs
+
+**Design:** [tracer_phase6_design.md §5](./tracer_phase6_design.md#53-dtos)
+
+Defines `TraceTreeDto`, `TraceNodeDto`, `TraceEdgeDto`, and `TraceSummaryDto` in `Tracer.WebApi.Contracts.Dto`, and `TraceDtoMapper` that converts the internal `TraceTree`/`TraceNode`/`TraceEdge`/`TraceSummary` records to wire form. All event and trace IDs are serialized as 16-character uppercase hex strings. `TraceNodeDto` carries `PayloadJson` so the inspector can open without a follow-up fetch. `TraceSummaryDto.TotalEventsAvailable` is present only when `Truncated = true`.
+
+**Success conditions:**
+1. `TraceDtoMapperTests.MapTraceTree_AllNodesProjected_EventIdIsUppercaseHex16` asserts every `TraceNodeDto.EventId` in the output is a 16-character uppercase hex string equal to the source `EventId` value formatted with `X16`.
+2. `TraceDtoMapperTests.MapTraceTree_RootNodes_HaveNullParentEventId` asserts that nodes whose `EventId` does not appear as a `ChildEventId` in any edge have `ParentEventId == null`.
+3. `TraceDtoMapperTests.MapTraceEdge_LatencyMs_RoundTripsAsDouble` asserts `TraceEdgeDto.LatencyMs` equals the source `TraceEdge.LatencyMs` without rounding.
+4. `TraceDtoMapperTests.MapTraceSummary_WhenTruncated_TotalEventsAvailableIsNonNull` asserts `TotalEventsAvailable` is non-null when the source `Truncated = true`.
+5. `TraceDtoMapperTests.MapTraceSummary_WhenNotTruncated_TotalEventsAvailableIsNull` asserts `TotalEventsAvailable` is `null` when `Truncated = false`.
+6. All Phase 1–6 integration tests pass.
+
+**Dependencies:** TRC-P6-002
+
+---
+
+## TRC-P6-004 — Trace API endpoints
+
+**Design:** [tracer_phase6_design.md §6](./tracer_phase6_design.md#5-the-trace-api-endpoints)
+
+Registers `TraceEndpoints` (and its `TraceQueryService` singleton) in `ObserverHostBuilder` and the offline-viewer builder, mapping five routes: `GET /api/traces/{traceId}`, `GET /api/traces/{traceId}/tree`, `GET /api/events/{eventId}/trace`, `GET /api/events/{eventId}/ancestors`, and `GET /api/events/{eventId}/descendants`. All IDs are parsed as 16-character hex; invalid input returns a `400 ProblemDetails`. The `maxEvents` query parameter is clamped to `[1, 5000]`; `maxDepth` to `[1, 100]`; `maxNodes` to `[1, 5000]`.
+
+**Success conditions:**
+1. `TraceEndpointsTests.GetTraceTree_ValidHexTraceId_Returns200WithNodesAndEdges` sends `GET /api/traces/{id}/tree` against a seeded test host and asserts HTTP 200 and `nodes.length > 0`.
+2. `TraceEndpointsTests.GetTraceTree_InvalidHexId_Returns400ProblemDetails` sends a non-hex `traceId` and asserts HTTP 400 with a `ProblemDetails` response body.
+3. `TraceEndpointsTests.GetTraceTree_UnknownTraceId_Returns404` sends a valid hex ID matching no events and asserts HTTP 404.
+4. `TraceEndpointsTests.GetTraceTree_MaxEventsExceeds5000_ClampedTo5000AndNoError` sends `?maxEvents=99999` and asserts the response succeeds and contains at most 5 000 nodes.
+5. `TraceEndpointsTests.GetAncestors_ValidEventId_Returns200WithAncestorChain` asserts HTTP 200 and that `rootEventIds` contains the topmost ancestor.
+6. `TraceEndpointsTests.GetDescendants_ValidEventId_Returns200WithDescendantTree` asserts HTTP 200 and that every `leafEventIds` entry has no outgoing edges in the response.
+7. `TraceEndpointsTests.GetTraceTree_Under100Events_RespondsBefore300ms` seeds 50 events on one trace, times the full round-trip with `Stopwatch`, and fails if elapsed exceeds 300 ms.
+8. `TraceEndpointsTests.GetAncestors_10DeepChain_WalkExpandsBefore200ms` seeds a 10-deep ancestor chain and asserts round-trip under 200 ms via `Stopwatch`.
+9. All Phase 1–6 integration tests pass.
+
+**Dependencies:** TRC-P6-002, TRC-P6-003
+
+---
+
+## TRC-P6-005 — DAG layout algorithm
+
+**Design:** [tracer_phase6_design.md §7](./tracer_phase6_design.md#6-the-layout-algorithm)
+
+Implements `causalTreeLayout.ts`, exporting `layout(tree, config): LayoutResult`. Layer assignment uses longest-path-from-roots so converging nodes sit below both parents; within-layer order uses median-of-parents x-position with publish-wallclock as tiebreaker; layer 0 nodes are sorted chronologically. Returns a `Map<string, LaidOutNode>` (each entry holds pixel `(x, y)`), an `LaidOutEdge[]` with pre-computed pixel endpoints, and the total canvas dimensions. Multi-root DAGs are handled natively; no node may appear in more than one position.
+
+**Success conditions:**
+1. `causalTreeLayout.spec.ts::layout_SingleRootLinearChain_LayersAreConsecutiveIntegers` creates a 5-node chain and asserts layers are exactly 0, 1, 2, 3, 4.
+2. `causalTreeLayout.spec.ts::layout_MultiRootDag_EachNodeAssignedExactlyOnce` constructs a 3-root, 10-node DAG and asserts `result.nodes.size === 10`.
+3. `causalTreeLayout.spec.ts::layout_ConvergentNode_LayerIsOnePastMaxParentLayer` constructs two roots (layers 0) each pointing to one shared child and asserts the child's layer is 1.
+4. `causalTreeLayout.spec.ts::layout_NodesInSameLayer_HaveDistinctXCoordinates` asserts no two nodes sharing a layer value have the same `x`.
+5. `causalTreeLayout.spec.ts::layout_EdgeEndpoints_FromXMatchesParentX_ToXMatchesChildX` asserts `edge.fromX === parent.x` and `edge.toX === child.x` for every laid-out edge.
+6. `causalTreeLayout.spec.ts::layout_EmptyTree_ReturnsZeroSizedResult` asserts `nodes.size === 0`, `edges.length === 0`, `widthPx === 0`, and `heightPx === 0`.
+7. `causalTreeLayout.spec.ts::layout_500NodeTree_CompletesUnder50ms` generates a synthetic 500-node tree and asserts `layout()` returns in fewer than 50 ms measured with `performance.now()`.
+8. All Phase 1–6 integration tests pass.
+
+**Dependencies:** TRC-P6-003
+
+---
+
+## TRC-P6-006 — Causal tree canvas renderer and hit test
+
+**Design:** [tracer_phase6_design.md §8](./tracer_phase6_design.md#7-frontend-rendering)
+
+Implements `causalTreeRenderer.ts` (exporting `renderTree(ctx, layout, input)`) and `causalTreeHitTest.ts` (exporting `findNodeAt(layout, x, y, radius)`). Edges are drawn as Bézier curves with a latency-label pill at the midpoint. Nodes are filled circles colored by `publisherNode` using the Phase 5 `buildNodeColorMap` palette; an inner severity dot marks warning/error nodes; a corner square marks notable nodes; a selection ring is drawn before the fill when the node is selected. `findNodeAt` performs a linear point-in-circle scan returning the nearest node within `radius`.
+
+**Success conditions:**
+1. `causalTreeRenderer.spec.ts::renderTree_SingleEdge_CallsBezierCurveToAndFillText` mocks a `CanvasRenderingContext2D` and asserts `bezierCurveTo` and `fillText` are each invoked at least once for a one-edge tree.
+2. `causalTreeRenderer.spec.ts::renderTree_ErrorSeverityNode_InnerDotUsesErrorColor` inserts one node with `severity='error'` and asserts an `arc` call is made with `fillStyle === '#e85c5c'`.
+3. `causalTreeRenderer.spec.ts::renderTree_NotableNode_FillRectCalledAtCornerOffset` inserts one node with `notableLabel='notable'` and asserts a `fillRect` call with x-offset `+8` and y-offset `-16` from the node center.
+4. `causalTreeRenderer.spec.ts::renderTree_SelectedNode_OuterRingArcPrecedesFillArc` inserts one selected node and asserts `arc` is called twice — the first call with radius 18 (ring) before the second with radius 14 (fill).
+5. `causalTreeRenderer.spec.ts::renderTree_PublisherNodeColor_MatchesBuildNodeColorMapOutput` creates two nodes with distinct `publisherNode` values and asserts each fill style equals the corresponding value from `buildNodeColorMap`.
+6. `causalTreeRenderer.spec.ts::renderTree_500NodeTree_CompletesUnder200ms` renders a 500-node `LayoutResult` against an `OffscreenCanvas` and asserts completion in fewer than 200 ms via `performance.now()`.
+7. `causalTreeHitTest.spec.ts::findNodeAt_QueryAtNodeCenter_ReturnsNode` asserts the correct node is returned when the query point equals the node's `(x, y)`.
+8. `causalTreeHitTest.spec.ts::findNodeAt_QueryBeyondRadius_ReturnsNull` asserts `null` when the query point is at distance `radius + 1` from every node.
+9. `causalTreeHitTest.spec.ts::findNodeAt_TwoNodesWithinRadius_ReturnsCloserNode` places two nodes both within radius and asserts the nearer one is returned.
+10. All Phase 1–6 integration tests pass.
+
+**Dependencies:** TRC-P6-004, TRC-P6-005
+
+## TRC-P6-007 — CausalTreeView Vue component
+
+**Design:** [tracer_phase6_design.md §9](./tracer_phase6_design.md#7-frontend-rendering)
+
+Three-column SPA view (`CausalTreeView.vue`) composing `TraceSummaryPanel.vue` on the left, `CausalTreeCanvas.vue` in the center, and the Phase 5 `EventInspector` on the right when a node is selected. `CausalTreeCanvas.vue` owns pan/zoom pointer-event handling (drag to pan, wheel to zoom with cursor-fixed scaling), triggers re-layout when the tree prop changes, and emits a `select` event on node click. `TraceSummaryPanel.vue` renders trace ID, total span, root/leaf counts, a color-keyed participating-node list, and a truncation warning when `summary.truncated` is true. `TraceNodeTooltip.vue` appears on node hover showing topic, publisher node, and publish time. `TraceSearchInput.vue` in the header accepts a 16-char hex ID with an "Event"/"Trace" kind toggle and routes via `vue-router`. A loading spinner occupies the canvas area until the first tree arrives; a retry-capable error message is shown on fetch failure. The whole view loads in under 300 ms for traces under 100 events.
+
+**Success conditions:**
+1. `CausalTreeView.spec.ts::renders_LoadingSpinner_WhenStoreIsLoadingAndNoTree` mounts the view with `store.loading = true, store.tree = null` and asserts `.loading-spinner` is visible and `.causal-tree-canvas` is absent.
+2. `CausalTreeView.spec.ts::renders_ErrorMessage_WithRetryButton_WhenStoreHasError` mounts with `store.error = 'timeout'` and asserts an element with `data-testid="error-message"` is visible and contains a "Retry" button that calls `store.retry` when clicked.
+3. `CausalTreeView.spec.ts::renders_ThreeColumnGrid_WhenTreeLoadedAndNodeSelected` mounts with a seeded `store.tree` and `store.selectedEventId`, and asserts `.causal-tree-view__summary`, `.causal-tree-view__canvas`, and `.causal-tree-view__inspector` are all visible.
+4. `CausalTreeView.spec.ts::renders_TwoColumnGrid_WhenTreeLoadedAndNoNodeSelected` mounts with a seeded `store.tree` and `store.selectedEventId = null`, and asserts `.causal-tree-view__inspector` is absent.
+5. `CausalTreeView.spec.ts::renders_EmptyPrompt_WhenNoTreeAndNotLoading` mounts with `store.tree = null, store.loading = false, store.error = null` and asserts `.causal-tree-view__empty` is visible.
+6. `TraceSummaryPanel.spec.ts::renders_TruncationNotice_WhenSummaryTruncatedIsTrue` mounts with `summary.truncated = true` and `summary.totalEventsAvailable = 6000` and asserts `.trace-summary__truncation-notice` is visible containing the number 6000.
+7. `TraceSummaryPanel.spec.ts::renders_NodeList_WithBorderColorMatchingNodeColorMap` mounts with two participating nodes and asserts each `.trace-summary__node` element has an inline `borderColor` style matching the `buildNodeColorMap` output for that node name.
+8. `TraceSearchInput.spec.ts::submit_WithValidEventHex_NavigatesToCausalByEventRoute` fills the input with a valid 16-char hex and kind "event", submits, and asserts `router.push` was called with `{ name: 'causal-by-event', params: { eventId: ... } }`.
+9. `TraceSearchInput.spec.ts::submit_WithNonHexValue_DisplaysValidationError` fills the input with `'zzzzzzzzzzzzzzzz'` and submits, and asserts `.trace-search__error` is visible and no navigation occurs.
+10. All Phase 1–6 integration tests pass.
+
+**Dependencies:** TRC-P6-006, TRC-P6-008
+
+---
+
+## TRC-P6-008 — Causal tree composables and store
+
+**Design:** [tracer_phase6_design.md §10](./tracer_phase6_design.md#8-stores-composables-and-url-binding)
+
+Implements `causalTreeStore.ts` (Pinia store with state `request`, `tree`, `loading`, `error`, `selectedEventId`; actions `openTrace`, `openByEvent`, `openAncestors`, `openDescendants`, `selectEvent`, `setResult`, `setError`, `clear`, `retry`), `useCausalTreeQuery.ts` (watches `store.request` and drives API calls with per-request `AbortController` cancellation so a new request cancels the prior in-flight fetch), `useCausalTreeLayout.ts` (wraps the pure `layout()` function in a `watchEffect` so the reactive `LayoutResult` ref updates when `store.tree` changes), and `causalTree.ts` (TypeScript type definitions mirroring all four backend DTOs: `TraceTreeDto`, `TraceNodeDto`, `TraceEdgeDto`, `TraceSummaryDto`). `setResult` auto-selects a notable node or the first event if `selectedEventId` is null or no longer in the returned tree.
+
+**Success conditions:**
+1. `causalTreeStore.spec.ts::openTrace_SetsRequestKindTraceAndClearsTree` calls `openTrace('abc0123456789def')` and asserts `store.request.kind === 'trace'`, `store.request.id === 'abc0123456789def'`, and `store.tree === null`.
+2. `causalTreeStore.spec.ts::setResult_WhenSelectedIdNotInTree_SelectsFirstNotableNode` calls `setResult(treeWithOneNotableNode)` with `store.selectedEventId = 'nonexistent'` and asserts `store.selectedEventId` equals the notable node's `eventId`.
+3. `causalTreeStore.spec.ts::setResult_WhenNoNotableNodes_SelectsFirstNode` calls `setResult(treeWithNoNotables)` with `store.selectedEventId = null` and asserts `store.selectedEventId === tree.nodes[0].eventId`.
+4. `causalTreeStore.spec.ts::retry_ReassignsRequest_TriggeringWatcher` calls `openTrace('abc')`, then `retry()`, and asserts `store.request` is a new object reference (watcher fires again).
+5. `useCausalTreeQuery.spec.ts::requestKindTrace_CallsGetTraceTree` sets `store.request = { kind: 'trace', id: 'abc', maxEvents: 1000 }` and asserts `api.getTraceTree` is called with `('abc', 1000, ...)`.
+6. `useCausalTreeQuery.spec.ts::requestKindAncestors_CallsGetEventAncestors` sets `store.request = { kind: 'ancestors', id: 'def', maxDepth: 50 }` and asserts `api.getEventAncestors` is called with `('def', 50, ...)`.
+7. `useCausalTreeQuery.spec.ts::secondRequest_AbortsFirst_BeforeFirstResolves` starts a first request via a delayed mock and fires a second before it resolves, and asserts the first `AbortController.abort` was called.
+8. `useCausalTreeQuery.spec.ts::abortError_DoesNotSetStoreError` resolves the in-flight fetch with an `AbortError` and asserts `store.error` remains `null`.
+9. `useCausalTreeLayout.spec.ts::layoutUpdates_WhenTreePropChanges` sets `store.tree` to a 5-node tree and asserts `layoutResult.value.nodes.size === 5`, then sets a 10-node tree and asserts `layoutResult.value.nodes.size === 10`.
+10. All Phase 1–6 integration tests pass.
+
+**Dependencies:** TRC-P6-005, TRC-P6-003
+
+---
+
+## TRC-P6-009 — Cross-view navigation
+
+**Design:** [tracer_phase6_design.md §11](./tracer_phase6_design.md#9-cross-view-navigation)
+
+Enables two-way pivot wiring across Phase 3–6 views. In `CausalTreeView`, `EventInspector` receives `showCausalTreePivot = false` (prevents self-loop) and `sessionId` resolved from `store.tree.sessionId`; clicking "Show in timeline" pushes to `/v/timeline/{sessionId}?from=...&to=...&select={eventId}` with a ±2 s window around the event's publish time; clicking "Show in scenario" pushes to `/scenario/{sessionId}`. In Phase 5 `TimelineView`, the previously-disabled "Show causal tree" button in `EventInspector` is enabled, pushing to `/v/causal/{eventId}`. Events with `traceId = '0000000000000000'` unconditionally hide the "Show causal tree" button. The backend `TraceQueryService` resolves `SessionId` (the session whose time window contains the trace's first event) and includes it in `TraceTreeDto`; `TraceDtoMapper` projects it.
+
+**Success conditions:**
+1. `EventInspector.spec.ts::showCausalTreeButton_HiddenWhenTraceIdIsZero` mounts with `event.traceId = '0000000000000000'` and `showCausalTreePivot = true`, and asserts no "Show causal tree" button is rendered.
+2. `EventInspector.spec.ts::showCausalTreeButton_VisibleAndNavigates_WhenTraceIdNonZero` mounts with a non-zero `traceId` and `showCausalTreePivot = true`, clicks the button, and asserts `router.push` was called with `{ name: 'causal-by-event', params: { eventId: event.eventId } }`.
+3. `EventInspector.spec.ts::pivotToTimeline_PushesTimelineRouteWithSelectAndWindow` mounts in causal-tree context with a known `sessionId` and `publishWallclock`, clicks "Show in timeline", and asserts `router.push` was called with `name: 'timeline'`, the correct `sessionId` param, and `query.select` equal to the event's ID.
+4. `EventInspector.spec.ts::pivotToScenario_PushesScenarioRouteWithSessionId` clicks "Show in scenario" and asserts `router.push` was called with `{ name: 'scenario', params: { sessionId: ... } }`.
+5. `EventInspector.spec.ts::showTimelinePivotFalse_HidesTimelineButton` mounts with `showTimelinePivot = false` and asserts "Show in timeline" is absent.
+6. `TraceQueryServiceTests.GetTraceTree_SessionIdResolved_MatchesSessionContainingFirstEvent` asserts the returned `TraceTree.SessionId` equals the ID of the session whose time window contains `Summary.FirstEventUtc`.
+7. `TraceDtoMapperTests.MapTraceTree_SessionIdPresentInDto` asserts `TraceTreeDto.SessionId` is a non-empty string equal to the source `TraceTree.SessionId`.
+8. All Phase 1–6 integration tests pass.
+
+**Dependencies:** TRC-P6-007, TRC-P6-004
+
+---
+
+## TRC-P6-010 — Shareable URL for causal view
+
+**Design:** [tracer_phase6_design.md §12](./tracer_phase6_design.md#83-url-patterns)
+
+Registers two lazy-loaded Vue Router routes — `{ path: '/v/trace/:traceId', name: 'causal-by-trace' }` and `{ path: '/v/causal/:eventId', name: 'causal-by-event' }` — both resolving to `CausalTreeView.vue`. `useCausalTreeUrl.ts` reads route params on mount and on every subsequent route change, dispatching `openTrace` / `openByEvent` / `openAncestors` / `openDescendants` based on the param and the optional `?mode`, `?maxDepth`, `?maxNodes`, `?maxEvents` query params; invalid or absent numeric params fall back to store-action defaults. When the user selects a node the composable debounce-writes `?select={eventId}` into the URL via `router.replace` (not `push`) so the browser back-button stack is not polluted. Navigating to the URL on any machine with access to the data restores the same view state.
+
+**Success conditions:**
+1. `useCausalTreeUrl.spec.ts::causalByEvent_NoMode_CallsOpenByEvent` simulates route `{ name: 'causal-by-event', params: { eventId: 'aabbccddeeff0011' } }` and asserts `store.openByEvent` is called with `'aabbccddeeff0011'`.
+2. `useCausalTreeUrl.spec.ts::causalByEvent_ModeAncestors_CallsOpenAncestorsWithMaxDepth` simulates the route with `query.mode = 'ancestors'` and `query.maxDepth = '20'`, and asserts `store.openAncestors('aabbccddeeff0011', 20)` is called.
+3. `useCausalTreeUrl.spec.ts::causalByEvent_ModeDescendants_CallsOpenDescendantsWithParsedParams` simulates `query.mode = 'descendants'`, `query.maxDepth = '15'`, `query.maxNodes = '300'`, and asserts `store.openDescendants(eventId, 15, 300)`.
+4. `useCausalTreeUrl.spec.ts::causalByTrace_CallsOpenTrace` simulates `{ name: 'causal-by-trace', params: { traceId: '1122334455667788' } }` and asserts `store.openTrace('1122334455667788')`.
+5. `useCausalTreeUrl.spec.ts::causalByTrace_WithSelectParam_SetsSelectedEventId` simulates the trace route with `query.select = 'ffff000011112222'` and asserts `store.selectedEventId === 'ffff000011112222'` after the watcher runs.
+6. `useCausalTreeUrl.spec.ts::selectEventId_WritesSelectQueryParamViaRouterReplace` sets `store.selectedEventId = 'ffff000011112222'` after the composable is mounted and asserts `router.replace` (not `router.push`) is called with `query.select = 'ffff000011112222'` after the debounce interval elapses.
+7. `router.spec.ts::causalByEventRoute_IsLazyLoaded` asserts the route's `component` property is a function (dynamic import) and not a statically-imported component reference.
+8. All Phase 1–6 integration tests pass.
+
+**Dependencies:** TRC-P6-008, TRC-P6-007
+
+---
+
+## TRC-P6-011 — Backend unit and integration tests
+
+**Design:** [tracer_phase6_design.md §13](./tracer_phase6_design.md#111-backend-unit-tests)
+
+Implements the full backend test suite across four files. `TraceQueryServiceTests.cs` covers normal/truncated/cross-interval/singleton-trace/convergent-DAG cases. `TraceWalkerTests.cs` covers ancestor depth-limit, root-edge stopping, cycle-guard termination, BFS descendant order, `maxNodes` truncation, and batched `IN`-clause child fetch (asserts exactly one SQL query per BFS level). `TraceEndpointsTests.cs` covers 200/400/404 status codes, parameter clamping, and round-trip timing assertions for all five endpoints. `CausalTreeRoundTripTests.cs` seeds a multi-event trace, queries the live observer, builds an offline bundle, queries the offline viewer, and asserts structural identity of both responses.
+
+**Success conditions:**
+1. `TraceQueryServiceTests.GetTraceTree_LinearChainOf5_Returns5Nodes4Edges` inserts 5 events as a parent chain on one `trace_id` and asserts `Nodes.Count == 5`, `Edges.Count == 4`, `Summary.RootCount == 1`, `Summary.LeafCount == 1`.
+2. `TraceQueryServiceTests.GetTraceTree_ConvergentDag_BothParentEdgesPresent` inserts events A → C and B → C and asserts `Edges.Count == 2`, `Nodes.Count == 3`, and no duplicate node appears in `Nodes`.
+3. `TraceQueryServiceTests.GetTraceTree_CrossIntervalTrace_AllNodesReturnedWithCrossRotationEdges` rotates the interval after 5 events, writes 5 more on the same `trace_id`, and asserts the tree contains all 10 nodes with all 9 edges intact.
+4. `TraceWalkerTests.WalkAncestors_CycleInParentPointers_TerminatesWithoutException` constructs a synthetic parent cycle, calls `WalkAncestorsAsync` with `maxDepth = 1000`, and asserts it returns within 1 000 ms and throws no exception.
+5. `TraceWalkerTests.WalkDescendants_100Children_IssuesSingleBatchedQuery` instruments the connection to count SQL statements, inserts 100 children of one parent, and asserts exactly 1 SQL statement was issued by the first BFS level (not 100 individual lookups).
+6. `TraceEndpointsTests.GetTraceTree_InvalidHexId_Returns400WithProblemDetails` sends a non-hex trace ID and asserts HTTP 400 and a response body deserializable as `ProblemDetails` with `status == 400`.
+7. `TraceEndpointsTests.GetTraceTree_Under50Events_RespondsBefore300ms` seeds 50 events, measures round-trip with `Stopwatch`, and fails if elapsed ≥ 300 ms.
+8. `TraceEndpointsTests.GetAncestors_10DeepChain_RespondsBefore200ms` seeds a 10-deep ancestor chain and asserts round-trip under 200 ms.
+9. `CausalTreeRoundTripTests.LiveAndBundleResponses_AreStructurallyIdentical` pushes a 30-event trace, queries via the live observer, builds a bundle from the same data, queries via the offline viewer, and asserts `nodes`, `edges`, `rootEventIds`, and `leafEventIds` are identical in both responses.
+10. All Phase 1–6 integration tests pass.
+
+**Dependencies:** TRC-P6-004, TRC-P6-003, TRC-P6-002, TRC-P6-001
+
+---
+
+## TRC-P6-012 — Frontend tests
+
+**Design:** [tracer_phase6_design.md §14](./tracer_phase6_design.md#113-frontend-unit-tests-vitest)
+
+Completes the frontend test suite with four Vitest unit-test files and one Playwright E2E spec. `causalTreeLayout.spec.ts` extends the cases from TRC-P6-005 success conditions with cycle-defense and multi-root no-duplicate assertions. `causalTreeRenderer.spec.ts` and `causalTreeHitTest.spec.ts` extend TRC-P6-006 success conditions with boundary and nearest-node cases. `useCausalTreeQuery.spec.ts` parameterizes all four request kinds and verifies abort-on-replace and abort-error swallowing. The Playwright spec `causal-tree-view.spec.ts` validates the full cross-view pivot flow: load from timeline `EventInspector`, walk expansion latency under 200 ms, and pivot back to timeline with correct URL.
+
+**Success conditions:**
+1. `causalTreeLayout.spec.ts::layout_CycleDefense_ReturnsWithoutHanging` constructs a tree with a fabricated parent cycle and asserts `layout()` returns within 1 000 ms (measured with `performance.now()`) and produces a `LayoutResult` with no duplicate `eventId` keys.
+2. `causalTreeLayout.spec.ts::layout_MultiRootDag_EachNodeAppearsExactlyOnce` constructs a 3-root 10-node DAG with two convergent children and asserts `result.nodes.size === 10`.
+3. `causalTreeHitTest.spec.ts::findNodeAt_ClickAtRadiusMinusOne_StillReturnsNode` verifies that a query point at distance `radius - 1` from the node center returns the node (inclusive boundary).
+4. `useCausalTreeQuery.spec.ts::allFourKinds_EachDispatchesCorrectApiMethod` parameterizes over `{ kind: 'trace', method: 'getTraceTree' }`, `{ kind: 'event', method: 'getTraceByEvent' }`, `{ kind: 'ancestors', method: 'getEventAncestors' }`, `{ kind: 'descendants', method: 'getEventDescendants' }` and asserts each fires exactly its corresponding API method once.
+5. `useCausalTreeUrl.spec.ts::routeChange_ModeDescendants_CallsOpenDescendants` simulates `?mode=descendants&maxDepth=15&maxNodes=300` and asserts `store.openDescendants(eventId, 15, 300)`.
+6. `causal-tree-view.spec.ts::opensFromTimelineEventInspectorPivot` navigates to the timeline, clicks a canvas marker, waits for `.event-inspector`, clicks "Show causal tree", and asserts navigation to a URL matching `/v/causal/` with `.trace-summary` visible within 300 ms of navigation.
+7. `causal-tree-view.spec.ts::walkExpansion_ClickNodeInTree_Under200ms` clicks a known canvas node on a seeded trace, measures elapsed from click until `.event-inspector` shows the node's event ID with `performance.now()`, and asserts elapsed < 200 ms.
+8. `causal-tree-view.spec.ts::crossViewPivotToTimeline_NavigatesWithSelectParam` clicks "Show in timeline" in the causal-tree inspector and asserts navigation to a URL matching `/v/timeline/` with a `select` query parameter equal to the event ID.
+9. All Phase 1–6 integration tests pass.
+
+**Dependencies:** TRC-P6-007, TRC-P6-008, TRC-P6-009, TRC-P6-010, TRC-P6-011
+
 <!-- PHASE 6 TASKS END -->

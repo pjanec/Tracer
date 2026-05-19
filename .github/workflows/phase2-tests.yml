@@ -1,0 +1,58 @@
+name: Phase 2 Tests
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Kill stray processes
+        shell: pwsh
+        run: |
+          Get-Process -Name dotnet, syncpub, SyncMaster, SyncAgent -ErrorAction SilentlyContinue | Stop-Process -Force
+
+      - name: Restore
+        run: dotnet restore SyncSystem.sln
+
+      - name: Build (Debug)
+        run: dotnet build SyncSystem.sln -c Debug --no-restore --nologo
+
+      - name: Run Phase 1+2 unit tests
+        run: |
+          dotnet test test\SyncSystem.Manifest.Tests\SyncSystem.Manifest.Tests.csproj -c Debug --no-build --logger "trx;LogFileName=manifest.trx" --results-directory .test-results
+          dotnet test test\SyncSystem.Publish.Tests\SyncSystem.Publish.Tests.csproj -c Debug --no-build --logger "trx;LogFileName=publish.trx" --results-directory .test-results
+          dotnet test test\SyncSystem.Publish.Cli.Tests\SyncSystem.Publish.Cli.Tests.csproj -c Debug --no-build --logger "trx;LogFileName=cli.trx" --results-directory .test-results
+        shell: pwsh
+
+      - name: Run Phase 1 integration tests
+        run: dotnet test test\SyncSystem.Tests.Integration\SyncSystem.Tests.Integration.csproj -c Debug --no-build --filter "Phase=1" --logger "trx;LogFileName=integration-p1.trx" --results-directory .test-results
+        shell: pwsh
+
+      - name: Run Phase 2 integration tests
+        run: dotnet test test\SyncSystem.Tests.Integration\SyncSystem.Tests.Integration.csproj -c Debug --no-build --filter "Phase=2" --logger "trx;LogFileName=integration-p2.trx" --results-directory .test-results
+        shell: pwsh
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: '.test-results/**/*.trx'
+
+      - name: Upload test artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-artifacts
+          path: '${{ runner.temp }}\SyncSystem.Tests'
