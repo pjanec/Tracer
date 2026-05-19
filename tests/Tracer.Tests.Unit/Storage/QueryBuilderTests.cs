@@ -99,6 +99,15 @@ public sealed class QueryBuilderTests
         parameters.Should().Contain(p => p.ParameterName == "sev0");
         parameters.Should().Contain(p => p.ParameterName == "sev1");
         parameters.Should().HaveCount(2);
+
+        // Verify the parameter VALUES are correct
+        var sev0 = parameters.Single(p => p.ParameterName == "sev0");
+        var sev1 = parameters.Single(p => p.ParameterName == "sev1");
+        sev0.Value!.ToString().Should().Be("Warning");
+        sev1.Value!.ToString().Should().Be("Error");
+
+        // Negative case: Info must NOT be included
+        parameters.Should().NotContain(p => p.Value!.ToString() == "Info");
     }
 
     [Fact]

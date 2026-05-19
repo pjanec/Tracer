@@ -18,14 +18,14 @@
 - [x] **TRC-P1-002** Tracer.Core: Domain Types — [details](./TASK-DETAIL.md#trc-p1-002--tracercore-domain-types)
 - [x] **TRC-P1-003** Tracer.Core: Abstractions & Error Types — [details](./TASK-DETAIL.md#trc-p1-003--tracercore-abstractions--error-types)
 - [x] **TRC-P1-004** Tracer.Core: Query Model — [details](./TASK-DETAIL.md#trc-p1-004--tracercore-query-model)
-- [⚠️] **TRC-P1-005** Tracer.Storage.DuckDB: Schema & Appenders — [details](./TASK-DETAIL.md#trc-p1-005--tracerstorageduckdb-schema--appenders) *test fixes needed (see BATCH-01-REVIEW)*
-- [⚠️] **TRC-P1-006** Tracer.Storage.DuckDB: Query Layer — [details](./TASK-DETAIL.md#trc-p1-006--tracerstorageduckdb-query-layer) *test fixes needed (see BATCH-01-REVIEW)*
-- [ ] **TRC-P1-007** Tracer.Adapters.Mock: MockDataSource & SimulatedClock — [details](./TASK-DETAIL.md#trc-p1-007--traceradaptersmock-mockdatasource--simulatedclock)
-- [ ] **TRC-P1-008** Tracer.Adapters.Mock: Scenario System — [details](./TASK-DETAIL.md#trc-p1-008--traceradaptersmock-scenario-system)
-- [ ] **TRC-P1-009** Tracer.TestHarness — [details](./TASK-DETAIL.md#trc-p1-009--tracertestharness)
-- [ ] **TRC-P1-010** Unit Tests: Core & Storage — [details](./TASK-DETAIL.md#trc-p1-010--unit-tests-core--storage)
-- [ ] **TRC-P1-011** Unit Tests: Mock Adapter — [details](./TASK-DETAIL.md#trc-p1-011--unit-tests-mock-adapter)
-- [ ] **TRC-P1-012** Integration Tests: End-to-End — [details](./TASK-DETAIL.md#trc-p1-012--integration-tests-end-to-end)
+- [x] **TRC-P1-005** Tracer.Storage.DuckDB: Schema & Appenders — [details](./TASK-DETAIL.md#trc-p1-005--tracerstorageduckdb-schema--appenders)
+- [x] **TRC-P1-006** Tracer.Storage.DuckDB: Query Layer — [details](./TASK-DETAIL.md#trc-p1-006--tracerstorageduckdb-query-layer)
+- [x] **TRC-P1-007** Tracer.Adapters.Mock: MockDataSource & SimulatedClock — [details](./TASK-DETAIL.md#trc-p1-007--traceradaptersmock-mockdatasource--simulatedclock)
+- [x] **TRC-P1-008** Tracer.Adapters.Mock: Scenario System — [details](./TASK-DETAIL.md#trc-p1-008--traceradaptersmock-scenario-system)
+- [x] **TRC-P1-009** Tracer.TestHarness — [details](./TASK-DETAIL.md#trc-p1-009--tracertestharness)
+- [x] **TRC-P1-010** Unit Tests: Core & Storage — [details](./TASK-DETAIL.md#trc-p1-010--unit-tests-core--storage)
+- [x] **TRC-P1-011** Unit Tests: Mock Adapter — [details](./TASK-DETAIL.md#trc-p1-011--unit-tests-mock-adapter)
+- [x] **TRC-P1-012** Integration Tests: End-to-End — [details](./TASK-DETAIL.md#trc-p1-012--integration-tests-end-to-end)
 
 <!-- PHASE 1 TRACKER END -->
 

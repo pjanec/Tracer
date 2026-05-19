@@ -1,3 +1,4 @@
+using DuckDB.NET.Data;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Tracer.Core.Domain;
@@ -88,6 +89,15 @@ public sealed class AppenderTests : IAsyncDisposable
             new EventQuery { Filter = EventFilter.All, Limit = 10 }, default);
         events.Should().HaveCount(10);
         events[0].PayloadJson.Should().Contain("seq");
+
+        // Verify specific fields for a known record (seq=500)
+        var known = await reader.GetEventAsync(new EventId(500), default);
+        known.Should().NotBeNull();
+        known!.EventId.Value.Should().Be(500UL);
+        known.TraceId.Value.Should().Be(42UL);
+        known.PublisherNode.Value.Should().Be("pub");
+        known.Topic.Value.Should().Be("test.topic");
+        known.PayloadJson.Should().Be("{\"seq\":500}");
     }
 
     [Fact]
@@ -133,10 +143,16 @@ public sealed class AppenderTests : IAsyncDisposable
         await using var writer = await DuckDbStorageWriter.CreateAsync(
             _dbPath, NullLogger<DuckDbStorageWriter>.Instance);
 
+        // 5 events + 3 slow-state + 1 fast-state (fast silently skipped)
         var batch = new List<DiagnosticRecord>
         {
             MakeEvent(1),
             MakeEvent(2),
+            MakeEvent(3),
+            MakeEvent(4),
+            MakeEvent(5),
+            MakeState(StateSampleRate.Slow),
+            MakeState(StateSampleRate.Slow),
             MakeState(StateSampleRate.Slow),
             MakeState(StateSampleRate.Fast),  // should be silently skipped
         };
@@ -148,9 +164,25 @@ public sealed class AppenderTests : IAsyncDisposable
         await using var reader = await DuckDbStorageReader.OpenAsync(
             _dbPath, NullLogger<DuckDbStorageReader>.Instance);
 
-        var count = await reader.CountEventsAsync(EventFilter.All, default);
-        count.Should().Be(2, "only event records should be counted in events table");
+        var eventCount = await reader.CountEventsAsync(EventFilter.All, default);
+        eventCount.Should().Be(5, "only the 5 event records should be in the events table");
+
+        // Verify slow_state table via raw DuckDB connection
+        var slowStateCount = await QueryScalarAsync<long>("SELECT COUNT(*) FROM slow_state");
+        slowStateCount.Should().Be(3, "exactly 3 slow-state records should be in slow_state table");
     }
+
+    // ── raw query helper ──────────────────────────────────────────────────────
+
+    private Task<T> QueryScalarAsync<T>(string sql) =>
+        Task.Run(() =>
+        {
+            using var conn = new DuckDBConnection($"Data Source={_dbPath}");
+            conn.Open();
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = sql;
+            return (T)Convert.ChangeType(cmd.ExecuteScalar()!, typeof(T));
+        });
 
     [Fact]
     public async Task Writer_DisposeAsync_IsIdempotent()

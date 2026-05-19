@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Tracer.Tests.Unit")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+5f7cd3c2de7334a60eb01ee52af349634d4bb31d")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+489b3884906fb2b35e0b42ffda38f7d2cab42835")]
 [assembly: System.Reflection.AssemblyProductAttribute("Tracer.Tests.Unit")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Tracer.Tests.Unit")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
