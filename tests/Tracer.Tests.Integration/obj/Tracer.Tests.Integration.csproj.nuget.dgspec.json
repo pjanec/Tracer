@@ -1265,6 +1265,12 @@
               "D:\\Work\\Tracer\\src\\Tracer.Agent\\Tracer.Agent.csproj": {
                 "projectPath": "D:\\Work\\Tracer\\src\\Tracer.Agent\\Tracer.Agent.csproj"
               },
+              "D:\\Work\\Tracer\\src\\Tracer.Aggregator\\Tracer.Aggregator.csproj": {
+                "projectPath": "D:\\Work\\Tracer\\src\\Tracer.Aggregator\\Tracer.Aggregator.csproj"
+              },
+              "D:\\Work\\Tracer\\src\\Tracer.Bundle\\Tracer.Bundle.csproj": {
+                "projectPath": "D:\\Work\\Tracer\\src\\Tracer.Bundle\\Tracer.Bundle.csproj"
+              },
               "D:\\Work\\Tracer\\src\\Tracer.Core\\Tracer.Core.csproj": {
                 "projectPath": "D:\\Work\\Tracer\\src\\Tracer.Core\\Tracer.Core.csproj"
               },

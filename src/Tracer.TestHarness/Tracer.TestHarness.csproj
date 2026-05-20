@@ -16,6 +16,8 @@
     <ProjectReference Include="..\Tracer.FakeNode\Tracer.FakeNode.csproj" />
     <ProjectReference Include="..\Tracer.WebApi\Tracer.WebApi.csproj" />
     <ProjectReference Include="..\Tracer.Observer\Tracer.Observer.csproj" />
+    <ProjectReference Include="..\Tracer.Aggregator\Tracer.Aggregator.csproj" />
+    <ProjectReference Include="..\Tracer.Bundle\Tracer.Bundle.csproj" />
   </ItemGroup>
 
   <ItemGroup>

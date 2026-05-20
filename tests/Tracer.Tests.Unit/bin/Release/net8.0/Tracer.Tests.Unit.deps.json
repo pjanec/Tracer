@@ -2046,6 +2046,8 @@
           "Microsoft.Extensions.Hosting": "8.0.0",
           "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
           "Tracer.Adapters.Mock": "1.0.0",
+          "Tracer.Aggregator": "1.0.0",
+          "Tracer.Bundle": "1.0.0",
           "Tracer.Core": "1.0.0",
           "Tracer.Storage.DuckDB": "1.0.0",
           "Tracer.WebApi": "1.0.0",

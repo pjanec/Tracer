@@ -338,3 +338,9 @@ D:\Work\Tracer\src\Tracer.TestHarness\bin\Release\net8.0\Tracer.WebApi.pdb
 D:\Work\Tracer\src\Tracer.TestHarness\bin\Release\net8.0\tracer-observer.pdb
 D:\Work\Tracer\src\Tracer.TestHarness\obj\Release\net8.0\MvcTestingAppManifest.json
 D:\Work\Tracer\src\Tracer.TestHarness\bin\Release\net8.0\tracer-observer.staticwebassets.runtime.json
+D:\Work\Tracer\src\Tracer.TestHarness\bin\Release\net8.0\Tracer.Aggregator.dll
+D:\Work\Tracer\src\Tracer.TestHarness\bin\Release\net8.0\Tracer.Bundle.dll
+D:\Work\Tracer\src\Tracer.TestHarness\bin\Release\net8.0\Tracer.Storage.DuckDB.MultiInterval.dll
+D:\Work\Tracer\src\Tracer.TestHarness\bin\Release\net8.0\Tracer.Aggregator.pdb
+D:\Work\Tracer\src\Tracer.TestHarness\bin\Release\net8.0\Tracer.Bundle.pdb
+D:\Work\Tracer\src\Tracer.TestHarness\bin\Release\net8.0\Tracer.Storage.DuckDB.MultiInterval.pdb

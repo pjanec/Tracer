@@ -3,7 +3,10 @@
   "tracer-fakenode, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "D:\\Work\\Tracer\\src\\Tracer.FakeNode",
   "tracer-observer, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "D:\\Work\\Tracer\\src\\Tracer.Observer",
   "Tracer.Adapters.Mock, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "D:\\Work\\Tracer\\src\\Tracer.Adapters.Mock",
+  "Tracer.Aggregator, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "D:\\Work\\Tracer\\src\\Tracer.Aggregator",
+  "Tracer.Bundle, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "D:\\Work\\Tracer\\src\\Tracer.Bundle",
   "Tracer.Core, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "D:\\Work\\Tracer\\src\\Tracer.Core",
   "Tracer.Storage.DuckDB, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "D:\\Work\\Tracer\\src\\Tracer.Storage.DuckDB",
+  "Tracer.Storage.DuckDB.MultiInterval, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "D:\\Work\\Tracer\\src\\Tracer.Storage.DuckDB.MultiInterval",
   "Tracer.WebApi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "D:\\Work\\Tracer\\src\\Tracer.WebApi"
 }
