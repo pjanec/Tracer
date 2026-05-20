@@ -139,6 +139,8 @@ public sealed class ObserverFixture : IAsyncDisposable
         builder.Services.AddSingleton<TopologyQueryService>();
         builder.Services.AddSingleton<ScenarioQueryService>();
         builder.Services.AddSingleton<EventLookupService>();
+        builder.Services.AddSingleton<EventQueryService>();
+        builder.Services.AddSingleton<EventAggregationService>();
 
         // SSE services
         var streaming = sseOptions ?? new SseStreamingOptions();

@@ -1,4 +1,5 @@
 using DuckDB.NET.Data;
+using Tracer.Core.Time;
 using Tracer.Storage.DuckDB.MultiInterval;
 using Tracer.WebApi.Contracts.Dto;
 
@@ -119,5 +120,64 @@ public sealed class SessionQueryService(LiveMultiIntervalReader multiReader)
     {
         var all = await ListAsync(null, ct);
         return all.FirstOrDefault(s => s.SessionId == sessionId);
+    }
+
+    /// <summary>
+    /// Returns the (Start, End) time range for the given session, or null if not found.
+    /// End is null for active sessions.
+    /// </summary>
+    public async Task<(WallclockTime Start, WallclockTime? End)?> GetSessionTimeRangeAsync(
+        string sessionId, CancellationToken ct)
+    {
+        await using var pooled = await _multiReader.AcquireAsync(ct);
+        var conn = pooled.Connection;
+
+        WallclockTime? start = null;
+        using (var cmd = conn.CreateCommand())
+        {
+            cmd.CommandText = pooled.WithEventsCte("""
+                SELECT publish_wallclock
+                FROM events
+                WHERE topic = 'system.session_start'
+                  AND json_extract_string(payload, '$.sessionId') = $sessionId
+                LIMIT 1
+                """);
+            var p = cmd.CreateParameter();
+            p.ParameterName = "sessionId";
+            p.Value = sessionId;
+            cmd.Parameters.Add(p);
+            using var r = cmd.ExecuteReader();
+            if (r.Read())
+            {
+                var dt = (DateTime)r.GetValue(0);
+                start = WallclockTime.FromDateTimeOffset(new DateTimeOffset(dt, TimeSpan.Zero));
+            }
+        }
+
+        if (start is null) return null;
+
+        WallclockTime? end = null;
+        using (var cmd = conn.CreateCommand())
+        {
+            cmd.CommandText = pooled.WithEventsCte("""
+                SELECT publish_wallclock
+                FROM events
+                WHERE topic = 'system.session_end'
+                  AND json_extract_string(payload, '$.sessionId') = $sessionId
+                LIMIT 1
+                """);
+            var p = cmd.CreateParameter();
+            p.ParameterName = "sessionId";
+            p.Value = sessionId;
+            cmd.Parameters.Add(p);
+            using var r = cmd.ExecuteReader();
+            if (r.Read())
+            {
+                var dt = (DateTime)r.GetValue(0);
+                end = WallclockTime.FromDateTimeOffset(new DateTimeOffset(dt, TimeSpan.Zero));
+            }
+        }
+
+        return (start.Value, end);
     }
 }

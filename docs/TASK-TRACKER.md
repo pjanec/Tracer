@@ -109,8 +109,8 @@
 **Phase success criteria:** All conditions from [tracer_phase5_design.md §1.3](./tracer_phase5_design.md#13-success-criteria) AND all Phase 1–5 integration tests pass.
 
 - [x] **TRC-P5-001** LiveMultiIntervalReader & IntervalSetTracker [details](./TASK-DETAIL.md#trc-p5-001--livemultiintervalreader--intervalsettracker)
-- [ ] **TRC-P5-002** /api/events List & Aggregate Endpoints [details](./TASK-DETAIL.md#trc-p5-002--apievents-list--aggregate-endpoints)
-- [ ] **TRC-P5-003** Extended SSE for Filtered Events [details](./TASK-DETAIL.md#trc-p5-003--extended-sse-for-filtered-events)
+- [x] **TRC-P5-002** /api/events List & Aggregate Endpoints [details](./TASK-DETAIL.md#trc-p5-002--apievents-list--aggregate-endpoints)
+- [x] **TRC-P5-003** Extended SSE for Filtered Events [details](./TASK-DETAIL.md#trc-p5-003--extended-sse-for-filtered-events)
 - [ ] **TRC-P5-004** Timeline Canvas Renderer [details](./TASK-DETAIL.md#trc-p5-004--timeline-canvas-renderer)
 - [ ] **TRC-P5-005** TimelineView Vue Components [details](./TASK-DETAIL.md#trc-p5-005--timelineview-vue-components)
 - [ ] **TRC-P5-006** Timeline Composables & Store [details](./TASK-DETAIL.md#trc-p5-006--timeline-composables--store)

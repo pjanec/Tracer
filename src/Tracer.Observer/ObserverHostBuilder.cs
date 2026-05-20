@@ -155,6 +155,8 @@ public static class ObserverHostBuilder
         builder.Services.AddSingleton<ScenarioQueryService>();
         builder.Services.AddSingleton<TopologyQueryService>();
         builder.Services.AddSingleton<EventLookupService>();
+        builder.Services.AddSingleton<EventQueryService>();
+        builder.Services.AddSingleton<EventAggregationService>();
 
         // ── Live streaming ────────────────────────────────────────────────────
         builder.Services.AddSingleton<SseStreamingOptions>();

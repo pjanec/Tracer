@@ -58,6 +58,8 @@ public sealed class WebApiFixture : IAsyncDisposable
         builder.Services.AddSingleton<TopologyQueryService>();
         builder.Services.AddSingleton<ScenarioQueryService>();
         builder.Services.AddSingleton<EventLookupService>();
+        builder.Services.AddSingleton<EventQueryService>();
+        builder.Services.AddSingleton<EventAggregationService>();
         builder.Services.AddSingleton<ILiveStatusProvider, NoOpLiveStatusProvider>();
         builder.Services.AddSingleton<LiveEventBroadcaster>();
         builder.Services.AddHostedService(sp => sp.GetRequiredService<LiveEventBroadcaster>());

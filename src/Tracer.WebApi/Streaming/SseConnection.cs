@@ -35,23 +35,10 @@ public sealed class SseConnection : IAsyncDisposable
     public void Enqueue(EventRecord ev)
     {
         ArgumentNullException.ThrowIfNull(ev);
+        if (!Filter.Matches(ev)) return;
 
-        // Apply filter: if NotablesOnly, only pass events with a label
-        if (Filter.NotablesOnly && ev.NotableLabel is null) return;
-
-        // Apply session filter if set
-        if (Filter.SessionId is not null)
-        {
-            // Best effort: try to read sessionId from payload JSON
-            if (!ev.PayloadJson.Contains($"\"sessionId\":\"{Filter.SessionId}\"", StringComparison.Ordinal))
-                return;
-        }
-
-        // With DropOldest mode, TryWrite always returns true (never rejects).
-        // We detect a drop by checking if the channel was already at capacity before writing.
         if (_channel.Reader.Count >= _bufferSize)
             Interlocked.Increment(ref _dropCount);
-
         _channel.Writer.TryWrite(ev);
     }
 
