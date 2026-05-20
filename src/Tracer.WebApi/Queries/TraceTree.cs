@@ -14,6 +14,8 @@ public sealed record TraceTree
     public required IReadOnlyList<TraceNode> Roots { get; init; }
     public required IReadOnlyList<TraceNode> Leaves { get; init; }
     public required TraceSummary Summary { get; init; }
+    /// <summary>Session ID of the session whose time range contains the trace's first event. Empty when not resolvable.</summary>
+    public string SessionId { get; init; } = string.Empty;
 }
 
 /// <summary>A node in the trace tree, wrapping the underlying event record.</summary>

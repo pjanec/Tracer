@@ -5,6 +5,7 @@ namespace Tracer.WebApi.Contracts.Dto;
 public sealed record TraceTreeDto
 {
     public required string TraceId { get; init; }
+    public required string SessionId { get; init; }
     public required IReadOnlyList<TraceNodeDto> Nodes { get; init; }
     public required IReadOnlyList<TraceEdgeDto> Edges { get; init; }
     public required IReadOnlyList<string> RootEventIds { get; init; }

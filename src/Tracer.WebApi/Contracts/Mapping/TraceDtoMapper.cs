@@ -16,6 +16,7 @@ public static class TraceDtoMapper
         return new TraceTreeDto
         {
             TraceId      = tree.TraceId.ToString("X16"),
+            SessionId    = tree.SessionId,
             Nodes        = nodes,
             Edges        = edges,
             RootEventIds = rootIds,

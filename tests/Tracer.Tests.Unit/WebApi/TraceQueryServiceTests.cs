@@ -150,4 +150,40 @@ public sealed class TraceQueryServiceTests : IAsyncDisposable
         tree.Edges.Should().BeEmpty("singleton has no edges");
         tree.Summary.Truncated.Should().BeFalse();
     }
+
+    [Fact]
+    public async Task GetTraceTree_SessionIdResolved_MatchesSessionContainingFirstEvent()
+    {
+        // Arrange: push a session_start event, then trace events after it
+        var sessionId = $"session-{_nextId++}";
+        var traceId   = _nextId++;
+        var rootId    = _nextId++;
+
+        // Session start event at BaseTime - 10 seconds
+        var sessionStart = new EventRecord
+        {
+            SequenceNumber   = _nextId++,
+            PublishWallclock = At(BaseTime.AddSeconds(-10)),
+            ReceiveWallclock = At(BaseTime.AddSeconds(-10)),
+            PublisherNode    = new AgentId("system"),
+            SubscriberNode   = new AgentId("system"),
+            Topic            = new TopicName("system.session_start"),
+            EventId          = new EventId(_nextId++),
+            TraceId          = new TraceId(0),
+            PayloadJson      = $"{{\"sessionId\":\"{sessionId}\",\"scenarioId\":\"Test\"}}",
+        };
+
+        var traceEvent = MakeEvent(rootId, traceId, 0, at: BaseTime);
+
+        await _fixture.PushAsync([sessionStart]);
+        await _fixture.PushAsync([traceEvent]);
+
+        // Act
+        var tree = await _svc.GetTraceTreeAsync(traceId, maxEvents: 100, CancellationToken.None);
+
+        // Assert
+        tree.Should().NotBeNull();
+        tree!.SessionId.Should().Be(sessionId);
+        tree.Summary.FirstEventUtc.Should().NotBeNull();
+    }
 }

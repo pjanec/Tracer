@@ -25,6 +25,8 @@
 | DT-020 | P3 | BATCH-08 | `MultipleNodes_AllEventsAppearInUnifiedStream`: asserts `lines.Count == 20` but doesn't verify 20 distinct `eventId` values (spec says "verified by eventId") | BATCH-09 | ✅ Resolved (test uses PascalCase `EventId` matching current SSE output — will update to camelCase in DT-021 fix) |
 | DT-021 | P1 | BATCH-09 | SSE endpoint (`SseEndpoints.cs`) uses `JsonSerializer.Serialize(dto)` without options, producing PascalCase (`EventId`, `TraceId`). REST API uses camelCase. TypeScript `NotableEventDto` uses camelCase. This breaks TRC-P3-007 `useLiveNotables` SSE parsing — all field accesses return `undefined`. Fix: add `JsonNamingPolicy.CamelCase` options to SSE serializer; update DT-020 test to use `GetProperty("eventId")`. | BATCH-10 | ✅ Resolved |
 | DT-022 | P2 | BATCH-09 | `@typescript-eslint` v6 in `tracer-viewer/package.json` does not officially support TypeScript 5.4.5 (supported range `<5.4.0`). Upgrade `@typescript-eslint/eslint-plugin` and `@typescript-eslint/parser` to `^7.0.0` or `^8.0.0`. | BATCH-10 | ✅ Resolved |
+| DT-023 | P3 | BATCH-29 | When upgrading DuckDB past 1.0.2, apply `WHERE parent_event_id != 0` partial clause to `SchemaV1.CreateIndexes` and update `SchemaV1Tests` test assertion. DuckDB 1.0.2 does not support partial indexes. | Future | Open |
+| DT-024 | P3 | BATCH-29 | `SchemaV1Tests.CreateIndexes_ContainsPartialIndexOnParentEventId` test name misleading (no longer a partial index). Rename to `CreateIndexes_ContainsIndexOnParentEventId` when DT-023 resolved. | Future | Open |
 
 > P1 = Critical (blocks next batch), P2 = Should fix soon, P3 = Nice to fix eventually  
 > Resolved items are marked ✅ (never deleted)

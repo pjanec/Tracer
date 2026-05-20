@@ -2,6 +2,7 @@
 
 export interface TraceTreeDto {
   traceId: string;
+  sessionId: string;              // resolved to empty string when unresolvable
   nodes: TraceNodeDto[];
   edges: TraceEdgeDto[];
   rootEventIds: string[];

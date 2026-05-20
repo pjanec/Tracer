@@ -191,4 +191,16 @@ public sealed class TraceDtoMapperTests
         dto.Truncated.Should().BeFalse();
         dto.TotalEventsAvailable.Should().BeNull("non-truncated traces must not include TotalEventsAvailable");
     }
+
+    [Fact]
+    public void MapTraceTree_SessionIdPresentInDto()
+    {
+        var ev = MakeEvent(1001, 2002);
+        var tree = MakeTree(2002, ev);
+        var treeWithSession = tree with { SessionId = "my-session-xyz" };
+
+        var dto = TraceDtoMapper.Map(treeWithSession);
+
+        dto.SessionId.Should().Be("my-session-xyz");
+    }
 }

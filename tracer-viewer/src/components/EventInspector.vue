@@ -1,35 +1,70 @@
 <template>
-  <div v-if="store.selectedEventId" class="event-inspector">
-    <div v-if="loading" class="event-inspector__loading">Loadingâ€¦</div>
-    <template v-else-if="event">
+  <div
+    v-if="visibleToUser"
+    class="event-inspector"
+  >
+    <div
+      v-if="loading && !isPropMode"
+      class="event-inspector__loading"
+    >
+      Loading…
+    </div>
+    <template v-else-if="displayEvent">
       <div class="event-inspector__header">
-        <span class="event-inspector__topic">{{ event.topic }}</span>
-        <span class="event-inspector__node">{{ event.publisherNode }}</span>
+        <span class="event-inspector__topic">{{ displayEvent.topic }}</span>
+        <span class="event-inspector__node">{{ displayEvent.publisherNode }}</span>
       </div>
 
       <pre class="event-inspector__payload">{{ prettyPayload }}</pre>
 
       <div class="event-inspector__actions">
-        <button class="event-inspector__action" @click="onFilterToTrace">
+        <button
+          class="event-inspector__action"
+          @click="onFilterToTrace"
+        >
           Filter to this trace
         </button>
-        <button class="event-inspector__action" @click="onShowInScenario">
+        <button
+          class="event-inspector__action"
+          @click="onShowInScenario"
+        >
           Show in scenario
         </button>
-        <button class="event-inspector__action event-inspector__action--disabled" disabled>
+        <button
+          v-if="showCausalButton"
+          class="event-inspector__action"
+          @click="pivotToCausalTree"
+        >
           Show causal tree
-          <!-- TODO Phase 6: enable causal tree navigation -->
         </button>
-        <button class="event-inspector__action event-inspector__action--disabled" disabled>
+        <button
+          v-if="showTimelineButton"
+          class="event-inspector__action"
+          @click="pivotToTimeline"
+        >
+          Show in timeline
+        </button>
+        <button
+          class="event-inspector__action event-inspector__action--disabled"
+          disabled
+        >
           Show entity history
           <!-- TODO Phase 7: enable entity history navigation -->
         </button>
-        <button class="event-inspector__action" @click="onCopyEventId">
+        <button
+          class="event-inspector__action"
+          @click="onCopyEventId"
+        >
           Copy event ID
         </button>
       </div>
     </template>
-    <div v-else class="event-inspector__not-found">Event not found</div>
+    <div
+      v-else
+      class="event-inspector__not-found"
+    >
+      Event not found
+    </div>
   </div>
 </template>
 
@@ -39,29 +74,50 @@ import { useRouter } from 'vue-router';
 import { useTimelineStore } from '@/stores/timelineStore';
 import { api } from '@/api/tracerApiClient';
 import type { EventDto as ApiEventDto } from '@/api/tracerApiClient';
+import type { TraceNodeDto } from '@/types/causalTree';
+
+const props = withDefaults(defineProps<{
+  event?: TraceNodeDto | null;
+  sessionId?: string | null;
+  showCausalTreePivot?: boolean;
+  showTimelinePivot?: boolean;
+}>(), {
+  event: null,
+  sessionId: null,
+  showCausalTreePivot: false,
+  showTimelinePivot: false,
+});
 
 const store  = useTimelineStore();
 const router = useRouter();
 
-const event   = ref<ApiEventDto | null>(null);
+// Store mode: fetched event (used when no event prop)
+const fetchedEvent = ref<ApiEventDto | null>(null);
 const loading = ref(false);
 
-const prettyPayload = computed(() => {
-  if (!event.value?.payloadJson) return '';
-  try {
-    return JSON.stringify(JSON.parse(event.value.payloadJson), null, 2);
-  } catch {
-    return event.value.payloadJson;
-  }
+// Detect which mode we're in: prop mode when event is explicitly set (not null)
+const isPropMode = computed(() => props.event !== null && props.event !== undefined);
+
+// Resolved values: prefer prop, fall back to store
+const resolvedTraceId = computed<string | null>(() => {
+  if (isPropMode.value) return props.event!.traceId;
+  return fetchedEvent.value?.traceId ?? null;
 });
 
+const resolvedSessionId = computed<string | null>(() => {
+  if (props.sessionId) return props.sessionId;
+  return store.sessionId ?? null;
+});
+
+// In store mode: watch selectedEventId and fetch event
 watch(
   () => store.selectedEventId,
   async (id) => {
-    if (!id) { event.value = null; return; }
+    if (isPropMode.value) return;
+    if (!id) { fetchedEvent.value = null; return; }
     loading.value = true;
     try {
-      event.value = await api.getEvent(id);
+      fetchedEvent.value = await api.getEvent(id);
     } finally {
       loading.value = false;
     }
@@ -69,28 +125,74 @@ watch(
   { immediate: true },
 );
 
+const displayEvent = computed(() => {
+  if (isPropMode.value) return props.event;
+  return fetchedEvent.value;
+});
+
+const visibleToUser = computed(() => {
+  if (isPropMode.value) return true;
+  return !!store.selectedEventId;
+});
+
+const prettyPayload = computed(() => {
+  const payload = displayEvent.value?.payloadJson;
+  if (!payload) return '';
+  try { return JSON.stringify(JSON.parse(payload), null, 2); }
+  catch { return payload; }
+});
+
+// Button visibility
+const showCausalButton = computed(() =>
+  props.showCausalTreePivot &&
+  resolvedTraceId.value !== null &&
+  resolvedTraceId.value !== '0000000000000000',
+);
+
+const showTimelineButton = computed(() =>
+  props.showTimelinePivot && !!resolvedSessionId.value,
+);
+
+// Navigation handlers
+function pivotToCausalTree() {
+  const eventId = isPropMode.value
+    ? props.event!.eventId
+    : (store.selectedEventId ?? null);
+  if (eventId) {
+    void router.push({ name: 'causal-by-event', params: { eventId } });
+  }
+}
+
+function pivotToTimeline() {
+  if (!resolvedSessionId.value || !isPropMode.value || !props.event) return;
+  const t = new Date(props.event.publishWallclock).getTime();
+  void router.push({
+    name: 'timeline',
+    params: { sessionId: resolvedSessionId.value },
+    query: {
+      from: new Date(t - 2000).toISOString(),
+      to:   new Date(t + 2000).toISOString(),
+      select: props.event.eventId,
+    },
+  });
+}
+
 function onFilterToTrace() {
-  if (!event.value) return;
-  store.applyFilter({ traceId: event.value.traceId });
+  if (!resolvedTraceId.value) return;
+  store.applyFilter({ traceId: resolvedTraceId.value });
 }
 
 function onShowInScenario() {
-  if (!store.sessionId) return;
-  void router.push(`/scenario/${store.sessionId}`);
+  const sId = resolvedSessionId.value;
+  if (!sId) return;
+  void router.push(`/scenario/${sId}`);
 }
 
 async function onCopyEventId() {
-  if (!event.value) return;
-  await navigator.clipboard.writeText(event.value.eventId);
+  const eventId = isPropMode.value
+    ? props.event!.eventId
+    : (fetchedEvent.value?.eventId ?? null);
+  if (!eventId) return;
+  await navigator.clipboard.writeText(eventId);
 }
 </script>
-
-<style scoped>
-.event-inspector { border-left: 2px solid #1976d2; padding: 8px 12px; background: #fafafa; }
-.event-inspector__header { display: flex; gap: 8px; margin-bottom: 8px; font-weight: 600; }
-.event-inspector__payload { background: #f5f5f5; padding: 8px; border-radius: 4px; font-size: 0.75rem; overflow: auto; max-height: 300px; }
-.event-inspector__actions { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; }
-.event-inspector__action { text-align: left; background: none; border: 1px solid #ccc; border-radius: 4px; padding: 4px 8px; cursor: pointer; }
-.event-inspector__action:hover:not(:disabled) { background: #e3f2fd; }
-.event-inspector__action--disabled { opacity: 0.5; cursor: not-allowed; }
-</style>

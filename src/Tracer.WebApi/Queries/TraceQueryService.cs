@@ -51,7 +51,10 @@ public sealed class TraceQueryService(LiveMultiIntervalReader reader, ILogger<Tr
         var truncated = events.Count > maxEvents;
         if (truncated) events.RemoveAt(events.Count - 1);
 
-        return BuildTree(events, truncated, traceId);
+        var tree = BuildTree(events, truncated, traceId);
+        var sessionId = await Task.Run(
+            () => ResolveSessionId(conn, tree.Summary.FirstEventUtc), ct);
+        return tree with { SessionId = sessionId };
     }
 
     /// <summary>
@@ -69,7 +72,14 @@ public sealed class TraceQueryService(LiveMultiIntervalReader reader, ILogger<Tr
             ev = await TraceWalker.LookupEventAsync(conn, eventId.Value, ct);
         }
         if (ev is null) return null;
-        if (ev.TraceId.Value == 0) return BuildSingletonTree(ev);
+        if (ev.TraceId.Value == 0)
+        {
+            var singleton = BuildSingletonTree(ev);
+            await using var conn2 = await _reader.AcquireAsync(ct);
+            var singletonSessionId = await Task.Run(
+                () => ResolveSessionId(conn2, singleton.Summary.FirstEventUtc), ct);
+            return singleton with { SessionId = singletonSessionId };
+        }
         return await GetTraceTreeAsync(ev.TraceId.Value, maxEvents, ct);
     }
 
@@ -85,7 +95,10 @@ public sealed class TraceQueryService(LiveMultiIntervalReader reader, ILogger<Tr
         if (chain.Count == 0) return null;
 
         var traceId = chain[0].TraceId.Value;
-        return BuildTree(chain.ToList(), truncated: false, traceId);
+        var tree = BuildTree(chain.ToList(), truncated: false, traceId);
+        var sessionId = await Task.Run(
+            () => ResolveSessionId(conn, tree.Summary.FirstEventUtc), ct);
+        return tree with { SessionId = sessionId };
     }
 
     /// <summary>Walks descendants from <paramref name="eventId"/> using BFS.</summary>
@@ -106,7 +119,10 @@ public sealed class TraceQueryService(LiveMultiIntervalReader reader, ILogger<Tr
         all.AddRange(descendants);
 
         var truncated = descendants.Count >= maxNodes;
-        return BuildTree(all, truncated, root.TraceId.Value);
+        var tree = BuildTree(all, truncated, root.TraceId.Value);
+        var sessionId = await Task.Run(
+            () => ResolveSessionId(conn, tree.Summary.FirstEventUtc), ct);
+        return tree with { SessionId = sessionId };
     }
 
     private static TraceTree BuildTree(
@@ -199,5 +215,37 @@ public sealed class TraceQueryService(LiveMultiIntervalReader reader, ILogger<Tr
                 LastEventUtc = ev.PublishWallclock.ToDateTimeOffset(),
             },
         };
+    }
+
+    /// <summary>
+    /// Returns the sessionId of the session whose <c>system.session_start</c> event
+    /// has the most recent timestamp at or before <paramref name="eventTime"/>.
+    /// Returns empty string when no matching session is found.
+    /// </summary>
+    private static string ResolveSessionId(
+        PooledMultiIntervalConnection conn,
+        DateTimeOffset? eventTime)
+    {
+        if (eventTime is null) return string.Empty;
+
+        var sql = conn.WithEventsCte("""
+            SELECT json_extract_string(payload, '$.sessionId') as session_id
+            FROM events
+            WHERE topic = 'system.session_start'
+              AND json_extract_string(payload, '$.sessionId') IS NOT NULL
+              AND publish_wallclock <= $eventTime
+            ORDER BY publish_wallclock DESC
+            LIMIT 1
+            """);
+
+        using var cmd = conn.Connection.CreateCommand();
+        cmd.CommandText = sql;
+        cmd.Parameters.Add(new DuckDBParameter("eventTime", eventTime.Value.UtcDateTime));
+
+        using var reader = cmd.ExecuteReader();
+        if (reader.Read() && !reader.IsDBNull(0))
+            return reader.GetString(0);
+
+        return string.Empty;
     }
 }
