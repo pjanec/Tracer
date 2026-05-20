@@ -11,10 +11,11 @@ using System;
 using System.Reflection;
 
 [assembly: System.Runtime.CompilerServices.InternalsVisibleToAttribute("Tracer.Tests.Unit")]
+[assembly: System.Runtime.CompilerServices.InternalsVisibleToAttribute("Tracer.Aggregator")]
 [assembly: System.Reflection.AssemblyCompanyAttribute("Tracer.Bundle")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+d07dd5b64517d9b524a8f2630fc70c3c4de34247")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+79c9aea008656cb53611840e72cc7ed7942313b5")]
 [assembly: System.Reflection.AssemblyProductAttribute("Tracer.Bundle")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Tracer.Bundle")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

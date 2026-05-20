@@ -10,6 +10,7 @@
     <ProjectReference Include="..\..\src\Tracer.Storage.DuckDB\Tracer.Storage.DuckDB.csproj" />
     <ProjectReference Include="..\..\src\Tracer.Storage.DuckDB.MultiInterval\Tracer.Storage.DuckDB.MultiInterval.csproj" />
     <ProjectReference Include="..\..\src\Tracer.Bundle\Tracer.Bundle.csproj" />
+    <ProjectReference Include="..\..\src\Tracer.Aggregator\Tracer.Aggregator.csproj" />
     <ProjectReference Include="..\..\src\Tracer.Adapters.Mock\Tracer.Adapters.Mock.csproj" />
     <ProjectReference Include="..\..\src\Tracer.Agent\Tracer.Agent.csproj" />
     <ProjectReference Include="..\..\src\Tracer.WebApi\Tracer.WebApi.csproj" />

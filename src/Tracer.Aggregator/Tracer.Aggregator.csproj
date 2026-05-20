@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <AssemblyName>Tracer.Aggregator</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+      <_Parameter1>Tracer.Tests.Unit</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Tracer.Core\Tracer.Core.csproj" />
+    <ProjectReference Include="..\Tracer.Storage.DuckDB\Tracer.Storage.DuckDB.csproj" />
+    <ProjectReference Include="..\Tracer.Storage.DuckDB.MultiInterval\Tracer.Storage.DuckDB.MultiInterval.csproj" />
+    <ProjectReference Include="..\Tracer.Bundle\Tracer.Bundle.csproj" />
+    <ProjectReference Include="..\Tracer.Adapters.Mock\Tracer.Adapters.Mock.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="DuckDB.NET.Data" />
+    <PackageReference Include="DuckDB.NET.Bindings.Full" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="System.IO.Compression.ZipFile" />
+  </ItemGroup>
+
+</Project>

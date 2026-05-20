@@ -40,6 +40,7 @@
           "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
           "Microsoft.NET.Test.Sdk": "17.8.0",
           "Tracer.Adapters.Mock": "1.0.0",
+          "Tracer.Aggregator": "1.0.0",
           "Tracer.Bundle": "1.0.0",
           "Tracer.Core": "1.0.0",
           "Tracer.Storage.DuckDB": "1.0.0",
@@ -1966,6 +1967,25 @@
         },
         "compile": {
           "Tracer.Adapters.Mock.dll": {}
+        }
+      },
+      "Tracer.Aggregator/1.0.0": {
+        "dependencies": {
+          "DuckDB.NET.Bindings.Full": "1.0.2",
+          "DuckDB.NET.Data": "1.0.2",
+          "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
+          "System.IO.Compression.ZipFile": "4.3.0",
+          "Tracer.Adapters.Mock": "1.0.0",
+          "Tracer.Bundle": "1.0.0",
+          "Tracer.Core": "1.0.0",
+          "Tracer.Storage.DuckDB": "1.0.0",
+          "Tracer.Storage.DuckDB.MultiInterval": "1.0.0"
+        },
+        "runtime": {
+          "Tracer.Aggregator.dll": {}
+        },
+        "compile": {
+          "Tracer.Aggregator.dll": {}
         }
       },
       "Tracer.Bundle/1.0.0": {
@@ -4820,6 +4840,11 @@
       "sha512": ""
     },
     "Tracer.Adapters.Mock/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Tracer.Aggregator/1.0.0": {
       "type": "project",
       "serviceable": false,
       "sha512": ""

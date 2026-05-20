@@ -31,6 +31,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tracer.Bundle", "src\Tracer
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tracer.Storage.DuckDB.MultiInterval", "src\Tracer.Storage.DuckDB.MultiInterval\Tracer.Storage.DuckDB.MultiInterval.csproj", "{94A2FEB6-50CE-476B-BD50-376BC9864048}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tracer.Aggregator", "src\Tracer.Aggregator\Tracer.Aggregator.csproj", "{B1C3D4E5-F6A7-4B8C-9D0E-1F2A3B4C5D6E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -88,6 +90,10 @@ Global
 		{94A2FEB6-50CE-476B-BD50-376BC9864048}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{94A2FEB6-50CE-476B-BD50-376BC9864048}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{94A2FEB6-50CE-476B-BD50-376BC9864048}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B1C3D4E5-F6A7-4B8C-9D0E-1F2A3B4C5D6E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B1C3D4E5-F6A7-4B8C-9D0E-1F2A3B4C5D6E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B1C3D4E5-F6A7-4B8C-9D0E-1F2A3B4C5D6E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B1C3D4E5-F6A7-4B8C-9D0E-1F2A3B4C5D6E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{246EF103-28A8-4F5B-9D41-1C3191EF1825} = {FE41F639-B667-4ABE-9046-6868B8702FE2}
@@ -102,5 +108,6 @@ Global
 		{873A3280-4596-4BC7-9136-D9E8DFE576AE} = {FE41F639-B667-4ABE-9046-6868B8702FE2}
 		{690B2CE0-B45A-4418-AEFD-BACE5C19A119} = {FE41F639-B667-4ABE-9046-6868B8702FE2}
 		{94A2FEB6-50CE-476B-BD50-376BC9864048} = {FE41F639-B667-4ABE-9046-6868B8702FE2}
+		{B1C3D4E5-F6A7-4B8C-9D0E-1F2A3B4C5D6E} = {FE41F639-B667-4ABE-9046-6868B8702FE2}
 	EndGlobalSection
 EndGlobal

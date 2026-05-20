@@ -482,3 +482,5 @@ D:\Work\Tracer\tests\Tracer.Tests.Unit\bin\Release\net8.0\Tracer.Bundle.dll
 D:\Work\Tracer\tests\Tracer.Tests.Unit\bin\Release\net8.0\Tracer.Storage.DuckDB.MultiInterval.dll
 D:\Work\Tracer\tests\Tracer.Tests.Unit\bin\Release\net8.0\Tracer.Storage.DuckDB.MultiInterval.pdb
 D:\Work\Tracer\tests\Tracer.Tests.Unit\bin\Release\net8.0\Tracer.Bundle.pdb
+D:\Work\Tracer\tests\Tracer.Tests.Unit\bin\Release\net8.0\Tracer.Aggregator.dll
+D:\Work\Tracer\tests\Tracer.Tests.Unit\bin\Release\net8.0\Tracer.Aggregator.pdb
