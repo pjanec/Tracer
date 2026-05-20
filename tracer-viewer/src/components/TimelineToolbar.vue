@@ -8,7 +8,7 @@
       :class="{ 'toolbar__follow--active': store.viewport.followLive }"
       :disabled="!store.isLiveSession"
       @click="toggleFollow"
-    >Follow</button>
+    >{{ store.viewport.followLive ? 'Following live' : 'Follow' }}</button>
     <DensityIndicator />
   </div>
 </template>

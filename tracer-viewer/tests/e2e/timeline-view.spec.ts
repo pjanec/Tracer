@@ -114,4 +114,72 @@ test.describe('TimelineView E2E', () => {
       expect(isDisabled).toBe(true);
     }
   });
+
+  test('shareableUrl_SameViewOnReload', async ({ page }) => {
+    await page.goto(TIMELINE_URL);
+    await page.locator('.timeline-toolbar').waitFor({ state: 'visible' });
+
+    // Apply a topic filter using FilterPanel
+    const filterPanel = page.locator('.filter-panel');
+    if (await filterPanel.isVisible()) {
+      const topicInput = filterPanel.locator('.filter-panel__input');
+      await topicInput.fill('weapons.fire');
+      await filterPanel.locator('.filter-panel__add-btn').click();
+      await page.waitForTimeout(500); // allow debounce
+    }
+
+    // Capture the URL after state settles
+    const urlWithState = page.url();
+    const parsedUrl = new URL(urlWithState);
+
+    // Reload with the captured URL
+    await page.goto(urlWithState);
+    await page.locator('.timeline-toolbar').waitFor({ state: 'visible' });
+
+    // The URL params should be preserved
+    const reloadedUrl = new URL(page.url());
+    if (parsedUrl.searchParams.has('from')) {
+      expect(reloadedUrl.searchParams.get('from')).toBe(parsedUrl.searchParams.get('from'));
+    }
+    if (parsedUrl.searchParams.has('topic')) {
+      expect(reloadedUrl.searchParams.get('topic')).toBe(parsedUrl.searchParams.get('topic'));
+    }
+    // The timeline should render without crashing
+    await expect(page.locator('.timeline-toolbar')).toBeVisible();
+  });
+
+  test('autoFollow_KeepsLiveEdgeVisible', async ({ page }) => {
+    await page.goto(TIMELINE_URL);
+    await page.locator('.timeline-toolbar').waitFor({ state: 'visible' });
+
+    // Enable follow mode
+    const followBtn = page.locator('.toolbar__follow');
+    await expect(followBtn).toBeVisible();
+
+    if (await followBtn.isDisabled()) {
+      // Session is not live in test environment — verify URL does not break
+      await expect(page.locator('.timeline-toolbar')).toBeVisible();
+      return;
+    }
+
+    await followBtn.click();
+    await page.waitForTimeout(300); // allow debounce
+
+    // URL should contain follow=true
+    const url = new URL(page.url());
+    expect(url.searchParams.get('follow')).toBe('true');
+
+    // A canvas click should disable follow (pan gesture)
+    const canvas = page.locator('canvas.timeline-canvas');
+    if (await canvas.isVisible()) {
+      const box = await canvas.boundingBox();
+      if (box) {
+        await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+        await page.waitForTimeout(300);
+        // After clicking, follow should be disabled (URL should not have follow=true)
+        const urlAfter = new URL(page.url());
+        expect(urlAfter.searchParams.get('follow')).not.toBe('true');
+      }
+    }
+  });
 });

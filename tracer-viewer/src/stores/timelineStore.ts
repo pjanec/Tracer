@@ -49,7 +49,18 @@ export const useTimelineStore = defineStore('timeline', {
     },
 
     setFollowLive(v: boolean) {
-      this.viewport = { ...this.viewport, followLive: v };
+      if (v) {
+        // Snap viewport to live edge: preserve span, move to = now, from = now - span
+        const spanMs = this.viewportSpanMs;
+        const nowMs = Date.now();
+        this.viewport = {
+          from: new Date(nowMs - spanMs),
+          to:   new Date(nowMs),
+          followLive: true,
+        };
+      } else {
+        this.viewport = { ...this.viewport, followLive: false };
+      }
     },
 
     applyFilter(patch: Partial<TimelineFilter>) {

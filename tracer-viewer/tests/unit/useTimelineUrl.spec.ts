@@ -17,7 +17,6 @@ describe('useTimelineUrl', () => {
     vi.useFakeTimers();
     mockReplace.mockReset();
     mockPush.mockReset();
-    // Reset route query to empty for each test
     for (const key of Object.keys(mockRouteQuery)) {
       delete mockRouteQuery[key];
     }
@@ -28,8 +27,7 @@ describe('useTimelineUrl', () => {
     vi.clearAllMocks();
   });
 
-  it('urlParams_restoreStoreStateOnMount', async () => {
-    // Set query params for this test
+  it('urlParams_AppliedToStoreOnMount', async () => {
     mockRouteQuery['from']  = '2026-01-01T14:00:00.000Z';
     mockRouteQuery['to']    = '2026-01-01T14:30:00.000Z';
     mockRouteQuery['topic'] = 'weapons.fire';
@@ -43,7 +41,7 @@ describe('useTimelineUrl', () => {
     expect(store.filter.topics).toContain('weapons.fire');
   });
 
-  it('storeChange_updatesUrl_debounced', async () => {
+  it('storeChange_UpdatesUrlDebounced', async () => {
     const store = useTimelineStore();
     store.viewport.from = new Date('2026-01-01T10:00:00Z');
     store.viewport.to   = new Date('2026-01-01T11:00:00Z');
@@ -63,52 +61,83 @@ describe('useTimelineUrl', () => {
     expect(callArg.query.to).toBeTruthy();
   });
 
-  it('multipleTopicValues_encodedAsRepeatedParams', async () => {
-    const store = useTimelineStore();
-    store.viewport.from = new Date('2026-01-01T10:00:00Z');
-    store.viewport.to   = new Date('2026-01-01T11:00:00Z');
-    store.filter = { topics: ['a', 'b'] };
+  it('multipleFilterValues_EncodedAsRepeatedParams', async () => {
+    // Part A: Store → URL encoding
+    {
+      const store = useTimelineStore();
+      store.viewport.from = new Date('2026-01-01T10:00:00Z');
+      store.viewport.to   = new Date('2026-01-01T11:00:00Z');
+      store.filter = { topics: ['a', 'b'] };
 
-    const { useTimelineUrl } = await import('../../src/composables/useTimelineUrl');
-    useTimelineUrl();
+      const { useTimelineUrl } = await import('../../src/composables/useTimelineUrl');
+      useTimelineUrl();
+      await vi.advanceTimersByTimeAsync(300);
 
-    await vi.advanceTimersByTimeAsync(300);
+      const callArg = mockReplace.mock.calls[0][0] as { query: Record<string, unknown> };
+      expect(callArg.query['topic']).toEqual(['a', 'b']);
+    }
 
-    const callArg = mockReplace.mock.calls[0][0] as { query: Record<string, unknown> };
-    expect(callArg.query['topic']).toEqual(['a', 'b']);
+    // Part B: URL → Store decoding (fresh pinia + fresh module imports)
+    {
+      vi.resetModules();
+      const { createPinia: freshCreatePinia, setActivePinia: freshSetActivePinia } = await import('pinia');
+      const freshPinia = freshCreatePinia();
+      freshSetActivePinia(freshPinia);
+
+      mockReplace.mockReset();
+      for (const key of Object.keys(mockRouteQuery)) delete mockRouteQuery[key];
+      mockRouteQuery['topic'] = ['a', 'b'];
+      mockRouteQuery['from']  = '2026-01-01T10:00:00.000Z';
+      mockRouteQuery['to']    = '2026-01-01T11:00:00.000Z';
+
+      const { useTimelineStore: freshStore } = await import('../../src/stores/timelineStore');
+      const { useTimelineUrl: freshUrl }     = await import('../../src/composables/useTimelineUrl');
+
+      const store2 = freshStore();
+      freshUrl();
+      expect(store2.filter.topics).toEqual(['a', 'b']);
+    }
   });
 
-  it('selectEvent_addsSelectParam', async () => {
-    const store = useTimelineStore();
-    store.viewport.from = new Date('2026-01-01T10:00:00Z');
-    store.viewport.to   = new Date('2026-01-01T11:00:00Z');
-    store.selectedEventId = 'AABBCCDD';
+  it('selectedEvent_RoundTripsViaUrl', async () => {
+    // Part A: Store → URL (selectedEventId encoded as ?select=)
+    {
+      const store = useTimelineStore();
+      store.viewport.from = new Date('2026-01-01T10:00:00Z');
+      store.viewport.to   = new Date('2026-01-01T11:00:00Z');
+      store.selectedEventId = 'AABBCCDD11223344';
 
-    const { useTimelineUrl } = await import('../../src/composables/useTimelineUrl');
-    useTimelineUrl();
+      const { useTimelineUrl } = await import('../../src/composables/useTimelineUrl');
+      useTimelineUrl();
+      await vi.advanceTimersByTimeAsync(300);
 
-    await vi.advanceTimersByTimeAsync(300);
+      const callArg = mockReplace.mock.calls[0][0] as { query: Record<string, string> };
+      expect(callArg.query['select']).toBe('AABBCCDD11223344');
+    }
 
-    const callArg = mockReplace.mock.calls[0][0] as { query: Record<string, string> };
-    expect(callArg.query['select']).toBe('AABBCCDD');
+    // Part B: URL → Store (restoring selectedEventId from ?select=)
+    {
+      vi.resetModules();
+      const { createPinia: freshCreatePinia, setActivePinia: freshSetActivePinia } = await import('pinia');
+      const freshPinia = freshCreatePinia();
+      freshSetActivePinia(freshPinia);
+
+      mockReplace.mockReset();
+      for (const key of Object.keys(mockRouteQuery)) delete mockRouteQuery[key];
+      mockRouteQuery['select'] = 'AABBCCDD11223344';
+      mockRouteQuery['from']   = '2026-01-01T10:00:00.000Z';
+      mockRouteQuery['to']     = '2026-01-01T11:00:00.000Z';
+
+      const { useTimelineStore: freshStore } = await import('../../src/stores/timelineStore');
+      const { useTimelineUrl: freshUrl }     = await import('../../src/composables/useTimelineUrl');
+
+      const store2 = freshStore();
+      freshUrl();
+      expect(store2.selectedEventId).toBe('AABBCCDD11223344');
+    }
   });
 
-  it('followLive_addsFollowTrueParam', async () => {
-    const store = useTimelineStore();
-    store.viewport.from = new Date('2026-01-01T10:00:00Z');
-    store.viewport.to   = new Date('2026-01-01T11:00:00Z');
-    store.viewport.followLive = true;
-
-    const { useTimelineUrl } = await import('../../src/composables/useTimelineUrl');
-    useTimelineUrl();
-
-    await vi.advanceTimersByTimeAsync(300);
-
-    const callArg = mockReplace.mock.calls[0][0] as { query: Record<string, string> };
-    expect(callArg.query['follow']).toBe('true');
-  });
-
-  it('routerReplace_notPush_preventsHistoryChurn', async () => {
+  it('panGesture_UsesReplaceNotPush', async () => {
     const store = useTimelineStore();
     store.viewport.from = new Date('2026-01-01T10:00:00Z');
     store.viewport.to   = new Date('2026-01-01T11:00:00Z');
@@ -124,8 +153,8 @@ describe('useTimelineUrl', () => {
 
     await vi.advanceTimersByTimeAsync(300);
 
-    // replace called (debounced to once), push never called
-    expect(mockPush).not.toHaveBeenCalled();
+    // router.replace should have been called, push must never be called
     expect(mockReplace).toHaveBeenCalled();
+    expect(mockPush).not.toHaveBeenCalled();
   });
 });

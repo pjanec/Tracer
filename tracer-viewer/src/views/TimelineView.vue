@@ -18,6 +18,7 @@
 <script setup lang="ts">
 import { onMounted } from 'vue';
 import { useTimelineStore } from '@/stores/timelineStore';
+import { useTimelineUrl } from '@/composables/useTimelineUrl';
 import TimelineToolbar from '@/components/TimelineToolbar.vue';
 import TimelineCanvas  from '@/components/TimelineCanvas.vue';
 import TimelineAxis    from '@/components/TimelineAxis.vue';
@@ -27,6 +28,7 @@ const props = defineProps<{
 }>();
 
 const store = useTimelineStore();
+useTimelineUrl();
 
 onMounted(() => {
   store.setSession(props.sessionId);
