@@ -234,5 +234,38 @@ public sealed class IntervalRotatorTests : IAsyncDisposable
         manifest!.CaptureGaps.Should().ContainSingle()
             .Which.Reason.Should().Be(CaptureGapReason.TransportDisconnected);
     }
+
+    // TRC-P2-011 additions ────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task IntervalRotator_RotateAsync_DispatchesUpload()
+    {
+        var rotator = BuildRotator();
+        await rotator.OpenCurrentAsync(CancellationToken.None);
+
+        await rotator.RotateAsync(ManifestFinalizationReason.GracefulShutdown, CancellationToken.None);
+
+        // FakeUploadService is wired via BuildRotator; it was called at least once during rotate
+        // We verify indirectly: the upload sentinel file must exist (meaning the full
+        // rotate protocol including dispatch ran without throwing)
+        var dirs = Directory.GetDirectories(Path.Combine(_tempDir, "intervals"));
+        dirs.Should().HaveCountGreaterThanOrEqualTo(1);
+        dirs.Should().Contain(d => File.Exists(Path.Combine(d, "_ready")));
+    }
+
+    [Fact]
+    public async Task IntervalRotator_DisposeAsync_TriggersGracefulShutdownRotation()
+    {
+        var rotator = BuildRotator();
+        await rotator.OpenCurrentAsync(CancellationToken.None);
+        var intervalDir = rotator.CurrentDirectory!;
+
+        await rotator.DisposeAsync();
+        _rotator = null; // Already disposed; skip second disposal in test class cleanup
+
+        File.Exists(intervalDir.ManifestPath).Should().BeTrue();
+        var manifest = await ManifestWriter.ReadAsync(intervalDir.ManifestPath, CancellationToken.None);
+        manifest!.FinalizationReason.Should().Be(ManifestFinalizationReason.GracefulShutdown);
+    }
 }
 

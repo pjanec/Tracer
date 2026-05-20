@@ -101,4 +101,53 @@ public sealed class ManifestWriterTests
             File.Delete(path);
         }
     }
+
+    [Fact]
+    public async Task ManifestWriter_WallclockTimes_SerializeAsIso8601()
+    {
+        var path = Path.GetTempFileName();
+        try
+        {
+            var manifest = MakeManifest() with
+            {
+                FinalizedAt = WallclockTime.FromDateTimeOffset(
+                    new DateTimeOffset(2026, 5, 19, 15, 0, 0, 500, TimeSpan.Zero)),
+            };
+
+            await ManifestWriter.WriteAsync(path, manifest, CancellationToken.None);
+            var json = await File.ReadAllTextAsync(path);
+
+            // finalized_at must be a string in ISO 8601 form, not a number
+            json.Should().MatchRegex(@"""finalized_at""\s*:\s*""2026-05-19");
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task ManifestWriter_EmptyGapsAndMarkers_SerializesEmptyArrays()
+    {
+        var path = Path.GetTempFileName();
+        try
+        {
+            var manifest = MakeManifest() with
+            {
+                CaptureGaps = [],
+                SessionMarkers = [],
+            };
+
+            await ManifestWriter.WriteAsync(path, manifest, CancellationToken.None);
+            var json = await File.ReadAllTextAsync(path);
+
+            // Both collections must appear as [] in JSON
+            json.Should().MatchRegex(@"""capture_gaps""\s*:\s*\[\s*\]");
+            json.Should().MatchRegex(@"""session_markers""\s*:\s*\[\s*\]");
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
 }

@@ -116,5 +116,20 @@ public sealed class IntervalSchedulerTests
 
         remaining2.Should().BeLessThan(remaining1);
     }
+
+    [Fact]
+    public void IntervalScheduler_24HourDuration_DoesNotThrow()
+    {
+        var config = new AgentConfig
+        {
+            NodeId = "n",
+            DataRoot = @"C:\d",
+            LogsRoot = @"C:\l",
+            IntervalDuration = TimeSpan.FromHours(24),
+        };
+        var clock = new FakeClock(WallclockTime.Zero);
+        var act = () => new IntervalScheduler(clock, config);
+        act.Should().NotThrow();
+    }
 }
 

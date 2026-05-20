@@ -46,9 +46,9 @@
 - [x] **TRC-P2-007** Upload & Retention [details](./TASK-DETAIL.md#trc-p2-007--upload--retention)
 - [x] **TRC-P2-008** Mock Transport & Upload [details](./TASK-DETAIL.md#trc-p2-008--mock-transport--upload)
 - [x] **TRC-P2-009** FakeNode [details](./TASK-DETAIL.md#trc-p2-009--fakenode)
-- [ ] **TRC-P2-010** TestHarness Phase 2 Additions [details](./TASK-DETAIL.md#trc-p2-010--testharness-phase-2-additions)
-- [ ] **TRC-P2-011** Agent Unit Tests [details](./TASK-DETAIL.md#trc-p2-011--agent-unit-tests)
-- [ ] **TRC-P2-012** Agent Integration Tests [details](./TASK-DETAIL.md#trc-p2-012--agent-integration-tests)
+- [x] **TRC-P2-010** TestHarness Phase 2 Additions [details](./TASK-DETAIL.md#trc-p2-010--testharness-phase-2-additions)
+- [x] **TRC-P2-011** Agent Unit Tests [details](./TASK-DETAIL.md#trc-p2-011--agent-unit-tests)
+- [x] **TRC-P2-012** Agent Integration Tests [details](./TASK-DETAIL.md#trc-p2-012--agent-integration-tests)
 
 <!-- PHASE 2 TRACKER END -->
 

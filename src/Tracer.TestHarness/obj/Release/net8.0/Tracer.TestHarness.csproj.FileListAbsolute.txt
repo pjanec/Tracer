@@ -17,3 +17,13 @@ D:\Work\Tracer\src\Tracer.TestHarness\obj\Release\net8.0\Tracer.TestHarness.dll
 D:\Work\Tracer\src\Tracer.TestHarness\obj\Release\net8.0\refint\Tracer.TestHarness.dll
 D:\Work\Tracer\src\Tracer.TestHarness\obj\Release\net8.0\Tracer.TestHarness.pdb
 D:\Work\Tracer\src\Tracer.TestHarness\obj\Release\net8.0\ref\Tracer.TestHarness.dll
+D:\Work\Tracer\src\Tracer.TestHarness\bin\Release\net8.0\tracer-agent.deps.json
+D:\Work\Tracer\src\Tracer.TestHarness\bin\Release\net8.0\tracer-agent.runtimeconfig.json
+D:\Work\Tracer\src\Tracer.TestHarness\bin\Release\net8.0\tracer-agent.exe
+D:\Work\Tracer\src\Tracer.TestHarness\bin\Release\net8.0\tracer-fakenode.deps.json
+D:\Work\Tracer\src\Tracer.TestHarness\bin\Release\net8.0\tracer-fakenode.runtimeconfig.json
+D:\Work\Tracer\src\Tracer.TestHarness\bin\Release\net8.0\tracer-fakenode.exe
+D:\Work\Tracer\src\Tracer.TestHarness\bin\Release\net8.0\tracer-agent.dll
+D:\Work\Tracer\src\Tracer.TestHarness\bin\Release\net8.0\tracer-fakenode.dll
+D:\Work\Tracer\src\Tracer.TestHarness\bin\Release\net8.0\tracer-agent.pdb
+D:\Work\Tracer\src\Tracer.TestHarness\bin\Release\net8.0\tracer-fakenode.pdb

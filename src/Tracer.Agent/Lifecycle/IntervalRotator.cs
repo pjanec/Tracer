@@ -147,7 +147,9 @@ public sealed class IntervalRotator : IIntervalContext, IAsyncDisposable
 
             if (reason != ManifestFinalizationReason.GracefulShutdown)
             {
-                var nextStart = _scheduler.CurrentIntervalStart();
+                // Use prevTimestamp + duration to avoid reopening the same interval
+                // when force-rotating before the wall-clock boundary
+                var nextStart = prevDir.Timestamp.ToDateTimeOffset() + _config.IntervalDuration;
                 await OpenInternalAsync(IntervalTimestamp.FromUtc(nextStart), ct);
             }
         }
@@ -205,8 +207,11 @@ public sealed class IntervalRotator : IIntervalContext, IAsyncDisposable
         catch { /* ignore malformed payloads */ }
     }
 
+    private int _disposed;
+
     public async ValueTask DisposeAsync()
     {
+        if (Interlocked.Exchange(ref _disposed, 1) == 1) return;
         await RotateAsync(ManifestFinalizationReason.GracefulShutdown, CancellationToken.None);
         _lock.Dispose();
     }
