@@ -2,6 +2,7 @@
 // Hand-authored stub matching the backend DTOs
 
 import type { EventListDto, EventAggregateDto } from '@/types/timeline';
+import type { TraceTreeDto } from '@/types/causalTree';
 
 export interface CurrentBundleDto {
   bundleId: string;
@@ -249,6 +250,51 @@ export class TracerApiClient {
     });
     if (!res.ok) throw new Error(`buildBundle: ${res.status}`);
     return res.json() as Promise<{ bundleId: string }>;
+  }
+
+  async getTraceTree(
+    traceId: string,
+    maxEvents = 1000,
+    opts?: { signal?: AbortSignal },
+  ): Promise<TraceTreeDto> {
+    const params = new URLSearchParams({ maxEvents: String(maxEvents) });
+    const res = await fetch(`/api/traces/${traceId}/tree?${params}`, { signal: opts?.signal });
+    if (!res.ok) throw new Error(`getTraceTree: ${res.status}`);
+    return res.json() as Promise<TraceTreeDto>;
+  }
+
+  async getTraceByEvent(
+    eventId: string,
+    maxEvents = 1000,
+    opts?: { signal?: AbortSignal },
+  ): Promise<TraceTreeDto> {
+    const params = new URLSearchParams({ maxEvents: String(maxEvents) });
+    const res = await fetch(`/api/events/${eventId}/trace?${params}`, { signal: opts?.signal });
+    if (!res.ok) throw new Error(`getTraceByEvent: ${res.status}`);
+    return res.json() as Promise<TraceTreeDto>;
+  }
+
+  async getEventAncestors(
+    eventId: string,
+    maxDepth = 50,
+    opts?: { signal?: AbortSignal },
+  ): Promise<TraceTreeDto> {
+    const params = new URLSearchParams({ maxDepth: String(maxDepth) });
+    const res = await fetch(`/api/events/${eventId}/ancestors?${params}`, { signal: opts?.signal });
+    if (!res.ok) throw new Error(`getEventAncestors: ${res.status}`);
+    return res.json() as Promise<TraceTreeDto>;
+  }
+
+  async getEventDescendants(
+    eventId: string,
+    maxDepth = 30,
+    maxNodes = 1000,
+    opts?: { signal?: AbortSignal },
+  ): Promise<TraceTreeDto> {
+    const params = new URLSearchParams({ maxDepth: String(maxDepth), maxNodes: String(maxNodes) });
+    const res = await fetch(`/api/events/${eventId}/descendants?${params}`, { signal: opts?.signal });
+    if (!res.ok) throw new Error(`getEventDescendants: ${res.status}`);
+    return res.json() as Promise<TraceTreeDto>;
   }
 }
 

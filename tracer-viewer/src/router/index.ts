@@ -29,6 +29,16 @@ const router = createRouter({
       name: 'bundles',
       component: () => import('@/views/BundlesView.vue'),
     },
+    {
+      path: '/v/trace/:traceId',
+      name: 'causal-by-trace',
+      component: () => import('@/views/CausalTreeView.vue'),
+    },
+    {
+      path: '/v/causal/:eventId',
+      name: 'causal-by-event',
+      component: () => import('@/views/CausalTreeView.vue'),
+    },
   ],
 });
 
