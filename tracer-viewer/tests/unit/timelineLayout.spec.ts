@@ -7,27 +7,36 @@ import {
 } from '../../src/rendering/timelineLayout';
 
 describe('timelineLayout', () => {
-  it('chooseBucketDuration_SubOneMinute_ReturnsRaw', () => {
+  it('chooseBucketDuration_SpanUnder60s_ReturnsRaw', () => {
     expect(chooseBucketDuration(59_999)).toBe('raw');
     expect(chooseBucketDuration(0)).toBe('raw');
     expect(chooseBucketDuration(1)).toBe('raw');
   });
 
-  it('chooseBucketDuration_FiveMinutes_Returns100ms', () => {
+  it('chooseBucketDuration_Span1mTo5m_Returns100ms', () => {
     // Exactly 5 minutes: the '1s' threshold is STRICTLY > 5min, so 5min exact → '100ms'
     const fiveMinMs = 5 * 60 * 1000; // 300000
     expect(chooseBucketDuration(fiveMinMs)).toBe('100ms');
   });
 
-  it('chooseBucketDuration_ThirtyMinutes_Returns5s', () => {
+  it('chooseBucketDuration_Span5mTo30m_Returns1s', () => {
+    // Just above 5min → '1s'
+    expect(chooseBucketDuration(300_001)).toBe('1s');
+    // At 15min
+    expect(chooseBucketDuration(15 * 60 * 1000)).toBe('1s');
+    // Just below 30min
+    expect(chooseBucketDuration(1_799_999)).toBe('1s');
+  });
+
+  it('chooseBucketDuration_Span30mTo1h_Returns5s', () => {
     expect(chooseBucketDuration(30 * 60 * 1000)).toBe('5s');
   });
 
-  it('chooseBucketDuration_OneHour_Returns30s', () => {
+  it('chooseBucketDuration_Span1hTo4h_Returns30s', () => {
     expect(chooseBucketDuration(60 * 60 * 1000)).toBe('30s');
   });
 
-  it('chooseBucketDuration_FourHoursOrMore_Returns5m', () => {
+  it('chooseBucketDuration_SpanOver4h_Returns5m', () => {
     expect(chooseBucketDuration(4 * 60 * 60 * 1000)).toBe('5m');
     expect(chooseBucketDuration(8 * 60 * 60 * 1000)).toBe('5m');
   });

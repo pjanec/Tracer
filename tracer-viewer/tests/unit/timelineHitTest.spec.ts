@@ -6,7 +6,7 @@ const W = 1000;
 const H = 400;
 
 describe('timelineHitTest', () => {
-  it('findMarkerAt_ExactCoordinate_ReturnsMarker', () => {
+  it('findMarkerAt_ExactPosition_ReturnsMarker', () => {
     const index = new HitIndex(W, H);
     const entry: MarkerHitEntry = { x: 200, y: 100, w: 8, h: 8, eventId: 'e1' };
     index.add(entry);
@@ -16,7 +16,7 @@ describe('timelineHitTest', () => {
     expect(result?.eventId).toBe('e1');
   });
 
-  it('findMarkerAt_InsideRadius_ReturnsMarker', () => {
+  it('findMarkerAt_WithinMarkerRadius_ReturnsMarker', () => {
     const index = new HitIndex(W, H);
     const entry: MarkerHitEntry = { x: 200, y: 100, w: 8, h: 8, eventId: 'e2' };
     index.add(entry);
@@ -27,7 +27,7 @@ describe('timelineHitTest', () => {
     expect(result?.eventId).toBe('e2');
   });
 
-  it('findMarkerAt_OutsideAllMarkers_ReturnsNull', () => {
+  it('findMarkerAt_BeyondMarkerRadius_ReturnsNull', () => {
     const index = new HitIndex(W, H);
     const entry: MarkerHitEntry = { x: 200, y: 100, w: 8, h: 8, eventId: 'e3' };
     index.add(entry);
@@ -80,7 +80,7 @@ describe('timelineHitTest', () => {
     expect(result).toBeNull();
   });
 
-  it('performanceWith1000Markers_FindTakesUnder1ms', () => {
+  it('findMarkerAt_1000Markers_CompletesUnder1ms', () => {
     const index = new HitIndex(W, H);
 
     // Insert 1000 markers spread across the canvas

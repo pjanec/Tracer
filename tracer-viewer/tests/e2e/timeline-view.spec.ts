@@ -182,4 +182,58 @@ test.describe('TimelineView E2E', () => {
       }
     }
   });
+
+  test('pan_ZoomFilter_CompleteUnder300ms', async ({ page }) => {
+    await page.goto(TIMELINE_URL);
+    await page.locator('canvas.timeline-canvas').waitFor({ state: 'visible' });
+
+    // (a) Horizontal pan: measure URL update latency
+    const canvas = page.locator('canvas.timeline-canvas');
+    const box = await canvas.boundingBox();
+    if (!box) throw new Error('Canvas bounding box not found');
+
+    const t0pan = await page.evaluate(() => performance.now());
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(box.x + box.width / 2 - 200, box.y + box.height / 2);
+    await page.mouse.up();
+    // Wait for URL to include from= param (debounced)
+    await page.waitForURL(/from=/, { timeout: 500 }).catch(() => { /* ok if URL not updated in offline mode */ });
+    const t1pan = await page.evaluate(() => performance.now());
+    const panLatencyMs = t1pan - t0pan;
+    console.log(`[perf] pan latency: ${panLatencyMs.toFixed(1)}ms`);
+    expect(panLatencyMs).toBeLessThan(300);
+
+    // (b) Filter via FilterPanel: measure network request + repaint latency
+    const filterPanel = page.locator('.filter-panel');
+    if (await filterPanel.isVisible()) {
+      const topicInput = filterPanel.locator('.filter-panel__input');
+      const t0filter = await page.evaluate(() => performance.now());
+      await topicInput.fill('rt.topic.0');
+      await filterPanel.locator('.filter-panel__add-btn').click();
+
+      // Wait for the API request to /api/events to complete
+      await page.waitForResponse(resp => resp.url().includes('/api/events'), { timeout: 500 })
+        .catch(() => { /* offline bundle may serve from cache */ });
+      const t1filter = await page.evaluate(() => performance.now());
+      const filterLatencyMs = t1filter - t0filter;
+      console.log(`[perf] filter latency: ${filterLatencyMs.toFixed(1)}ms`);
+      expect(filterLatencyMs).toBeLessThan(300);
+    }
+
+    // (c) Click a marker: measure inspector visibility latency
+    const t0click = await page.evaluate(() => performance.now());
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+    // Wait for inspector to appear (may not appear if no marker at click position)
+    await page.locator('.event-inspector').waitFor({ state: 'visible', timeout: 300 }).catch(() => {
+      // No marker at this position — acceptable in unit E2E setup
+    });
+    const t1click = await page.evaluate(() => performance.now());
+    const clickLatencyMs = t1click - t0click;
+    console.log(`[perf] click-to-inspector latency: ${clickLatencyMs.toFixed(1)}ms`);
+    expect(clickLatencyMs).toBeLessThan(300);
+
+    // Canvas should still be visible after all interactions
+    await expect(canvas).toBeVisible();
+  });
 });

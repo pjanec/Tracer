@@ -38,7 +38,7 @@ const BASE_INPUT: TimelineRenderInput = {
 };
 
 describe('timelineRenderer', () => {
-  it('drawsOneMarkerPerEventInListMode', () => {
+  it('render_ListMode_DrawsOneArcPerNonNotableEvent', () => {
     const ctx = makeCanvasMock();
     const events: EventDto[] = [
       makeEvent({ publishWallclock: '2026-01-01T10:10:00.000Z', eventId: 'e1' }),
@@ -53,7 +53,7 @@ describe('timelineRenderer', () => {
     expect((ctx.arc as ReturnType<typeof vi.fn>).mock.calls.length).toBe(5);
   });
 
-  it('drawsSquareForNotableEvents', () => {
+  it('render_ListMode_DrawsOneRectPerNotableEvent', () => {
     const ctx = makeCanvasMock();
     const events: EventDto[] = [
       makeEvent({
@@ -70,7 +70,7 @@ describe('timelineRenderer', () => {
     expect((ctx.arc as ReturnType<typeof vi.fn>).mock.calls.length).toBe(0);
   });
 
-  it('drawsBarPerBucketGroupInAggregateMode', () => {
+  it('render_AggregateMode_DrawsFillRectPerBucketGroup', () => {
     const ctx = makeCanvasMock();
 
     const aggregate = {
@@ -109,7 +109,7 @@ describe('timelineRenderer', () => {
     expect((ctx.fillRect as ReturnType<typeof vi.fn>).mock.calls.length).toBeGreaterThanOrEqual(6);
   });
 
-  it('skipsEventsOutsideViewport', () => {
+  it('render_EventOutsideViewportBounds_SkippedDefensively', () => {
     const ctx = makeCanvasMock();
     const fromMs = new Date('2026-01-01T10:00:00Z').getTime();
     const toMs   = new Date('2026-01-01T11:00:00Z').getTime();
@@ -129,7 +129,7 @@ describe('timelineRenderer', () => {
     expect((ctx.arc as ReturnType<typeof vi.fn>).mock.calls.length).toBe(1);
   });
 
-  it('handlesEmptyEventsListWithoutError', () => {
+  it('render_EmptyEventList_NoArcOrRectCallsMade', () => {
     const ctx = makeCanvasMock();
 
     expect(() => {
@@ -140,7 +140,7 @@ describe('timelineRenderer', () => {
     expect((ctx.fillRect as ReturnType<typeof vi.fn>).mock.calls.length).toBe(0);
   });
 
-  it('hitIndexHasEntryForEachDrawnMarker', () => {
+  it('render_ReturnsHitIndexWithEntryForEachDrawnMarker', () => {
     const ctx = makeCanvasMock();
     const fromMs = new Date('2026-01-01T10:00:00Z').getTime();
     const toMs   = new Date('2026-01-01T11:00:00Z').getTime();

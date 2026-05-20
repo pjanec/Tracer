@@ -120,7 +120,7 @@
 - [x] **TRC-P5-010** Auto-Follow Live Mode [details](./TASK-DETAIL.md#trc-p5-010--auto-follow-live-mode)
 - [x] **TRC-P5-011** Backend Unit Tests [details](./TASK-DETAIL.md#trc-p5-011--backend-unit-tests)
 - [x] **TRC-P5-012** Backend Integration Tests [details](./TASK-DETAIL.md#trc-p5-012--backend-integration-tests)
-- [ ] **TRC-P5-013** Frontend Tests [details](./TASK-DETAIL.md#trc-p5-013--frontend-tests)
+- [x] **TRC-P5-013** Frontend Tests [details](./TASK-DETAIL.md#trc-p5-013--frontend-tests)
 
 <!-- PHASE 5 TRACKER END -->
 
