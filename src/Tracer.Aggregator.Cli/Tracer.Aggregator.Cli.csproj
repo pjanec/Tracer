@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>tracer-aggregate</AssemblyName>
+    <RootNamespace>Tracer.Aggregator.Cli</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+      <_Parameter1>Tracer.Tests.Integration</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Tracer.Aggregator\Tracer.Aggregator.csproj" />
+    <ProjectReference Include="..\Tracer.Bundle\Tracer.Bundle.csproj" />
+    <ProjectReference Include="..\Tracer.Adapters.Mock\Tracer.Adapters.Mock.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.CommandLine" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+  </ItemGroup>
+
+</Project>

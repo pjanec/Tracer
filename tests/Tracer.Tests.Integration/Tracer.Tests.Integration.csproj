@@ -7,6 +7,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Tracer.TestHarness\Tracer.TestHarness.csproj" />
+    <ProjectReference Include="..\..\src\Tracer.Aggregator.Cli\Tracer.Aggregator.Cli.csproj" />
   </ItemGroup>
 
   <ItemGroup>

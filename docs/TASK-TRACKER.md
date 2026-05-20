@@ -90,7 +90,7 @@
 - [x] **TRC-P4-004** MultiIntervalReader [details](./TASK-DETAIL.md#trc-p4-004--multiintervalreader)
 - [x] **TRC-P4-005** Aggregation Core [details](./TASK-DETAIL.md#trc-p4-005--aggregation-core)
 - [x] **TRC-P4-006** Aggregation Consolidators [details](./TASK-DETAIL.md#trc-p4-006--aggregation-consolidators)
-- [ ] **TRC-P4-007** tracer-aggregate.exe CLI [details](./TASK-DETAIL.md#trc-p4-007--tracer-aggregateexe-cli)
+- [x] **TRC-P4-007** tracer-aggregate.exe CLI [details](./TASK-DETAIL.md#trc-p4-007--tracer-aggregateexe-cli)
 - [ ] **TRC-P4-008** OfflineViewer [details](./TASK-DETAIL.md#trc-p4-008--offlineviewer)
 - [ ] **TRC-P4-009** Web API Bundle Mode [details](./TASK-DETAIL.md#trc-p4-009--web-api-bundle-mode)
 - [ ] **TRC-P4-010** Self-Contained Distribution [details](./TASK-DETAIL.md#trc-p4-010--self-contained-distribution)
