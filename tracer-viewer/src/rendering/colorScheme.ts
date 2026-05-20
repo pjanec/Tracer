@@ -43,3 +43,15 @@ export const SEVERITY_COLORS = {
   warning: '#e8b048',
   error:   '#e85c5c',
 } as const;
+
+/**
+ * Build a map from node name to color for a list of node names.
+ * Uses getNodeColor for each, ensuring deterministic colors.
+ */
+export function buildNodeColorMap(nodes: readonly string[]): Map<string, string> {
+  const map = new Map<string, string>();
+  for (const name of nodes) {
+    map.set(name, getNodeColor(name));
+  }
+  return map;
+}
