@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("tracer-observer")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+6a8be9426aa9e7533683a8e1aa3c64783ae27a36")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+13a1541de83145dd147de37567f1cf041fb41a32")]
 [assembly: System.Reflection.AssemblyProductAttribute("tracer-observer")]
 [assembly: System.Reflection.AssemblyTitleAttribute("tracer-observer")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

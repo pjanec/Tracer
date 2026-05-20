@@ -1,0 +1,17 @@
+D:\Work\Tracer\src\Tracer.Storage.DuckDB.MultiInterval\bin\Release\net8.0\Tracer.Storage.DuckDB.MultiInterval.deps.json
+D:\Work\Tracer\src\Tracer.Storage.DuckDB.MultiInterval\bin\Release\net8.0\Tracer.Storage.DuckDB.MultiInterval.dll
+D:\Work\Tracer\src\Tracer.Storage.DuckDB.MultiInterval\bin\Release\net8.0\Tracer.Storage.DuckDB.MultiInterval.pdb
+D:\Work\Tracer\src\Tracer.Storage.DuckDB.MultiInterval\bin\Release\net8.0\Tracer.Core.dll
+D:\Work\Tracer\src\Tracer.Storage.DuckDB.MultiInterval\bin\Release\net8.0\Tracer.Storage.DuckDB.dll
+D:\Work\Tracer\src\Tracer.Storage.DuckDB.MultiInterval\bin\Release\net8.0\Tracer.Core.pdb
+D:\Work\Tracer\src\Tracer.Storage.DuckDB.MultiInterval\bin\Release\net8.0\Tracer.Storage.DuckDB.pdb
+D:\Work\Tracer\src\Tracer.Storage.DuckDB.MultiInterval\obj\Release\net8.0\Tracer.Storage.DuckDB.MultiInterval.csproj.AssemblyReference.cache
+D:\Work\Tracer\src\Tracer.Storage.DuckDB.MultiInterval\obj\Release\net8.0\Tracer.Storage.DuckDB.MultiInterval.GeneratedMSBuildEditorConfig.editorconfig
+D:\Work\Tracer\src\Tracer.Storage.DuckDB.MultiInterval\obj\Release\net8.0\Tracer.Storage.DuckDB.MultiInterval.AssemblyInfoInputs.cache
+D:\Work\Tracer\src\Tracer.Storage.DuckDB.MultiInterval\obj\Release\net8.0\Tracer.Storage.DuckDB.MultiInterval.AssemblyInfo.cs
+D:\Work\Tracer\src\Tracer.Storage.DuckDB.MultiInterval\obj\Release\net8.0\Tracer.Storage.DuckDB.MultiInterval.csproj.CoreCompileInputs.cache
+D:\Work\Tracer\src\Tracer.Storage.DuckDB.MultiInterval\obj\Release\net8.0\Tracer.Storage.DuckDB.MultiInterval.csproj.CopyComplete
+D:\Work\Tracer\src\Tracer.Storage.DuckDB.MultiInterval\obj\Release\net8.0\Tracer.Storage.DuckDB.MultiInterval.dll
+D:\Work\Tracer\src\Tracer.Storage.DuckDB.MultiInterval\obj\Release\net8.0\refint\Tracer.Storage.DuckDB.MultiInterval.dll
+D:\Work\Tracer\src\Tracer.Storage.DuckDB.MultiInterval\obj\Release\net8.0\Tracer.Storage.DuckDB.MultiInterval.pdb
+D:\Work\Tracer\src\Tracer.Storage.DuckDB.MultiInterval\obj\Release\net8.0\ref\Tracer.Storage.DuckDB.MultiInterval.dll
