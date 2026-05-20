@@ -12,9 +12,13 @@
 | DT-008 | P2 | BATCH-03 | `RecordRouterTests` missing `RecordRouter_AfterWrite_NotifiesRotator` test (TRC-P2-011 SC3) | BATCH-04 | ✅ Resolved |
 | DT-009 | P3 | BATCH-04 | `StartupRecoveryService.TryFinalizeAsync` reads `slow_state.duckdb` but records `SlowStateCount = 0` regardless | BATCH-09 | Open |
 
-| DT-010 | P1 | BATCH-06 | `ObserverIngestionTests`: 5 of 6 tests bypass `ObserverIngestionPipeline.RunAsync`; pipeline is constructed but never called; tests manually invoke writer/broadcaster directly | BATCH-07 corrective | Open |
-| DT-011 | P1 | BATCH-06 | Integration test stub method names in `ObserverFakeNodeEndToEndTests` and `ObserverRotationIntegrationTests` don't match TRC-P3-001 SC14/SC15 spec — must be renamed exactly | BATCH-07 corrective | Open |
-| DT-012 | P2 | BATCH-06 | `OnGracefulShutdown_FinalRotationHasGracefulReason` has no assertion (`await Task.CompletedTask`) — must read manifest and assert `FinalizationReason == GracefulShutdown` | BATCH-07 | Open |
+| DT-010 | P1 | BATCH-06 | `ObserverIngestionTests`: 5 of 6 tests bypass `ObserverIngestionPipeline.RunAsync`; pipeline is constructed but never called; tests manually invoke writer/broadcaster directly | BATCH-07 corrective | ✅ Resolved |
+| DT-011 | P1 | BATCH-06 | Integration test stub method names in `ObserverFakeNodeEndToEndTests` and `ObserverRotationIntegrationTests` don't match TRC-P3-001 SC14/SC15 spec — must be renamed exactly | BATCH-07 corrective | ✅ Resolved |
+| DT-012 | P2 | BATCH-06 | `OnGracefulShutdown_FinalRotationHasGracefulReason` has no assertion (`await Task.CompletedTask`) — must read manifest and assert `FinalizationReason == GracefulShutdown` | BATCH-07 | ✅ Resolved |
+| DT-013 | P1 | BATCH-07 | Scenario endpoint routes deviate from spec: `/api/scenarios/{sessionId}/...` instead of spec `/api/scenario/...?sessionId=...` — breaks TRC-P3-009 and TRC-P3-010 integration test routes | BATCH-08 corrective | Open |
+| DT-014 | P2 | BATCH-07 | `GetNotables_PaginationWithBeforeCursor` only asserts 200 status — must verify returned events are strictly before the cursor | BATCH-08 | Open |
+| DT-015 | P2 | BATCH-07 | `ListSessions_OrderedByStartTimeDesc` test missing from `SessionEndpointTests` (replaced with fields-check test) | BATCH-08 | Open |
+| DT-016 | P3 | BATCH-07 | `IntervalRotator.CurrentWriter` has a public setter for test injection; should be `internal set` + `InternalsVisibleTo` | BATCH-09 | Open |
 
 > P1 = Critical (blocks next batch), P2 = Should fix soon, P3 = Nice to fix eventually  
 > Resolved items are marked ✅ (never deleted)

@@ -8,6 +8,7 @@ using Tracer.Agent.Storage;
 using Tracer.Agent.Time;
 using Tracer.Agent.Upload;
 using Tracer.Core.Abstractions;
+using Tracer.Core.Domain;
 using Tracer.Core.Time;
 using Tracer.Observer.Lifecycle;
 using Tracer.WebApi.Lifecycle;
@@ -112,9 +113,15 @@ public sealed class ObserverHostedServiceTests : IAsyncDisposable
         try { await Task.Delay(300); } catch { }
         try { await svc.StopAsync(default); } catch { }
 
-        // The final rotation uses CancellationToken.None (graceful), not stoppingToken
-        // We verify that the rotator was disposed without exception
-        await Task.CompletedTask;
+        // After graceful shutdown, the rotator should have written a manifest
+        // with FinalizationReason == GracefulShutdown
+        var manifestPath = Directory.GetFiles(_tempDir, "manifest.json", SearchOption.AllDirectories)
+            .FirstOrDefault();
+        manifestPath.Should().NotBeNull("a manifest must be written on graceful shutdown");
+
+        var manifest = await ManifestWriter.ReadAsync(manifestPath!, CancellationToken.None);
+        manifest.Should().NotBeNull();
+        manifest!.FinalizationReason.Should().Be(ManifestFinalizationReason.GracefulShutdown);
     }
 
     [Fact]

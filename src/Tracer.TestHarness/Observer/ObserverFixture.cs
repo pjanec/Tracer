@@ -3,9 +3,13 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Tracer.Core.Records;
 using Tracer.Observer.Configuration;
 using Tracer.Observer.Lifecycle;
+using Tracer.WebApi.Endpoints;
 using Tracer.WebApi.Lifecycle;
+using Tracer.WebApi.Queries;
+using Tracer.WebApi.Streaming;
 
 namespace Tracer.TestHarness.Observer;
 
@@ -26,11 +30,16 @@ public sealed class ObserverFixtureOptions
 public sealed class ObserverFixture : IAsyncDisposable
 {
     public WebApplication App { get; private set; } = null!;
+    public HttpClient Client { get; private set; } = null!;
     public string DataRoot { get; private set; } = null!;
     public ObserverStateReporter StateReporter =>
         App.Services.GetRequiredService<ObserverStateReporter>();
     public ReadOnlyConnectionPool Pool =>
         App.Services.GetRequiredService<ReadOnlyConnectionPool>();
+    public SseConnectionManager SseConnections =>
+        App.Services.GetRequiredService<SseConnectionManager>();
+    public LiveEventBroadcaster Broadcaster =>
+        App.Services.GetRequiredService<LiveEventBroadcaster>();
 
     private string _tempDir = null!;
     private bool _disposed;
@@ -40,6 +49,7 @@ public sealed class ObserverFixture : IAsyncDisposable
 
     public static async Task<ObserverFixture> CreateAsync(
         ObserverFixtureOptions? options = null,
+        SseStreamingOptions? sseOptions = null,
         CancellationToken ct = default)
     {
         options ??= new ObserverFixtureOptions();
@@ -54,6 +64,9 @@ public sealed class ObserverFixture : IAsyncDisposable
 
         var builder = WebApplication.CreateBuilder([]);
         builder.Logging.ClearProviders();
+        builder.WebHost.UseTestServer();
+
+        Tracer.WebApi.OpenApi.OpenApiConfiguration.Configure(builder);
 
         // Override config
         builder.Services.AddSingleton(new ObserverConfig
@@ -67,7 +80,7 @@ public sealed class ObserverFixture : IAsyncDisposable
             DataSources = new DataSourcesConfig { Kind = "Mock" }
         });
 
-        // Register minimal set of services needed for lifecycle + pool tests
+        // Core services
         builder.Services.AddSingleton<Tracer.Core.Time.IClock, Tracer.Agent.Time.SystemClock>();
         builder.Services.AddSingleton(sp =>
         {
@@ -90,9 +103,35 @@ public sealed class ObserverFixture : IAsyncDisposable
         builder.Services.AddSingleton<Tracer.Agent.Lifecycle.IntervalRotator>();
         builder.Services.AddSingleton<Tracer.Agent.Storage.RetentionManager>();
         builder.Services.AddSingleton<ObserverStateReporter>();
+        builder.Services.AddSingleton<ILiveStatusProvider>(sp =>
+            sp.GetRequiredService<ObserverStateReporter>());
         builder.Services.AddSingleton<ReadOnlyConnectionPool>();
 
+        // Query services
+        builder.Services.AddSingleton<SessionQueryService>();
+        builder.Services.AddSingleton<TopologyQueryService>();
+        builder.Services.AddSingleton<ScenarioQueryService>();
+        builder.Services.AddSingleton<EventLookupService>();
+
+        // SSE services
+        var streaming = sseOptions ?? new SseStreamingOptions();
+        builder.Services.AddSingleton(streaming);
+        builder.Services.AddSingleton<SseConnectionManager>();
+        builder.Services.AddSingleton<LiveEventBroadcaster>();
+        builder.Services.AddHostedService(sp => sp.GetRequiredService<LiveEventBroadcaster>());
+
         var app = builder.Build();
+
+        app.UseExceptionHandler(eb =>
+            eb.Run(Tracer.WebApi.Errors.ApiExceptionMiddleware.HandleAsync));
+
+        HealthEndpoints.Map(app);
+        SessionEndpoints.Map(app);
+        TopologyEndpoints.Map(app);
+        ScenarioEndpoints.Map(app);
+        EventEndpoints.Map(app);
+        SseEndpoints.Map(app);
+
         fixture.App = app;
 
         // Open the initial interval and init pool
@@ -101,7 +140,40 @@ public sealed class ObserverFixture : IAsyncDisposable
         var pool = app.Services.GetRequiredService<ReadOnlyConnectionPool>();
         await pool.InitializeAsync(rotator.CurrentDirectory!.EventsDbPath, ct);
 
+        await app.StartAsync(ct);
+        fixture.Client = app.GetTestClient();
+
         return fixture;
+    }
+
+    /// <summary>Push a single event directly into the current interval's storage.</summary>
+    public async Task PushAsync(EventRecord ev, CancellationToken ct = default)
+    {
+        var rotator = App.Services.GetRequiredService<Tracer.Agent.Lifecycle.IntervalRotator>();
+        await rotator.CurrentWriter!.AppendEventAsync(ev, ct);
+        await rotator.CurrentWriter.FlushAsync(ct);
+
+        var broadcaster = App.Services.GetRequiredService<LiveEventBroadcaster>();
+        broadcaster.Publish(ev);
+
+        var stateReporter = App.Services.GetRequiredService<ObserverStateReporter>();
+        stateReporter.IncrementIngested();
+    }
+
+    /// <summary>Push multiple events directly into the current interval's storage.</summary>
+    public async Task PushAsync(IEnumerable<EventRecord> events, CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(events);
+        var rotator = App.Services.GetRequiredService<Tracer.Agent.Lifecycle.IntervalRotator>();
+        var stateReporter = App.Services.GetRequiredService<ObserverStateReporter>();
+        var broadcaster = App.Services.GetRequiredService<LiveEventBroadcaster>();
+        foreach (var ev in events)
+        {
+            await rotator.CurrentWriter!.AppendEventAsync(ev, ct);
+            broadcaster.Publish(ev);
+            stateReporter.IncrementIngested();
+        }
+        await rotator.CurrentWriter!.FlushAsync(ct);
     }
 
     public async Task ForceRotationAsync(CancellationToken ct = default)
@@ -121,6 +193,7 @@ public sealed class ObserverFixture : IAsyncDisposable
 
         if (App is not null)
         {
+            await App.StopAsync();
             await App.DisposeAsync();
         }
 
@@ -128,3 +201,4 @@ public sealed class ObserverFixture : IAsyncDisposable
         catch { /* best effort */ }
     }
 }
+

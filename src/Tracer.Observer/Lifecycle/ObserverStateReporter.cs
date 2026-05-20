@@ -1,8 +1,9 @@
 using Tracer.Core.Time;
+using Tracer.WebApi.Lifecycle;
 
 namespace Tracer.Observer.Lifecycle;
 
-public sealed class ObserverStateReporter
+public sealed class ObserverStateReporter : ILiveStatusProvider
 {
     private long _ingestedTotal;
     private long _droppedTotal;
@@ -25,6 +26,14 @@ public sealed class ObserverStateReporter
     public void IncrementDropped()
     {
         Interlocked.Increment(ref _droppedTotal);
+    }
+
+    // ILiveStatusProvider implementation
+    long ILiveStatusProvider.IngestedTotal => Interlocked.Read(ref _ingestedTotal);
+    long ILiveStatusProvider.DroppedTotal => Interlocked.Read(ref _droppedTotal);
+    DateTimeOffset? ILiveStatusProvider.LastEventUtc
+    {
+        get { lock (_lastEventLock) { return _lastEventAt == default ? null : _lastEventAt; } }
     }
 
     public ObserverStateSnapshot Snapshot()

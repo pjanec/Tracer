@@ -5,14 +5,18 @@ namespace Tracer.Tests.Integration;
 public sealed class ObserverRotationIntegrationTests
 {
     [Fact(Skip = "Deferred to TRC-P3-009")]
-    public Task Observer_RotatesInterval_WritesManifest()
+    public Task FirstInterval_FinalizedWithReady_AfterRotation()
         => Task.CompletedTask;
 
     [Fact(Skip = "Deferred to TRC-P3-009")]
-    public Task Observer_ConnectionPool_RefreshesOnRotation()
+    public Task SecondInterval_QueriesReturnCurrentIntervalEvents()
         => Task.CompletedTask;
 
     [Fact(Skip = "Deferred to TRC-P3-009")]
-    public Task Observer_RetentionDeletesOldIntervals()
+    public Task Queries_DuringRotation_SucceedAfterBriefBlock()
+        => Task.CompletedTask;
+
+    [Fact(Skip = "Deferred to TRC-P3-009")]
+    public Task MultipleNodes_EventsFromAllNodesIngested()
         => Task.CompletedTask;
 }

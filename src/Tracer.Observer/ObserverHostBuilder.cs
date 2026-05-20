@@ -127,6 +127,8 @@ public static class ObserverHostBuilder
 
         // ── Observer services ─────────────────────────────────────────────────
         builder.Services.AddSingleton<ObserverStateReporter>();
+        builder.Services.AddSingleton<ILiveStatusProvider>(sp =>
+            sp.GetRequiredService<ObserverStateReporter>());
         builder.Services.AddSingleton<ObserverIngestionPipeline>();
 
         // ── WebApi services ───────────────────────────────────────────────────
@@ -137,6 +139,7 @@ public static class ObserverHostBuilder
         builder.Services.AddSingleton<EventLookupService>();
 
         // ── Live streaming ────────────────────────────────────────────────────
+        builder.Services.AddSingleton<SseStreamingOptions>();
         builder.Services.AddSingleton<SseConnectionManager>();
         builder.Services.AddSingleton<LiveEventBroadcaster>();
         builder.Services.AddHostedService(sp => sp.GetRequiredService<LiveEventBroadcaster>());
