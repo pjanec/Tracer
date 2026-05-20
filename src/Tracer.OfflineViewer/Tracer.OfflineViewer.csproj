@@ -8,6 +8,19 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <PublishTrimmed>false</PublishTrimmed>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <!-- Self-contained single-file publish settings.
+       Guarded by PublishDir so they are only active during `dotnet publish`,
+       not during `dotnet build`. Without this guard, SelfContained=true causes
+       NETSDK1150 when referencing non-self-contained executable projects. -->
+  <PropertyGroup Condition="'$(PublishDir)' != ''">
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
   </PropertyGroup>
 
   <ItemGroup>
@@ -21,6 +34,15 @@
     <PackageReference Include="Serilog.AspNetCore" />
     <PackageReference Include="Serilog.Sinks.File" />
     <PackageReference Include="Serilog.Formatting.Compact" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Embed the Vue SPA build output as static files at publish time -->
+    <Content Include="..\..\tracer-viewer\dist\**\*.*"
+             Link="wwwroot\%(RecursiveDir)%(Filename)%(Extension)"
+             Condition="Exists('..\..\tracer-viewer\dist')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>

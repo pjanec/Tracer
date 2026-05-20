@@ -99,6 +99,52 @@ public class MultiIntervalReaderTests
         await act2.Should().NotThrowAsync();
     }
 
+    // ── TRC-P4-012: Additional required test methods ────────────────────────
+
+    [Fact]
+    public async Task CreateWithNFiles_AllAliasesPresent()
+    {
+        // Must use N ≥ 3 files per spec
+        const int n = 3;
+        var paths = new string[n];
+        for (var i = 0; i < n; i++)
+            paths[i] = await CreateTempDuckDbAsync();
+
+        var files = paths.Select((p, i) => new IntervalDbFile(p, $"node{i:D2}"));
+        await using var reader = await MultiIntervalReader.CreateAsync(files);
+
+        reader.Attachments.Should().HaveCount(n,
+            $"all {n} files should be attached");
+
+        var sql = reader.BuildEventsUnionSql();
+        foreach (var alias in reader.Attachments.Keys)
+            sql.Should().Contain(alias,
+                $"alias '{alias}' should appear in the generated UNION ALL SQL");
+    }
+
+    [Fact]
+    public async Task Dispose_DetachesAllDatabases()
+    {
+        var path1 = await CreateTempDuckDbAsync();
+        var path2 = await CreateTempDuckDbAsync();
+
+        // Do NOT use await-using here — we need to inspect Attachments after disposal
+        var reader = await MultiIntervalReader.CreateAsync(
+        [
+            new IntervalDbFile(path1, "n1"),
+            new IntervalDbFile(path2, "n2"),
+        ]);
+
+        reader.Attachments.Should().HaveCount(2,
+            "both databases should be attached before dispose");
+
+        await reader.DisposeAsync();
+
+        // After disposal, the AttachedDatabaseManager must have cleared its dictionary
+        reader.Attachments.Should().BeEmpty(
+            "DisposeAsync should detach all databases and clear the Attachments dictionary");
+    }
+
     private static int CountOccurrences(string source, string pattern)
     {
         var count = 0;

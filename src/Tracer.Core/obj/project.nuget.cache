@@ -1,8 +1,13 @@
 {
   "version": 2,
-  "dgSpecHash": "pvWgJChjpk+LufDSdMaJHHubACNyXDPqUm4VR0suFreJgCrTItCSs2DZOGuC22mMqwAI3gl9m957mwk1/wrsog==",
+  "dgSpecHash": "iZzs4frwFll6sUyBbFOLQKkjLTLTFrsnSHkMa4VZK6muBYd6m4goGVFgfVL0yJ7iWyDfzky33Jhxoazjf6c9vA==",
   "success": true,
   "projectFilePath": "D:\\Work\\Tracer\\src\\Tracer.Core\\Tracer.Core.csproj",
-  "expectedPackageFiles": [],
+  "expectedPackageFiles": [
+    "C:\\Users\\petr.janecek\\.nuget\\packages\\microsoft.net.illink.tasks\\8.0.27\\microsoft.net.illink.tasks.8.0.27.nupkg.sha512",
+    "C:\\Users\\petr.janecek\\.nuget\\packages\\microsoft.netcore.app.runtime.win-x64\\8.0.27\\microsoft.netcore.app.runtime.win-x64.8.0.27.nupkg.sha512",
+    "C:\\Users\\petr.janecek\\.nuget\\packages\\microsoft.windowsdesktop.app.runtime.win-x64\\8.0.27\\microsoft.windowsdesktop.app.runtime.win-x64.8.0.27.nupkg.sha512",
+    "C:\\Users\\petr.janecek\\.nuget\\packages\\microsoft.aspnetcore.app.runtime.win-x64\\8.0.27\\microsoft.aspnetcore.app.runtime.win-x64.8.0.27.nupkg.sha512"
+  ],
   "logs": []
 }

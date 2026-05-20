@@ -101,4 +101,22 @@ public class AttachedDatabaseManagerTests
 
         alias.Should().MatchRegex(@"^[a-zA-Z_][a-zA-Z0-9_]*$");
     }
+
+    // ── TRC-P4-012: Additional required test methods ────────────────────────
+
+    [Fact]
+    public async Task AttachSamePath_Twice_Throws()
+    {
+        var dbPath = await CreateTempDuckDbAsync();
+        await using var conn = await OpenInMemoryAsync();
+        await using var manager = new AttachedDatabaseManager(conn);
+
+        // First attach succeeds
+        await manager.AttachAsync(new IntervalDbFile(dbPath, "first-hint"));
+
+        // Attaching the same file path a second time (even with a different hint) must throw
+        var act = async () => await manager.AttachAsync(new IntervalDbFile(dbPath, "second-hint"));
+        await act.Should().ThrowAsync<InvalidOperationException>(
+            "the same file path cannot be attached twice to the same manager");
+    }
 }

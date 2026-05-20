@@ -3,6 +3,7 @@
   "tracer-aggregate, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "D:\\Work\\Tracer\\src\\Tracer.Aggregator.Cli",
   "tracer-fakenode, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "D:\\Work\\Tracer\\src\\Tracer.FakeNode",
   "tracer-observer, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "D:\\Work\\Tracer\\src\\Tracer.Observer",
+  "tracer-viewer, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "D:\\Work\\Tracer\\src\\Tracer.OfflineViewer",
   "Tracer.Adapters.Mock, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "D:\\Work\\Tracer\\src\\Tracer.Adapters.Mock",
   "Tracer.Aggregator, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "D:\\Work\\Tracer\\src\\Tracer.Aggregator",
   "Tracer.Bundle, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "D:\\Work\\Tracer\\src\\Tracer.Bundle",

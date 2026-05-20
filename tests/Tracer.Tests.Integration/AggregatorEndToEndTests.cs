@@ -1,8 +1,15 @@
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using Tracer.Adapters.Mock.Scenarios;
+using Tracer.Adapters.Mock.Storage;
 using Tracer.Agent.Configuration;
+using Tracer.Aggregator;
+using Tracer.Aggregator.Configuration;
+using Tracer.Aggregator.Progress;
 using Tracer.Bundle.Packaging;
 using Tracer.Bundle.Validation;
+using Tracer.Core.Domain;
+using Tracer.Core.Time;
 using Tracer.TestHarness;
 using Xunit;
 using CliProgram = Tracer.Aggregator.Cli.Program;
@@ -115,7 +122,7 @@ public sealed class AggregatorEndToEndTests : IAsyncDisposable
         var manifest = await BundleReader.ReadManifestAsync(outputPath);
         manifest.BundleId.Should().NotBeNullOrEmpty();
 
-        var validation = await BundleValidator.ValidateAsync(outputPath, manifest, strict: false);
+        var validation = await BundleValidator.ValidateAsync(outputPath, manifest, strict: true);
         validation.IsValid.Should().BeTrue(
             $"bundle should be valid; errors: {string.Join(", ", validation.Errors.Select(e => e.Message))}");
     }
@@ -256,5 +263,194 @@ public sealed class AggregatorEndToEndTests : IAsyncDisposable
         stdoutLines.Should().NotBeEmpty();
         stdoutLines[0].Should().StartWith("LOG_FILE=",
             "first stdout line must be the LOG_FILE= announcement");
+    }
+
+    // ── TRC-P4-013: Additional required test methods ─────────────────────────
+
+    [Fact]
+    public async Task Build_SessionIdVariant_UsesCorrectTimeRange()
+    {
+        // AggregationFixture aligns event timestamps with real UTC so the session resolver works
+        await using var agg = await AggregationFixture.InitializeAsync();
+        var outputPath = Path.Combine(TempDir(), "session-bundle");
+
+        // Extract session ID from interval manifests via the storage reader
+        var sessionId = await FindFirstSessionIdAsync(agg.NasRoot);
+        sessionId.Should().NotBeNullOrEmpty(
+            "CalmScenario always emits a session_start marker with a sessionId in the payload");
+
+        var exitCode = await CliProgram.Main(new[]
+        {
+            "build",
+            "--nas-root", agg.NasRoot,
+            "--session-id", sessionId!,
+            "--output", outputPath,
+        });
+
+        exitCode.Should().Be(0, "build command with --session-id should succeed");
+        Directory.Exists(outputPath).Should().BeTrue("bundle directory should be created");
+
+        var manifest = await BundleReader.ReadManifestAsync(outputPath);
+        manifest.TimeRange.StartUtc.Should().BeBefore(manifest.TimeRange.EndUtc,
+            "session-resolved time range must be a valid non-empty interval");
+    }
+
+    [Fact]
+    public async Task Build_EventCount_MatchesSumOfSources()
+    {
+        var (nasRoot, timeRange) = await RunNasAsync();
+        var outputPath = Path.Combine(TempDir(), "count-bundle");
+
+        // Parse time range boundaries
+        var parts = timeRange.Split("..");
+        var rangeStart = DateTimeOffset.Parse(parts[0]).UtcDateTime;
+        var rangeEnd   = DateTimeOffset.Parse(parts[1]).UtcDateTime;
+
+        // Count source events within the time range by opening each interval's DuckDB file
+        var sourceCount = await CountSourceEventsAsync(nasRoot, rangeStart, rangeEnd);
+
+        // Build the bundle via CLI using the same time range
+        var exitCode = await CliProgram.Main(new[]
+        {
+            "build",
+            "--nas-root", nasRoot,
+            "--time-range", timeRange,
+            "--output", outputPath,
+        });
+        exitCode.Should().Be(0, "build should succeed");
+
+        // Count events in the bundle's consolidated events.duckdb
+        var bundleEventsPath = Path.Combine(outputPath, "events.duckdb");
+        var bundleCount = await CountBundleEventsAsync(bundleEventsPath);
+
+        // The bundle must contain exactly the events from source files within the time range
+        bundleCount.Should().Be(sourceCount,
+            "bundle event count must equal the sum of source events within the time range");
+    }
+
+    [Fact]
+    public async Task Build_ProgressEvents_InOrder()
+    {
+        var (nasRoot, timeRange) = await RunNasAsync();
+        var outputPath = Path.Combine(TempDir(), "progress-bundle");
+
+        var parts = timeRange.Split("..");
+        var rangeStart = WallclockTime.FromDateTimeOffset(DateTimeOffset.Parse(parts[0]));
+        var rangeEnd   = WallclockTime.FromDateTimeOffset(DateTimeOffset.Parse(parts[1]));
+
+        var orchestrator = new AggregationOrchestrator(
+            new LocalFileSystemStorageReader(nasRoot),
+            NullLogger<AggregationOrchestrator>.Instance);
+
+        var capturedStages = new List<AggregationStage>();
+        var reporter = new DelegatingProgressReporter((stage, _) => capturedStages.Add(stage));
+
+        var request = new AggregationRequest
+        {
+            TimeRange = new Core.Time.TimeRange(rangeStart, rangeEnd),
+            OutputPath = outputPath,
+        };
+        await orchestrator.RunAsync(request, reporter);
+
+        capturedStages.Should().NotBeEmpty("orchestrator must emit at least one progress event");
+        capturedStages.First().Should().Be(AggregationStage.Started,
+            "first progress event must be AggregationStage.Started");
+        capturedStages.Last().Should().Be(AggregationStage.Completed,
+            "last progress event must be AggregationStage.Completed");
+        capturedStages.Should().NotContain(AggregationStage.Failed,
+            "no Failed stage should be emitted for a successful run");
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Scans interval manifests in the NAS and returns the first session ID found.
+    /// </summary>
+    private static async Task<string?> FindFirstSessionIdAsync(string nasRoot)
+    {
+        var reader = new LocalFileSystemStorageReader(nasRoot);
+        var nodes = await reader.ListNodesAsync();
+        foreach (var node in nodes)
+        {
+            var intervals = await reader.ListIntervalsAsync(node);
+            foreach (var iv in intervals)
+            {
+                var manifest = await reader.ReadIntervalManifestAsync(node, iv);
+                if (manifest is null) continue;
+                var marker = manifest.SessionMarkers
+                    .FirstOrDefault(m => m.Type == SessionMarkerType.Start);
+                if (marker is not null) return marker.SessionId;
+            }
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Counts events in all source DuckDB files found in interval zips within <paramref name="nasRoot"/>
+    /// that fall within the specified wallclock time range.
+    /// </summary>
+    private static async Task<long> CountSourceEventsAsync(
+        string nasRoot, DateTime rangeStart, DateTime rangeEnd)
+    {
+        long total = 0;
+        var extractBase = Path.Combine(Path.GetTempPath(), $"src-count-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(extractBase);
+        try
+        {
+            foreach (var zipFile in Directory.GetFiles(nasRoot, "*.zip", SearchOption.AllDirectories))
+            {
+                var extractDir = Path.Combine(extractBase, Guid.NewGuid().ToString("N"));
+                Directory.CreateDirectory(extractDir);
+                System.IO.Compression.ZipFile.ExtractToDirectory(zipFile, extractDir);
+
+                var dbPath = Path.Combine(extractDir, "events.duckdb");
+                if (!File.Exists(dbPath)) continue;
+
+                await using var conn = new DuckDB.NET.Data.DuckDBConnection($"DataSource={dbPath}");
+                await conn.OpenAsync();
+                await using var cmd = conn.CreateCommand();
+                cmd.CommandText =
+                    "SELECT COUNT(*) FROM events " +
+                    "WHERE publish_wallclock >= $from AND publish_wallclock < $to";
+                cmd.Parameters.Add(new DuckDB.NET.Data.DuckDBParameter("from", rangeStart));
+                cmd.Parameters.Add(new DuckDB.NET.Data.DuckDBParameter("to", rangeEnd));
+                var scalar = await cmd.ExecuteScalarAsync();
+                if (scalar is not null)
+                    total += Convert.ToInt64(scalar);
+            }
+        }
+        finally
+        {
+            try { Directory.Delete(extractBase, recursive: true); } catch { /* best-effort */ }
+        }
+        return total;
+    }
+
+    /// <summary>
+    /// Counts all events in the bundle's consolidated <c>events.duckdb</c> file.
+    /// </summary>
+    private static async Task<long> CountBundleEventsAsync(string bundleEventsDbPath)
+    {
+        if (!File.Exists(bundleEventsDbPath)) return 0;
+        await using var conn = new DuckDB.NET.Data.DuckDBConnection($"DataSource={bundleEventsDbPath}");
+        await conn.OpenAsync();
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT COUNT(*) FROM events";
+        var scalar = await cmd.ExecuteScalarAsync();
+        return scalar is not null ? Convert.ToInt64(scalar) : 0;
+    }
+
+    /// <summary>Captures aggregation progress stages via a callback.</summary>
+    private sealed class DelegatingProgressReporter : IAggregationProgressReporter
+    {
+        private readonly Action<AggregationStage, string?> _callback;
+
+        public DelegatingProgressReporter(Action<AggregationStage, string?> callback)
+        {
+            _callback = callback;
+        }
+
+        public void Report(AggregationStage stage, string? message = null)
+            => _callback(stage, message);
     }
 }

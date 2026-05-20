@@ -25,7 +25,7 @@
     "languageVersion": "12",
     "platform": "",
     "allowUnsafe": false,
-    "warningsAsErrors": false,
+    "warningsAsErrors": true,
     "optimize": true,
     "keyFile": "",
     "emitEntryPoint": true,
@@ -40,12 +40,14 @@
           "Microsoft.NET.Test.Sdk": "17.8.0",
           "Tracer.TestHarness": "1.0.0",
           "tracer-aggregate": "1.0.0",
+          "tracer-viewer": "1.0.0",
           "xunit": "2.6.6",
           "xunit.runner.visualstudio": "2.5.6",
           "tracer-agent.Reference": "1.0.0.0",
           "tracer-aggregate.Reference": "1.0.0.0",
           "tracer-fakenode.Reference": "1.0.0.0",
           "tracer-observer.Reference": "1.0.0.0",
+          "tracer-viewer.Reference": "1.0.0.0",
           "Microsoft.AspNetCore.Antiforgery": "8.0.0.0",
           "Microsoft.AspNetCore.Authentication.Abstractions": "8.0.0.0",
           "Microsoft.AspNetCore.Authentication.BearerToken": "8.0.0.0",
@@ -2018,6 +2020,23 @@
           "tracer-observer.dll": {}
         }
       },
+      "tracer-viewer/1.0.0": {
+        "dependencies": {
+          "Serilog.AspNetCore": "8.0.2",
+          "Serilog.Formatting.Compact": "2.0.0",
+          "Serilog.Sinks.File": "5.0.0",
+          "Tracer.Bundle": "1.0.0",
+          "Tracer.Storage.DuckDB.MultiInterval": "1.0.0",
+          "Tracer.WebApi": "1.0.0",
+          "tracer-observer": "1.0.0"
+        },
+        "runtime": {
+          "tracer-viewer.dll": {}
+        },
+        "compile": {
+          "tracer-viewer.dll": {}
+        }
+      },
       "Tracer.Adapters.Mock/1.0.0": {
         "dependencies": {
           "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
@@ -2182,6 +2201,17 @@
         },
         "compile": {
           "tracer-observer.dll": {}
+        }
+      },
+      "tracer-viewer.Reference/1.0.0.0": {
+        "runtime": {
+          "tracer-viewer.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        },
+        "compile": {
+          "tracer-viewer.dll": {}
         }
       },
       "Microsoft.AspNetCore.Antiforgery/8.0.0.0": {
@@ -4928,6 +4958,11 @@
       "serviceable": false,
       "sha512": ""
     },
+    "tracer-viewer/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
     "Tracer.Adapters.Mock/1.0.0": {
       "type": "project",
       "serviceable": false,
@@ -4984,6 +5019,11 @@
       "sha512": ""
     },
     "tracer-observer.Reference/1.0.0.0": {
+      "type": "reference",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "tracer-viewer.Reference/1.0.0.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""

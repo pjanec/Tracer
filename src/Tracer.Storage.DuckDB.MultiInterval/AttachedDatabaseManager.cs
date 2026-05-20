@@ -26,9 +26,16 @@ public sealed class AttachedDatabaseManager : IAsyncDisposable
     /// Attaches <paramref name="file"/> to the connection as a read-only database.
     /// Returns the generated SQL alias.
     /// </summary>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when <paramref name="file"/>'s path is already attached to this manager.
+    /// </exception>
     public async Task<string> AttachAsync(IntervalDbFile file, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(file);
+
+        if (_attachments.ContainsValue(file.FilePath))
+            throw new InvalidOperationException(
+                $"The file '{file.FilePath}' is already attached to this manager.");
 
         var alias = GenerateAlias(file.AliasHint);
 

@@ -41,6 +41,7 @@
           }
         },
         "warningProperties": {
+          "allWarningsAsErrors": true,
           "warnAsError": [
             "NU1605"
           ]
@@ -149,6 +150,7 @@
           }
         },
         "warningProperties": {
+          "allWarningsAsErrors": true,
           "warnAsError": [
             "NU1605"
           ]
@@ -307,6 +309,7 @@
           }
         },
         "warningProperties": {
+          "allWarningsAsErrors": true,
           "warnAsError": [
             "NU1605"
           ]
@@ -426,6 +429,7 @@
           }
         },
         "warningProperties": {
+          "allWarningsAsErrors": true,
           "warnAsError": [
             "NU1605"
           ]
@@ -543,6 +547,7 @@
           }
         },
         "warningProperties": {
+          "allWarningsAsErrors": true,
           "warnAsError": [
             "NU1605"
           ]
@@ -646,6 +651,7 @@
           }
         },
         "warningProperties": {
+          "allWarningsAsErrors": true,
           "warnAsError": [
             "NU1605"
           ]
@@ -750,6 +756,7 @@
           }
         },
         "warningProperties": {
+          "allWarningsAsErrors": true,
           "warnAsError": [
             "NU1605"
           ]
@@ -905,6 +912,7 @@
           }
         },
         "warningProperties": {
+          "allWarningsAsErrors": true,
           "warnAsError": [
             "NU1605"
           ]
@@ -932,6 +940,131 @@
             "Serilog.Sinks.Console": {
               "target": "Package",
               "version": "[5.0.1, )",
+              "versionCentrallyManaged": true
+            },
+            "Serilog.Sinks.File": {
+              "target": "Package",
+              "version": "[5.0.0, )",
+              "versionCentrallyManaged": true
+            }
+          },
+          "centralPackageVersions": {
+            "DuckDB.NET.Bindings.Full": "[1.0.2, )",
+            "DuckDB.NET.Data": "[1.0.2, )",
+            "FluentAssertions": "[6.12.0, )",
+            "Microsoft.AspNetCore.Mvc.Testing": "[8.0.0, )",
+            "Microsoft.AspNetCore.OpenApi": "[8.0.0, )",
+            "Microsoft.Extensions.Configuration": "[8.0.0, )",
+            "Microsoft.Extensions.Configuration.Json": "[8.0.0, )",
+            "Microsoft.Extensions.Hosting": "[8.0.0, )",
+            "Microsoft.Extensions.Hosting.WindowsServices": "[8.0.0, )",
+            "Microsoft.Extensions.Logging.Abstractions": "[8.0.0, )",
+            "Microsoft.Extensions.Options": "[8.0.0, )",
+            "Microsoft.Extensions.Options.DataAnnotations": "[8.0.0, )",
+            "Microsoft.Extensions.Time.Testing": "[8.0.0, )",
+            "Microsoft.NET.Test.Sdk": "[17.8.0, )",
+            "NSwag.AspNetCore": "[14.0.7, )",
+            "NSwag.MSBuild": "[14.0.7, )",
+            "Parquet.Net": "[4.24.0, )",
+            "Serilog": "[3.1.1, )",
+            "Serilog.AspNetCore": "[8.0.2, )",
+            "Serilog.Extensions.Hosting": "[8.0.0, )",
+            "Serilog.Formatting.Compact": "[2.0.0, )",
+            "Serilog.Sinks.Console": "[5.0.1, )",
+            "Serilog.Sinks.File": "[5.0.0, )",
+            "System.CommandLine": "[2.0.0-beta4.22272.1, )",
+            "System.IO.Compression.ZipFile": "[4.3.0, )",
+            "Ulid": "[1.3.4, )",
+            "xunit": "[2.6.6, )",
+            "xunit.runner.visualstudio": "[2.5.6, )"
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.AspNetCore.App": {
+              "privateAssets": "none"
+            },
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.127/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "D:\\Work\\Tracer\\src\\Tracer.OfflineViewer\\Tracer.OfflineViewer.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "D:\\Work\\Tracer\\src\\Tracer.OfflineViewer\\Tracer.OfflineViewer.csproj",
+        "projectName": "tracer-viewer",
+        "projectPath": "D:\\Work\\Tracer\\src\\Tracer.OfflineViewer\\Tracer.OfflineViewer.csproj",
+        "packagesPath": "C:\\Users\\petr.janecek\\.nuget\\packages\\",
+        "outputPath": "D:\\Work\\Tracer\\src\\Tracer.OfflineViewer\\obj\\",
+        "projectStyle": "PackageReference",
+        "centralPackageVersionsManagementEnabled": true,
+        "CentralPackageTransitivePinningEnabled": true,
+        "fallbackFolders": [
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
+        "configFilePaths": [
+          "C:\\Users\\petr.janecek\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "net8.0"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net8.0": {
+            "targetAlias": "net8.0",
+            "projectReferences": {
+              "D:\\Work\\Tracer\\src\\Tracer.Bundle\\Tracer.Bundle.csproj": {
+                "projectPath": "D:\\Work\\Tracer\\src\\Tracer.Bundle\\Tracer.Bundle.csproj"
+              },
+              "D:\\Work\\Tracer\\src\\Tracer.Observer\\Tracer.Observer.csproj": {
+                "projectPath": "D:\\Work\\Tracer\\src\\Tracer.Observer\\Tracer.Observer.csproj"
+              },
+              "D:\\Work\\Tracer\\src\\Tracer.Storage.DuckDB.MultiInterval\\Tracer.Storage.DuckDB.MultiInterval.csproj": {
+                "projectPath": "D:\\Work\\Tracer\\src\\Tracer.Storage.DuckDB.MultiInterval\\Tracer.Storage.DuckDB.MultiInterval.csproj"
+              },
+              "D:\\Work\\Tracer\\src\\Tracer.WebApi\\Tracer.WebApi.csproj": {
+                "projectPath": "D:\\Work\\Tracer\\src\\Tracer.WebApi\\Tracer.WebApi.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "allWarningsAsErrors": true,
+          "warnAsError": [
+            "NU1605"
+          ]
+        }
+      },
+      "frameworks": {
+        "net8.0": {
+          "targetAlias": "net8.0",
+          "dependencies": {
+            "Serilog.AspNetCore": {
+              "target": "Package",
+              "version": "[8.0.2, )",
+              "versionCentrallyManaged": true
+            },
+            "Serilog.Formatting.Compact": {
+              "target": "Package",
+              "version": "[2.0.0, )",
               "versionCentrallyManaged": true
             },
             "Serilog.Sinks.File": {
@@ -1033,6 +1166,7 @@
           }
         },
         "warningProperties": {
+          "allWarningsAsErrors": true,
           "warnAsError": [
             "NU1605"
           ]
@@ -1145,6 +1279,7 @@
           }
         },
         "warningProperties": {
+          "allWarningsAsErrors": true,
           "warnAsError": [
             "NU1605"
           ]
@@ -1286,6 +1421,7 @@
           }
         },
         "warningProperties": {
+          "allWarningsAsErrors": true,
           "warnAsError": [
             "NU1605"
           ]
@@ -1418,6 +1554,7 @@
           }
         },
         "warningProperties": {
+          "allWarningsAsErrors": true,
           "warnAsError": [
             "NU1605"
           ]
@@ -1524,6 +1661,9 @@
               "D:\\Work\\Tracer\\src\\Tracer.Aggregator.Cli\\Tracer.Aggregator.Cli.csproj": {
                 "projectPath": "D:\\Work\\Tracer\\src\\Tracer.Aggregator.Cli\\Tracer.Aggregator.Cli.csproj"
               },
+              "D:\\Work\\Tracer\\src\\Tracer.OfflineViewer\\Tracer.OfflineViewer.csproj": {
+                "projectPath": "D:\\Work\\Tracer\\src\\Tracer.OfflineViewer\\Tracer.OfflineViewer.csproj"
+              },
               "D:\\Work\\Tracer\\src\\Tracer.TestHarness\\Tracer.TestHarness.csproj": {
                 "projectPath": "D:\\Work\\Tracer\\src\\Tracer.TestHarness\\Tracer.TestHarness.csproj"
               }
@@ -1531,6 +1671,7 @@
           }
         },
         "warningProperties": {
+          "allWarningsAsErrors": true,
           "warnAsError": [
             "NU1605"
           ]

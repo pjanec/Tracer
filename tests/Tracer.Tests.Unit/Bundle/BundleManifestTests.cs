@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using FluentAssertions;
 using Tracer.Bundle.Format;
 using Xunit;
@@ -105,5 +106,63 @@ public class BundleManifestTests
             var value = (string?)field.GetValue(null);
             value.Should().NotBeNullOrEmpty(because: $"BundleLayout.{field.Name} must be a non-empty string");
         }
+    }
+
+    // ── TRC-P4-012: Additional required test methods ────────────────────────
+
+    [Fact]
+    public void RoundTrip_SerializeDeserialize_Equals()
+    {
+        var original = MakeFullManifest();
+        var json = JsonSerializer.Serialize(original, BundleManifest.SerializerOptions);
+        var restored = JsonSerializer.Deserialize<BundleManifest>(json, BundleManifest.SerializerOptions);
+
+        restored.Should().NotBeNull();
+        restored!.BundleId.Should().Be(original.BundleId,
+            "deserialized BundleId must equal the original");
+        restored.SchemaVersion.Should().Be(original.SchemaVersion,
+            "deserialized SchemaVersion must equal the original");
+    }
+
+    [Fact]
+    public void Deserialize_UnknownFields_Ignored()
+    {
+        // System.Text.Json ignores unknown fields by default
+        var manifest = MakeFullManifest();
+        var validJson = JsonSerializer.Serialize(manifest, BundleManifest.SerializerOptions);
+
+        // Inject an extra unknown field into the JSON object
+        var jsonWithExtra = validJson.Replace("{", "{\"foo\":\"bar\",", StringComparison.Ordinal);
+
+        var act = () => JsonSerializer.Deserialize<BundleManifest>(
+            jsonWithExtra, BundleManifest.SerializerOptions);
+        act.Should().NotThrow("System.Text.Json ignores unknown fields by default");
+
+        var result = act();
+        result!.BundleId.Should().NotBeNullOrEmpty(
+            "BundleId should be populated even when the JSON contains unknown fields");
+    }
+
+    [Fact]
+    public void Deserialize_MissingRequiredField_Throws()
+    {
+        // System.Text.Json in .NET 8 respects the C# 'required' keyword:
+        // deserializing an object whose required properties are absent throws JsonException.
+        var json = "{}";
+        var act = () => JsonSerializer.Deserialize<BundleManifest>(
+            json, BundleManifest.SerializerOptions);
+        act.Should().Throw<JsonException>(
+            "BundleManifest has 'required' properties (BundleId, SchemaVersion, etc.) " +
+            "that must be present in the JSON");
+    }
+
+    [Fact]
+    public void BundleId_IsValidUlid()
+    {
+        var manifest = MakeFullManifest();
+        // ULID alphabet: digits 0-9 and uppercase letters A-Z excluding I, L, O, U
+        manifest.BundleId.Should().MatchRegex(
+            @"^[0-9A-HJKMNP-TV-Z]{26}$",
+            "BundleId must be a valid 26-character ULID string");
     }
 }

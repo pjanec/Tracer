@@ -93,10 +93,10 @@
 - [x] **TRC-P4-007** tracer-aggregate.exe CLI [details](./TASK-DETAIL.md#trc-p4-007--tracer-aggregateexe-cli)
 - [x] **TRC-P4-008** OfflineViewer [details](./TASK-DETAIL.md#trc-p4-008--offlineviewer)
 - [x] **TRC-P4-009** Web API Bundle Mode [details](./TASK-DETAIL.md#trc-p4-009--web-api-bundle-mode)
-- [ ] **TRC-P4-010** Self-Contained Distribution [details](./TASK-DETAIL.md#trc-p4-010--self-contained-distribution)
+- [x] **TRC-P4-010** Self-Contained Distribution [details](./TASK-DETAIL.md#trc-p4-010--self-contained-distribution)
 - [x] **TRC-P4-011** TestHarness Phase 4 Additions [details](./TASK-DETAIL.md#trc-p4-011--testharness-phase-4-additions)
-- [ ] **TRC-P4-012** Bundle & Aggregator Unit Tests [details](./TASK-DETAIL.md#trc-p4-012--bundle--aggregator-unit-tests)
-- [ ] **TRC-P4-013** Bundle Round-Trip Integration Tests [details](./TASK-DETAIL.md#trc-p4-013--bundle-round-trip-integration-tests)
+- [x] **TRC-P4-012** Bundle & Aggregator Unit Tests [details](./TASK-DETAIL.md#trc-p4-012--bundle--aggregator-unit-tests)
+- [x] **TRC-P4-013** Bundle Round-Trip Integration Tests [details](./TASK-DETAIL.md#trc-p4-013--bundle-round-trip-integration-tests)
 
 <!-- PHASE 4 TRACKER END -->
 

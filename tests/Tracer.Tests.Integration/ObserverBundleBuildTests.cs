@@ -162,6 +162,80 @@ public sealed class ObserverBundleBuildTests : IAsyncLifetime
         }
     }
 
+    // ── TRC-P4-013: Additional required test methods (spec-mandated names) ──
+
+    [Fact]
+    public async Task PostBundleBuild_ReturnsAcceptedWithBundleId()
+    {
+        var nasRange = _nasFixture.NasTimeRange;
+        var request = new BundleBuildRequestDto
+        {
+            TimeRange = new TimeRangeDto
+            {
+                StartUtc = nasRange.StartUtc.ToDateTimeOffset(),
+                EndUtc = nasRange.EndUtc.ToDateTimeOffset(),
+            }
+        };
+
+        var postResponse = await _observer.Client.PostAsJsonAsync("/api/bundles/build", request);
+        postResponse.StatusCode.Should().Be(HttpStatusCode.Accepted,
+            "POST /api/bundles/build must return 202 Accepted");
+
+        var accepted = await postResponse.Content.ReadFromJsonAsync<BundleBuildAcceptedDto>();
+        accepted.Should().NotBeNull();
+        accepted!.BundleId.Should().NotBeNullOrWhiteSpace(
+            "response body must contain a non-empty bundleId");
+    }
+
+    [Fact]
+    public async Task GetStatus_AfterBuild_ShowsCompleted()
+    {
+        var bundleId = await StartBuildAsync();
+        var status = await PollUntilDoneAsync(bundleId, timeoutSeconds: 60);
+
+        status.State.Should().Be("Completed",
+            "bundle build must reach Completed state within the timeout");
+    }
+
+    [Fact]
+    public async Task GetDownload_ReturnsValidZip()
+    {
+        var bundleId = await StartBuildAsync();
+        await PollUntilDoneAsync(bundleId, timeoutSeconds: 60);
+
+        var downloadResponse = await _observer.Client.GetAsync($"/api/bundles/{bundleId}/download");
+        downloadResponse.StatusCode.Should().Be(HttpStatusCode.OK,
+            "download endpoint must return 200 OK");
+        downloadResponse.Content.Headers.ContentType!.MediaType.Should().Be("application/zip",
+            "response must have application/zip content type");
+
+        var zipBytes = await downloadResponse.Content.ReadAsByteArrayAsync();
+        using var archive = new System.IO.Compression.ZipArchive(
+            new MemoryStream(zipBytes), System.IO.Compression.ZipArchiveMode.Read);
+        archive.Entries.Should().Contain(e => e.Name == BundleLayout.ManifestFile,
+            "zip archive must contain manifest.json at the root");
+    }
+
+    [Fact]
+    public async Task DeleteBundle_RemovesFromDisk()
+    {
+        var bundleId = await StartBuildAsync();
+        var status = await PollUntilDoneAsync(bundleId, timeoutSeconds: 60);
+        var outputPath = status.OutputPath;
+
+        var deleteResponse = await _observer.Client.DeleteAsync($"/api/bundles/{bundleId}");
+        deleteResponse.StatusCode.Should().Be(HttpStatusCode.NoContent,
+            "DELETE must return 204 No Content");
+
+        if (outputPath is not null)
+        {
+            Directory.Exists(outputPath).Should().BeFalse(
+                "bundle directory should be removed from disk after deletion");
+            File.Exists(outputPath).Should().BeFalse(
+                "bundle zip should be removed from disk after deletion");
+        }
+    }
+
     // ── Helpers ────────────────────────────────────────────────────────────
 
     private async Task<string> StartBuildAsync()

@@ -9,6 +9,7 @@
       "Tracer.WebApi/1.0.0": {
         "dependencies": {
           "Microsoft.AspNetCore.OpenApi": "8.0.0",
+          "Microsoft.NET.ILLink.Tasks": "8.0.27",
           "NSwag.AspNetCore": "14.0.7",
           "Tracer.Adapters.Mock": "1.0.0",
           "Tracer.Aggregator": "1.0.0",
@@ -201,6 +202,7 @@
           }
         }
       },
+      "Microsoft.NET.ILLink.Tasks/8.0.27": {},
       "Microsoft.NETCore.Platforms/1.1.0": {},
       "Microsoft.NETCore.Targets/1.1.0": {},
       "Microsoft.OpenApi/1.4.3": {
@@ -848,6 +850,13 @@
       "sha512": "sha512-mkZt1r6Nx5CAoD3klhC7VMQFzwWMHHjoYpv3X9u+GMvTMbSRaDdiA88HUoOzT7kCeq4/L1nKctmrByhLK28Xjw==",
       "path": "microsoft.ml.dataview/3.0.1",
       "hashPath": "microsoft.ml.dataview.3.0.1.nupkg.sha512"
+    },
+    "Microsoft.NET.ILLink.Tasks/8.0.27": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-rQi9TxifHRnXP7lVRZH05DxD2/XGbJp12q0ozcbrlBlBnyyzssFTH/2vLhtKWUp2CT1qVscTrcYTFiwTyKPKRg==",
+      "path": "microsoft.net.illink.tasks/8.0.27",
+      "hashPath": "microsoft.net.illink.tasks.8.0.27.nupkg.sha512"
     },
     "Microsoft.NETCore.Platforms/1.1.0": {
       "type": "package",

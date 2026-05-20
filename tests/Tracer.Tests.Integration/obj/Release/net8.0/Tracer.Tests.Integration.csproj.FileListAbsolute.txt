@@ -503,3 +503,9 @@ D:\Work\Tracer\tests\Tracer.Tests.Integration\bin\Release\net8.0\tracer-aggregat
 D:\Work\Tracer\tests\Tracer.Tests.Integration\bin\Release\net8.0\Tracer.Aggregator.pdb
 D:\Work\Tracer\tests\Tracer.Tests.Integration\bin\Release\net8.0\Tracer.Bundle.pdb
 D:\Work\Tracer\tests\Tracer.Tests.Integration\bin\Release\net8.0\Tracer.Storage.DuckDB.MultiInterval.pdb
+D:\Work\Tracer\tests\Tracer.Tests.Integration\bin\Release\net8.0\tracer-viewer.deps.json
+D:\Work\Tracer\tests\Tracer.Tests.Integration\bin\Release\net8.0\tracer-viewer.runtimeconfig.json
+D:\Work\Tracer\tests\Tracer.Tests.Integration\bin\Release\net8.0\tracer-viewer.staticwebassets.runtime.json
+D:\Work\Tracer\tests\Tracer.Tests.Integration\bin\Release\net8.0\tracer-viewer.exe
+D:\Work\Tracer\tests\Tracer.Tests.Integration\bin\Release\net8.0\tracer-viewer.dll
+D:\Work\Tracer\tests\Tracer.Tests.Integration\bin\Release\net8.0\tracer-viewer.pdb

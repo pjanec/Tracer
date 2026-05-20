@@ -1,11 +1,15 @@
 {
   "version": 2,
-  "dgSpecHash": "A42t8FNCxpbxS24iVwIue/ySvsMunD9rdfI2yZpFdORb+3dfQ1zCQy2K88nfL+RgMwXip39fLo/BKuItYDtkBw==",
+  "dgSpecHash": "LRDL76yeqCopzC89CKy5jIWs6Ym7kiAKY6PJnymvcjujrh5Q/2Wi8CXWCph4vsBQJLRKkNFhEQvOOpW5sDIykA==",
   "success": true,
   "projectFilePath": "D:\\Work\\Tracer\\src\\Tracer.Adapters.Mock\\Tracer.Adapters.Mock.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\petr.janecek\\.nuget\\packages\\microsoft.extensions.dependencyinjection.abstractions\\8.0.0\\microsoft.extensions.dependencyinjection.abstractions.8.0.0.nupkg.sha512",
-    "C:\\Users\\petr.janecek\\.nuget\\packages\\microsoft.extensions.logging.abstractions\\8.0.0\\microsoft.extensions.logging.abstractions.8.0.0.nupkg.sha512"
+    "C:\\Users\\petr.janecek\\.nuget\\packages\\microsoft.extensions.logging.abstractions\\8.0.0\\microsoft.extensions.logging.abstractions.8.0.0.nupkg.sha512",
+    "C:\\Users\\petr.janecek\\.nuget\\packages\\microsoft.net.illink.tasks\\8.0.27\\microsoft.net.illink.tasks.8.0.27.nupkg.sha512",
+    "C:\\Users\\petr.janecek\\.nuget\\packages\\microsoft.netcore.app.runtime.win-x64\\8.0.27\\microsoft.netcore.app.runtime.win-x64.8.0.27.nupkg.sha512",
+    "C:\\Users\\petr.janecek\\.nuget\\packages\\microsoft.windowsdesktop.app.runtime.win-x64\\8.0.27\\microsoft.windowsdesktop.app.runtime.win-x64.8.0.27.nupkg.sha512",
+    "C:\\Users\\petr.janecek\\.nuget\\packages\\microsoft.aspnetcore.app.runtime.win-x64\\8.0.27\\microsoft.aspnetcore.app.runtime.win-x64.8.0.27.nupkg.sha512"
   ],
   "logs": []
 }
