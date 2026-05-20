@@ -132,17 +132,17 @@
 
 **Phase success criteria:** All conditions from [tracer_phase6_design.md §1.3](./tracer_phase6_design.md#13-success-criteria) AND all Phase 1–6 integration tests pass.
 
-- [ ] **TRC-P6-001** Schema Extension: parent_event_id Index [details](./TASK-DETAIL.md#trc-p6-001--schema-extension-parent_event_id-partial-index)
-- [ ] **TRC-P6-002** Trace Walking Backend [details](./TASK-DETAIL.md#trc-p6-002--trace-walking-backend)
-- [ ] **TRC-P6-003** Trace DTOs [details](./TASK-DETAIL.md#trc-p6-003--trace-dtos)
-- [ ] **TRC-P6-004** Trace API Endpoints [details](./TASK-DETAIL.md#trc-p6-004--trace-api-endpoints)
-- [ ] **TRC-P6-005** DAG Layout Algorithm [details](./TASK-DETAIL.md#trc-p6-005--dag-layout-algorithm)
-- [ ] **TRC-P6-006** Causal Tree Canvas Renderer [details](./TASK-DETAIL.md#trc-p6-006--causal-tree-canvas-renderer-and-hit-test)
-- [ ] **TRC-P6-007** CausalTreeView Vue Component [details](./TASK-DETAIL.md#trc-p6-007--causaltreeview-vue-component)
-- [ ] **TRC-P6-008** Causal Tree Composables & Store [details](./TASK-DETAIL.md#trc-p6-008--causal-tree-composables-and-store)
-- [ ] **TRC-P6-009** Cross-View Navigation [details](./TASK-DETAIL.md#trc-p6-009--cross-view-navigation)
-- [ ] **TRC-P6-010** Shareable URL for Causal View [details](./TASK-DETAIL.md#trc-p6-010--shareable-url-for-causal-view)
-- [ ] **TRC-P6-011** Backend Unit & Integration Tests [details](./TASK-DETAIL.md#trc-p6-011--backend-unit-and-integration-tests)
-- [ ] **TRC-P6-012** Frontend Tests [details](./TASK-DETAIL.md#trc-p6-012--frontend-tests)
+- [x] **TRC-P6-001** Schema Extension: parent_event_id Index [details](./TASK-DETAIL.md#trc-p6-001--schema-extension-parent_event_id-partial-index)
+- [x] **TRC-P6-002** Trace Walking Backend [details](./TASK-DETAIL.md#trc-p6-002--trace-walking-backend)
+- [x] **TRC-P6-003** Trace DTOs [details](./TASK-DETAIL.md#trc-p6-003--trace-dtos)
+- [x] **TRC-P6-004** Trace API Endpoints [details](./TASK-DETAIL.md#trc-p6-004--trace-api-endpoints)
+- [x] **TRC-P6-005** DAG Layout Algorithm [details](./TASK-DETAIL.md#trc-p6-005--dag-layout-algorithm)
+- [x] **TRC-P6-006** Causal Tree Canvas Renderer [details](./TASK-DETAIL.md#trc-p6-006--causal-tree-canvas-renderer-and-hit-test)
+- [x] **TRC-P6-007** CausalTreeView Vue Component [details](./TASK-DETAIL.md#trc-p6-007--causaltreeview-vue-component)
+- [x] **TRC-P6-008** Causal Tree Composables & Store [details](./TASK-DETAIL.md#trc-p6-008--causal-tree-composables-and-store)
+- [x] **TRC-P6-009** Cross-View Navigation [details](./TASK-DETAIL.md#trc-p6-009--cross-view-navigation)
+- [x] **TRC-P6-010** Shareable URL for Causal View [details](./TASK-DETAIL.md#trc-p6-010--shareable-url-for-causal-view)
+- [x] **TRC-P6-011** Backend Unit & Integration Tests [details](./TASK-DETAIL.md#trc-p6-011--backend-unit-and-integration-tests)
+- [x] **TRC-P6-012** Frontend Tests [details](./TASK-DETAIL.md#trc-p6-012--frontend-tests)
 
 <!-- PHASE 6 TRACKER END -->
