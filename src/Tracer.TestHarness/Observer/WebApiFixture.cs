@@ -60,6 +60,7 @@ public sealed class WebApiFixture : IAsyncDisposable
         builder.Services.AddSingleton<EventLookupService>();
         builder.Services.AddSingleton<EventQueryService>();
         builder.Services.AddSingleton<EventAggregationService>();
+        builder.Services.AddSingleton<TraceQueryService>();
         builder.Services.AddSingleton<ILiveStatusProvider, NoOpLiveStatusProvider>();
         builder.Services.AddSingleton<LiveEventBroadcaster>();
         builder.Services.AddHostedService(sp => sp.GetRequiredService<LiveEventBroadcaster>());
@@ -75,6 +76,7 @@ public sealed class WebApiFixture : IAsyncDisposable
         ScenarioEndpoints.Map(app);
         EventEndpoints.Map(app);
         SseEndpoints.Map(app);
+        TraceEndpoints.Map(app);
 
         await app.StartAsync(ct);
 

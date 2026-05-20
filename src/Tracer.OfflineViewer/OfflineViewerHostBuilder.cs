@@ -62,6 +62,7 @@ public static class OfflineViewerHostBuilder
         builder.Services.AddSingleton<EventLookupService>();
         builder.Services.AddSingleton<EventQueryService>();
         builder.Services.AddSingleton<EventAggregationService>();
+        builder.Services.AddSingleton<TraceQueryService>();
 
         // Observer state reporter — inert instance (no events in bundle mode)
         builder.Services.AddSingleton<ObserverStateReporter>(_ => new InertObserverStateReporter());
@@ -95,6 +96,7 @@ public static class OfflineViewerHostBuilder
         EventEndpoints.Map(app);
         SseEndpoints.Map(app);
         BundleOpenEndpoints.Map(app);
+        TraceEndpoints.Map(app);
 
         // SPA fallback
         app.MapFallbackToFile("index.html");

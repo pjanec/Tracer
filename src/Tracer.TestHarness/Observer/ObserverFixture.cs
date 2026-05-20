@@ -141,6 +141,7 @@ public sealed class ObserverFixture : IAsyncDisposable
         builder.Services.AddSingleton<EventLookupService>();
         builder.Services.AddSingleton<EventQueryService>();
         builder.Services.AddSingleton<EventAggregationService>();
+        builder.Services.AddSingleton<TraceQueryService>();
 
         // SSE services
         var streaming = sseOptions ?? new SseStreamingOptions();
@@ -162,6 +163,7 @@ public sealed class ObserverFixture : IAsyncDisposable
         ScenarioEndpoints.Map(app);
         EventEndpoints.Map(app);
         SseEndpoints.Map(app);
+        TraceEndpoints.Map(app);
 
         configureExtraApp?.Invoke(app);
 

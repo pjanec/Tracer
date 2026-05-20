@@ -157,6 +157,7 @@ public static class ObserverHostBuilder
         builder.Services.AddSingleton<EventLookupService>();
         builder.Services.AddSingleton<EventQueryService>();
         builder.Services.AddSingleton<EventAggregationService>();
+        builder.Services.AddSingleton<TraceQueryService>();
 
         // ── Live streaming ────────────────────────────────────────────────────
         builder.Services.AddSingleton<SseStreamingOptions>();
@@ -223,6 +224,7 @@ public static class ObserverHostBuilder
         TopologyEndpoints.Map(app);
         SseEndpoints.Map(app);
         BundleEndpoints.Map(app);
+        TraceEndpoints.Map(app);
 
         // ── SPA static files (if present) ─────────────────────────────────────
         var spaPath = Path.Combine(app.Environment.ContentRootPath, "wwwroot");
