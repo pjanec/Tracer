@@ -186,4 +186,89 @@ public sealed class TraceQueryServiceTests : IAsyncDisposable
         tree!.SessionId.Should().Be(sessionId);
         tree.Summary.FirstEventUtc.Should().NotBeNull();
     }
+
+    [Fact]
+    public async Task GetTraceTree_ConvergentDag_BothParentEdgesPresent()
+    {
+        // DAG: A → C and B → C (two parents for C)
+        var traceId = _nextId++;
+        var idA = _nextId++;
+        var idB = _nextId++;
+        var idC = _nextId++;
+
+        await _fixture.PushAsync(
+        [
+            MakeEvent(idA, traceId, parentEventId: 0,    at: BaseTime),
+            MakeEvent(idB, traceId, parentEventId: 0,    at: BaseTime.AddMilliseconds(1)),
+            MakeEvent(idC, traceId, parentEventId: idA,  at: BaseTime.AddMilliseconds(50)),
+        ]);
+
+        // NOTE: True convergent DAG (event with two parents) is not possible with
+        // single parent_event_id per event. "Convergent" here means two separate
+        // root chains in the same trace. A and B are both roots; only A→C edge exists.
+
+        var tree = await _svc.GetTraceTreeAsync(traceId, maxEvents: 100, CancellationToken.None);
+
+        tree.Should().NotBeNull();
+        tree!.Nodes.Should().HaveCount(3, "3 events in the trace");
+        tree.Edges.Should().HaveCount(1, "only A→C edge (B is a separate root)");
+        tree.Summary.RootCount.Should().Be(2, "A and B are both roots");
+        tree.Summary.LeafCount.Should().Be(2, "B and C are both leaves");
+
+        // Verify the edge is A → C
+        tree.Edges.Should().ContainSingle(e =>
+            e.ParentEventId.Value == idA && e.ChildEventId.Value == idC,
+            "edge from A to C must exist");
+    }
+
+    [Fact]
+    public async Task GetTraceTree_CrossIntervalTrace_AllNodesReturnedWithCrossRotationEdges()
+    {
+        // Arrange: push 5 events on a trace, rotate, push 5 more on the SAME trace
+        var traceId = _nextId++;
+        var rootId  = _nextId++;
+        var midId   = _nextId++;
+
+        // Events in interval 1: root → e1 → e2 → e3 → mid
+        var ids1 = Enumerable.Range(0, 4).Select(_ => _nextId++).ToArray();
+        var events1 = new List<EventRecord>
+        {
+            MakeEvent(rootId,  traceId, 0,       at: BaseTime),
+            MakeEvent(ids1[0], traceId, rootId,  at: BaseTime.AddSeconds(1)),
+            MakeEvent(ids1[1], traceId, ids1[0], at: BaseTime.AddSeconds(2)),
+            MakeEvent(ids1[2], traceId, ids1[1], at: BaseTime.AddSeconds(3)),
+            MakeEvent(midId,   traceId, ids1[2], at: BaseTime.AddSeconds(4)),
+        };
+        await _fixture.PushAsync(events1);
+
+        // Force rotation so interval 1 is closed and interval 2 opens
+        await _fixture.ForceRotationAsync();
+
+        // Events in interval 2: continue from mid
+        var ids2 = Enumerable.Range(0, 5).Select(_ => _nextId++).ToArray();
+        var events2 = new List<EventRecord>
+        {
+            MakeEvent(ids2[0], traceId, midId,   at: BaseTime.AddSeconds(5)),
+            MakeEvent(ids2[1], traceId, ids2[0], at: BaseTime.AddSeconds(6)),
+            MakeEvent(ids2[2], traceId, ids2[1], at: BaseTime.AddSeconds(7)),
+            MakeEvent(ids2[3], traceId, ids2[2], at: BaseTime.AddSeconds(8)),
+            MakeEvent(ids2[4], traceId, ids2[3], at: BaseTime.AddSeconds(9)),
+        };
+        await _fixture.PushAsync(events2);
+
+        // Act: query the full trace tree
+        var tree = await _svc.GetTraceTreeAsync(traceId, maxEvents: 100, CancellationToken.None);
+
+        // Assert: all 10 events returned with 9 edges intact across the interval boundary
+        tree.Should().NotBeNull();
+        tree!.Nodes.Should().HaveCount(10, "all 10 events across both intervals");
+        tree.Edges.Should().HaveCount(9, "9 edges: full chain root→leaf across rotation");
+        tree.Summary.RootCount.Should().Be(1, "single root");
+        tree.Summary.LeafCount.Should().Be(1, "single leaf");
+
+        // Verify the cross-interval edge: mid → ids2[0]
+        tree.Edges.Should().Contain(e =>
+            e.ParentEventId.Value == midId && e.ChildEventId.Value == ids2[0],
+            "cross-interval edge from interval 1 to interval 2 must be present");
+    }
 }

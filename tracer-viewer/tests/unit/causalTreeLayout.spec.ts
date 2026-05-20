@@ -190,4 +190,35 @@ describe('causalTreeLayout', () => {
     expect(result.nodes.size).toBe(500);
     expect(elapsed).toBeLessThan(50);
   });
+
+  it('layout_CycleDefense_ReturnsWithoutHanging', () => {
+    // Two edges form a cycle: A→B and B→A. Layout must not infinite-loop.
+    const nodes: TraceNodeDto[] = [makeNode('cycle-a'), makeNode('cycle-b')];
+    const edges: TraceEdgeDto[] = [
+      makeEdge('cycle-a', 'cycle-b'),
+      makeEdge('cycle-b', 'cycle-a'),
+    ];
+    const tree: TraceTreeDto = {
+      traceId: 'trace-cycle',
+      nodes,
+      edges,
+      rootEventIds: ['cycle-a'],
+      leafEventIds: ['cycle-b'],
+      summary: {
+        traceId: 'trace-cycle', totalEvents: 2, truncated: false, totalSpanMs: 0,
+        participatingNodes: ['node-a'], rootCount: 1, leafCount: 1,
+      },
+    };
+
+    const start = performance.now();
+    const result = layout(tree, DEFAULT_CONFIG);
+    const elapsed = performance.now() - start;
+
+    // Must complete quickly (not hang)
+    expect(elapsed).toBeLessThan(1000);
+    // Both nodes must appear exactly once
+    expect(result.nodes.size).toBe(2);
+    const keys = [...result.nodes.keys()];
+    expect(new Set(keys).size).toBe(keys.length);
+  });
 });

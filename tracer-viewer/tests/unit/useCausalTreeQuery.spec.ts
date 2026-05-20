@@ -133,4 +133,40 @@ describe('useCausalTreeQuery', () => {
 
     expect(store.error).toBeNull();
   });
+
+  it('requestKindEvent_CallsGetTraceByEvent', async () => {
+    const { api } = await import('@/api/tracerApiClient');
+    (api.getTraceByEvent as ReturnType<typeof vi.fn>).mockResolvedValue(makeMinimalTree());
+
+    const store = useCausalTreeStore();
+    mountWithQuery();
+
+    store.request = { kind: 'event', id: 'aabbccddeeff0011', maxEvents: 500 };
+    await nextTick();
+    await flushPromises();
+
+    expect(api.getTraceByEvent).toHaveBeenCalledOnce();
+    expect(api.getTraceByEvent).toHaveBeenCalledWith(
+      'aabbccddeeff0011', 500, expect.objectContaining({ signal: expect.any(AbortSignal) })
+    );
+    expect(api.getTraceTree).not.toHaveBeenCalled();
+  });
+
+  it('requestKindDescendants_CallsGetEventDescendants', async () => {
+    const { api } = await import('@/api/tracerApiClient');
+    (api.getEventDescendants as ReturnType<typeof vi.fn>).mockResolvedValue(makeMinimalTree());
+
+    const store = useCausalTreeStore();
+    mountWithQuery();
+
+    store.request = { kind: 'descendants', id: 'aabbccddeeff0011', maxDepth: 20, maxNodes: 400 };
+    await nextTick();
+    await flushPromises();
+
+    expect(api.getEventDescendants).toHaveBeenCalledOnce();
+    expect(api.getEventDescendants).toHaveBeenCalledWith(
+      'aabbccddeeff0011', 20, 400, expect.objectContaining({ signal: expect.any(AbortSignal) })
+    );
+    expect(api.getTraceTree).not.toHaveBeenCalled();
+  });
 });

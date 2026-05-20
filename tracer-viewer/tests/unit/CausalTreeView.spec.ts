@@ -11,6 +11,10 @@ vi.mock('@/composables/useCausalTreeQuery', () => ({
   useCausalTreeQuery: vi.fn(),
 }));
 
+vi.mock('@/composables/useCausalTreeUrl', () => ({
+  useCausalTreeUrl: vi.fn(),
+}));
+
 function makeRouter() {
   return createRouter({
     history: createMemoryHistory(),
@@ -21,6 +25,7 @@ function makeRouter() {
 function makeTree(): TraceTreeDto {
   return {
     traceId: 'aabbccddeeff0011',
+    sessionId: '',
     nodes: [
       { eventId: 'evt-1', traceId: 'aabbccddeeff0011', publishWallclock: '2026-01-01T10:00:00.000Z', publisherNode: 'node-a', topic: 'test' },
     ],
@@ -51,7 +56,7 @@ describe('CausalTreeView', () => {
         stubs: {
           CausalTreeCanvas: true,
           TraceSummaryPanel: true,
-          CausalNodeInspector: true,
+          EventInspector: true,
           TraceSearchInput: true,
           LoadingSpinner: { template: '<div class="loading-spinner"/>' },
           ErrorMessage: { template: '<div><slot/><button @click="$emit(\'retry\')">Retry</button></div>', emits: ['retry'] },

@@ -62,4 +62,18 @@ describe('causalTreeHitTest', () => {
     expect(hit).not.toBeNull();
     expect(hit!.eventId).toBe(nodeNear.x > nodeFar.x ? 'node-near' : 'node-far');
   });
+
+  it('findNodeAt_ClickAtRadiusMinusOne_StillReturnsNode', () => {
+    // A click at exactly (radius - 1) pixels from the node center must still hit
+    const tree = makeSimpleTree(['target-node']);
+    const layoutResult = layout(tree, CONFIG);
+    const node = [...layoutResult.nodes.values()][0];
+
+    const radius = CONFIG.nodeRadiusPx; // 14
+    // Click at offset (radius - 1, 0) from center → still inside the node circle
+    const hit = findNodeAt(layoutResult, node.x + radius - 1, node.y, radius);
+
+    expect(hit).not.toBeNull();
+    expect(hit!.eventId).toBe('target-node');
+  });
 });

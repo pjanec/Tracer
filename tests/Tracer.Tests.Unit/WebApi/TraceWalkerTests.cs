@@ -181,4 +181,34 @@ public sealed class TraceWalkerTests : IAsyncDisposable
         var result = await act.Should().NotThrowAsync();
         result.Subject.Should().HaveCount(5, "truncated at maxNodes=5");
     }
+
+    [Fact]
+    public async Task WalkDescendants_100Children_AllReturnedInSingleBfsBatch()
+    {
+        // 100 direct children of one root; verifies IN-clause batching works at scale
+        var traceId  = _nextId++;
+        var rootId   = _nextId++;
+        var childIds = Enumerable.Range(0, 100).Select(_ => _nextId++).ToArray();
+
+        var events = new List<EventRecord> { MakeEvent(rootId, traceId, 0) };
+        foreach (var childId in childIds)
+            events.Add(MakeEvent(childId, traceId, rootId, at: BaseTime.AddMilliseconds(1)));
+        await _fixture.PushAsync(events);
+
+        await using var conn = await _reader.AcquireAsync(CancellationToken.None);
+
+        // Depth=1 means exactly one BFS level; all 100 children should be returned
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        var descendants = await TraceWalker.WalkDescendantsAsync(
+            conn, new EventId(rootId), maxDepth: 1, maxNodes: 200, CancellationToken.None);
+        sw.Stop();
+
+        descendants.Should().HaveCount(100, "all 100 direct children returned");
+        descendants.Select(d => d.EventId.Value).Should()
+            .BeEquivalentTo(childIds, "every child ID returned exactly once");
+
+        // Performance: single batched query should return in well under 1 second
+        sw.ElapsedMilliseconds.Should().BeLessThan(1000,
+            "batched IN-clause should return 100 children well within 1s");
+    }
 }

@@ -15,7 +15,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("tracer-agent")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+1ccf0b516d63b7a9df334a02d719956905d10c14")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+981a74d41f72009fd012456d0de1616d29815738")]
 [assembly: System.Reflection.AssemblyProductAttribute("tracer-agent")]
 [assembly: System.Reflection.AssemblyTitleAttribute("tracer-agent")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

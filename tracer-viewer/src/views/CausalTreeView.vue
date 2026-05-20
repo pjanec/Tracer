@@ -3,15 +3,17 @@
 import { computed } from 'vue';
 import { useCausalTreeStore } from '@/stores/causalTreeStore';
 import { useCausalTreeQuery } from '@/composables/useCausalTreeQuery';
+import { useCausalTreeUrl } from '@/composables/useCausalTreeUrl';
 import CausalTreeCanvas from '@/components/CausalTreeCanvas.vue';
 import TraceSummaryPanel from '@/components/TraceSummaryPanel.vue';
-import CausalNodeInspector from '@/components/CausalNodeInspector.vue';
+import EventInspector from '@/components/EventInspector.vue';
 import TraceSearchInput from '@/components/TraceSearchInput.vue';
 import LoadingSpinner from '@/components/LoadingSpinner.vue';
 import ErrorMessage from '@/components/ErrorMessage.vue';
 
 const store = useCausalTreeStore();
 useCausalTreeQuery();
+useCausalTreeUrl();
 
 const selectedNode = computed(() => {
   if (!store.selectedEventId || !store.tree) return null;
@@ -53,10 +55,13 @@ const selectedNode = computed(() => {
         :selected-event-id="store.selectedEventId"
         @select="store.selectEvent"
       />
-      <CausalNodeInspector
+      <EventInspector
         v-if="selectedNode"
         class="causal-tree-view__inspector"
         :event="selectedNode"
+        :session-id="store.tree?.sessionId ?? null"
+        :show-causal-tree-pivot="false"
+        :show-timeline-pivot="true"
       />
     </div>
 
