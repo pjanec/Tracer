@@ -476,3 +476,4 @@ D:\Work\Tracer\tests\Tracer.Tests.Integration\bin\Release\net8.0\Tracer.WebApi.d
 D:\Work\Tracer\tests\Tracer.Tests.Integration\bin\Release\net8.0\tracer-observer.pdb
 D:\Work\Tracer\tests\Tracer.Tests.Integration\bin\Release\net8.0\Tracer.WebApi.pdb
 D:\Work\Tracer\tests\Tracer.Tests.Integration\obj\Release\net8.0\MvcTestingAppManifest.json
+D:\Work\Tracer\tests\Tracer.Tests.Integration\bin\Release\net8.0\tracer-observer.staticwebassets.runtime.json

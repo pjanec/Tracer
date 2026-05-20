@@ -301,7 +301,7 @@ public sealed class LiveStreamingTests : IAsyncLifetime
             {
                 var json = line.Substring("data: ".Length);
                 using var doc = JsonDocument.Parse(json);
-                return doc.RootElement.GetProperty("EventId").GetString()!;
+                return doc.RootElement.GetProperty("eventId").GetString()!;
             })
             .ToHashSet();
 

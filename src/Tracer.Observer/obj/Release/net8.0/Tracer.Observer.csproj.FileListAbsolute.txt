@@ -83,3 +83,4 @@ D:\Work\Tracer\src\Tracer.Observer\obj\Release\net8.0\refint\tracer-observer.dll
 D:\Work\Tracer\src\Tracer.Observer\obj\Release\net8.0\tracer-observer.pdb
 D:\Work\Tracer\src\Tracer.Observer\obj\Release\net8.0\Tracer.Observer.genruntimeconfig.cache
 D:\Work\Tracer\src\Tracer.Observer\obj\Release\net8.0\ref\tracer-observer.dll
+D:\Work\Tracer\src\Tracer.Observer\bin\Release\net8.0\tracer-observer.staticwebassets.runtime.json

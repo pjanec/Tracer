@@ -8,6 +8,11 @@ namespace Tracer.WebApi.Endpoints;
 
 public static class SseEndpoints
 {
+    private static readonly JsonSerializerOptions _sseJsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+    };
+
     public static void Map(WebApplication app)
     {
         // GET /api/live/notables — SSE stream of notable events
@@ -56,7 +61,7 @@ public static class SseEndpoints
                 await foreach (var ev in connection.ReadAsync(requestAborted))
                 {
                     var dto = DtoMappers.ToNotableDto(ev);
-                    var json = JsonSerializer.Serialize(dto);
+                    var json = JsonSerializer.Serialize(dto, _sseJsonOptions);
                     await response.WriteAsync($"data: {json}\n\n", requestAborted);
                     await response.Body.FlushAsync(requestAborted);
                 }

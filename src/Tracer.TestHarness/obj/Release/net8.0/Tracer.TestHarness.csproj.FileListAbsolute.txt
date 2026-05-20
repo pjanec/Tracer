@@ -337,3 +337,4 @@ D:\Work\Tracer\src\Tracer.TestHarness\bin\Release\net8.0\Tracer.WebApi.dll
 D:\Work\Tracer\src\Tracer.TestHarness\bin\Release\net8.0\Tracer.WebApi.pdb
 D:\Work\Tracer\src\Tracer.TestHarness\bin\Release\net8.0\tracer-observer.pdb
 D:\Work\Tracer\src\Tracer.TestHarness\obj\Release\net8.0\MvcTestingAppManifest.json
+D:\Work\Tracer\src\Tracer.TestHarness\bin\Release\net8.0\tracer-observer.staticwebassets.runtime.json

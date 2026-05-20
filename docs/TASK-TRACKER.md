@@ -66,7 +66,7 @@
 - [x] **TRC-P3-004** Scenario & Event Endpoints [details](./TASK-DETAIL.md#trc-p3-004--scenario--event-endpoints)
 - [x] **TRC-P3-005** SSE Live Streaming [details](./TASK-DETAIL.md#trc-p3-005--sse-live-streaming)
 - [x] **TRC-P3-006** Vue SPA Scaffold [details](./TASK-DETAIL.md#trc-p3-006--vue-spa-scaffold)
-- [ ] **TRC-P3-007** Session Browser View [details](./TASK-DETAIL.md#trc-p3-007--session-browser-view)
+- [x] **TRC-P3-007** Session Browser View [details](./TASK-DETAIL.md#trc-p3-007--session-browser-view)
 - [ ] **TRC-P3-008** Scenario View [details](./TASK-DETAIL.md#trc-p3-008--scenario-view)
 - [x] **TRC-P3-009** Observer+FakeNode Integration Tests [details](./TASK-DETAIL.md#trc-p3-009--observerfakenode-integration-tests)
 - [x] **TRC-P3-010** Web API Query Round-Trip Tests [details](./TASK-DETAIL.md#trc-p3-010--web-api-query-round-trip-tests)

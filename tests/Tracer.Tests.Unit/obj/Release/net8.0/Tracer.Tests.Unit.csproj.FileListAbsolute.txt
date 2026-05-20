@@ -476,3 +476,4 @@ D:\Work\Tracer\tests\Tracer.Tests.Unit\bin\Release\net8.0\tracer-observer.pdb
 D:\Work\Tracer\tests\Tracer.Tests.Unit\bin\Release\net8.0\Tracer.TestHarness.pdb
 D:\Work\Tracer\tests\Tracer.Tests.Unit\bin\Release\net8.0\tracer-fakenode.pdb
 D:\Work\Tracer\tests\Tracer.Tests.Unit\obj\Release\net8.0\MvcTestingAppManifest.json
+D:\Work\Tracer\tests\Tracer.Tests.Unit\bin\Release\net8.0\tracer-observer.staticwebassets.runtime.json
