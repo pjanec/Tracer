@@ -117,7 +117,7 @@ public sealed class ScenarioEndpointTests : IAsyncDisposable
         await _fixture.PushAsync(MakeNonNotable(sessionId));
 
         var response = await _fixture.Client.GetAsync(
-            $"/api/scenarios/{sessionId}/notables?limit=50");
+            $"/api/scenario/notables?sessionId={sessionId}&limit=50");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var json = await response.Content.ReadAsStringAsync();
@@ -131,7 +131,7 @@ public sealed class ScenarioEndpointTests : IAsyncDisposable
     public async Task GetNotables_LimitOutOfRange_Returns400()
     {
         var response = await _fixture.Client.GetAsync(
-            "/api/scenarios/any-session/notables?limit=1000");
+            "/api/scenario/notables?sessionId=any-session&limit=1000");
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
@@ -148,18 +148,35 @@ public sealed class ScenarioEndpointTests : IAsyncDisposable
 
         // Get all notables first
         var allResp = await _fixture.Client.GetAsync(
-            $"/api/scenarios/{sessionId}/notables?limit=10");
+            $"/api/scenario/notables?sessionId={sessionId}&limit=10");
         allResp.StatusCode.Should().Be(HttpStatusCode.OK);
         var allJson = await allResp.Content.ReadAsStringAsync();
         using var allDoc = JsonDocument.Parse(allJson);
         var allItems = allDoc.RootElement.EnumerateArray().ToList();
-        allItems.Should().HaveCountGreaterOrEqualTo(1);
+        allItems.Should().HaveCount(5);
 
-        // Get first event ID and use as before cursor
-        var firstEventId = allItems.Last().GetProperty("eventId").GetString()!;
+        // The service returns in descending order; get the 3rd item (index 2 = middle)
+        var midItem = allItems[2];
+        var midEventId = midItem.GetProperty("eventId").GetString()!;
+        var midTimestamp = midItem.GetProperty("occurredAtUtc").GetString()!;
+
         var pagedResp = await _fixture.Client.GetAsync(
-            $"/api/scenarios/{sessionId}/notables?limit=10&before={firstEventId}");
+            $"/api/scenario/notables?sessionId={sessionId}&limit=10&before={midEventId}");
         pagedResp.StatusCode.Should().Be(HttpStatusCode.OK);
+        var pagedJson = await pagedResp.Content.ReadAsStringAsync();
+        using var pagedDoc = JsonDocument.Parse(pagedJson);
+        var pagedItems = pagedDoc.RootElement.EnumerateArray().ToList();
+
+        // Must have fewer items than full result
+        pagedItems.Count.Should().BeLessThan(5);
+
+        // Every item must have occurredAtUtc strictly before the cursor event
+        var midTime = DateTimeOffset.Parse(midTimestamp);
+        foreach (var item in pagedItems)
+        {
+            var itemTime = DateTimeOffset.Parse(item.GetProperty("occurredAtUtc").GetString()!);
+            itemTime.Should().BeBefore(midTime);
+        }
     }
 
     [Fact]
@@ -170,7 +187,7 @@ public sealed class ScenarioEndpointTests : IAsyncDisposable
         await _fixture.PushAsync(MakePhaseEnded(sessionId, "Phase1", at: BaseTime.AddMinutes(5)));
 
         var response = await _fixture.Client.GetAsync(
-            $"/api/scenarios/{sessionId}/phases");
+            $"/api/scenario/phases?sessionId={sessionId}");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var json = await response.Content.ReadAsStringAsync();
@@ -189,7 +206,7 @@ public sealed class ScenarioEndpointTests : IAsyncDisposable
         await _fixture.PushAsync(MakePhaseStarted(sessionId, "OngoingPhase", at: BaseTime));
 
         var response = await _fixture.Client.GetAsync(
-            $"/api/scenarios/{sessionId}/phases");
+            $"/api/scenario/phases?sessionId={sessionId}");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var json = await response.Content.ReadAsStringAsync();
@@ -208,7 +225,7 @@ public sealed class ScenarioEndpointTests : IAsyncDisposable
         await _fixture.PushAsync(MakeNonNotable(sessionId));
 
         var response = await _fixture.Client.GetAsync(
-            $"/api/scenarios/{sessionId}/state");
+            $"/api/scenario/state?sessionId={sessionId}");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var json = await response.Content.ReadAsStringAsync();

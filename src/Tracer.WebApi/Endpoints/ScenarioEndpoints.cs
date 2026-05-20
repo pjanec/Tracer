@@ -9,10 +9,10 @@ public static class ScenarioEndpoints
 
     public static void Map(WebApplication app)
     {
-        app.MapGet("/api/scenarios/{sessionId}/notables", async (
-            string sessionId,
-            int? limit,
-            string? before,
+        app.MapGet("/api/scenario/notables", async (
+            [Microsoft.AspNetCore.Mvc.FromQuery] string sessionId,
+            [Microsoft.AspNetCore.Mvc.FromQuery] int? limit,
+            [Microsoft.AspNetCore.Mvc.FromQuery] string? before,
             ScenarioQueryService svc,
             CancellationToken ct) =>
         {
@@ -32,8 +32,8 @@ public static class ScenarioEndpoints
             return Results.Ok(notables);
         }).WithName("GetScenarioNotables").WithOpenApi();
 
-        app.MapGet("/api/scenarios/{sessionId}/phases", async (
-            string sessionId,
+        app.MapGet("/api/scenario/phases", async (
+            [Microsoft.AspNetCore.Mvc.FromQuery] string sessionId,
             ScenarioQueryService svc,
             CancellationToken ct) =>
         {
@@ -41,8 +41,8 @@ public static class ScenarioEndpoints
             return Results.Ok(phases);
         }).WithName("GetScenarioPhases").WithOpenApi();
 
-        app.MapGet("/api/scenarios/{sessionId}/state", async (
-            string sessionId,
+        app.MapGet("/api/scenario/state", async (
+            [Microsoft.AspNetCore.Mvc.FromQuery] string sessionId,
             ScenarioQueryService svc,
             CancellationToken ct) =>
         {

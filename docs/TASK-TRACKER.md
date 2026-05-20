@@ -60,17 +60,17 @@
 
 **Phase success criteria:** All conditions from [tracer_phase3_design.md §1.3](./tracer_phase3_design.md#13-success-criteria) AND all Phase 1, 2, and 3 integration tests pass.
 
-- [ ] **TRC-P3-001** Tracer.Observer Assembly [details](./TASK-DETAIL.md#trc-p3-001--tracerObserver-assembly)
-- [ ] **TRC-P3-002** Tracer.WebApi Setup & Middleware [details](./TASK-DETAIL.md#trc-p3-002--tracerwebapi-setup--middleware)
-- [ ] **TRC-P3-003** Session & Topology Endpoints [details](./TASK-DETAIL.md#trc-p3-003--session--topology-endpoints)
-- [ ] **TRC-P3-004** Scenario & Event Endpoints [details](./TASK-DETAIL.md#trc-p3-004--scenario--event-endpoints)
-- [ ] **TRC-P3-005** SSE Live Streaming [details](./TASK-DETAIL.md#trc-p3-005--sse-live-streaming)
+- [x] **TRC-P3-001** Tracer.Observer Assembly [details](./TASK-DETAIL.md#trc-p3-001--tracerObserver-assembly)
+- [x] **TRC-P3-002** Tracer.WebApi Setup & Middleware [details](./TASK-DETAIL.md#trc-p3-002--tracerwebapi-setup--middleware)
+- [x] **TRC-P3-003** Session & Topology Endpoints [details](./TASK-DETAIL.md#trc-p3-003--session--topology-endpoints)
+- [x] **TRC-P3-004** Scenario & Event Endpoints [details](./TASK-DETAIL.md#trc-p3-004--scenario--event-endpoints)
+- [x] **TRC-P3-005** SSE Live Streaming [details](./TASK-DETAIL.md#trc-p3-005--sse-live-streaming)
 - [ ] **TRC-P3-006** Vue SPA Scaffold [details](./TASK-DETAIL.md#trc-p3-006--vue-spa-scaffold)
 - [ ] **TRC-P3-007** Session Browser View [details](./TASK-DETAIL.md#trc-p3-007--session-browser-view)
 - [ ] **TRC-P3-008** Scenario View [details](./TASK-DETAIL.md#trc-p3-008--scenario-view)
-- [ ] **TRC-P3-009** Observer+FakeNode Integration Tests [details](./TASK-DETAIL.md#trc-p3-009--observerfakenode-integration-tests)
-- [ ] **TRC-P3-010** Web API Query Round-Trip Tests [details](./TASK-DETAIL.md#trc-p3-010--web-api-query-round-trip-tests)
-- [ ] **TRC-P3-011** Live Streaming Integration Tests [details](./TASK-DETAIL.md#trc-p3-011--live-streaming-integration-tests)
+- [x] **TRC-P3-009** Observer+FakeNode Integration Tests [details](./TASK-DETAIL.md#trc-p3-009--observerfakenode-integration-tests)
+- [x] **TRC-P3-010** Web API Query Round-Trip Tests [details](./TASK-DETAIL.md#trc-p3-010--web-api-query-round-trip-tests)
+- [x] **TRC-P3-011** Live Streaming Integration Tests [details](./TASK-DETAIL.md#trc-p3-011--live-streaming-integration-tests)
 - [ ] **TRC-P3-012** Frontend Component Tests [details](./TASK-DETAIL.md#trc-p3-012--frontend-component-tests)
 - [ ] **TRC-P3-013** Playwright E2E Smoke Tests [details](./TASK-DETAIL.md#trc-p3-013--playwright-e2e-smoke-tests)
 

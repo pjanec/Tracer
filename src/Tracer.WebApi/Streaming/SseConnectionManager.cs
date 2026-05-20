@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Linq;
 using Tracer.Core.Records;
 
 namespace Tracer.WebApi.Streaming;
@@ -17,6 +18,12 @@ public sealed class SseConnectionManager
     }
 
     public int ActiveCount => _connections.Count;
+
+    /// <summary>Sum of drop counts across all active connections.</summary>
+    public int TotalDropCount => _connections.Values.Sum(c => c.DropCount);
+
+    /// <summary>Exposes all currently registered connections (for testing/diagnostics).</summary>
+    public IEnumerable<SseConnection> Connections => _connections.Values;
 
     /// <summary>
     /// Attempts to register a new SSE connection with the given filter.

@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("tracer-fakenode")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+bdbb76acaef00eff1bfaa36404ab7d8e215dcdb0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+eb65833dc19fba47081fa31f9920ce5c399b814a")]
 [assembly: System.Reflection.AssemblyProductAttribute("tracer-fakenode")]
 [assembly: System.Reflection.AssemblyTitleAttribute("tracer-fakenode")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

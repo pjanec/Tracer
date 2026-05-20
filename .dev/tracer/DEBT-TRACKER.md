@@ -19,6 +19,10 @@
 | DT-014 | P2 | BATCH-07 | `GetNotables_PaginationWithBeforeCursor` only asserts 200 status — must verify returned events are strictly before the cursor | BATCH-08 | Open |
 | DT-015 | P2 | BATCH-07 | `ListSessions_OrderedByStartTimeDesc` test missing from `SessionEndpointTests` (replaced with fields-check test) | BATCH-08 | Open |
 | DT-016 | P3 | BATCH-07 | `IntervalRotator.CurrentWriter` has a public setter for test injection; should be `internal set` + `InternalsVisibleTo` | BATCH-09 | Open |
+| DT-017 | P2 | BATCH-08 | `SecondInterval_QueriesReturnCurrentIntervalEvents`: `ingestedTotal > 0` is trivially true; push session_start into interval 2, then verify `GET /api/sessions` shows it (proving pool targets new interval) | BATCH-09 | Open |
+| DT-018 | P2 | BATCH-08 | `GetEvent_ById_ReturnsCorrectEventDto`: missing `traceId`, `severity`, `occurredAtUtc` field assertions matching the pushed event (spec TRC-P3-010 SC7) | BATCH-09 | Open |
+| DT-019 | P2 | BATCH-08 | `GetTopology_AfterIngestion_ReturnsNodeInfo`: missing `eventsPublished` count assertion per node (spec TRC-P3-010 SC9) | BATCH-09 | Open |
+| DT-020 | P3 | BATCH-08 | `MultipleNodes_AllEventsAppearInUnifiedStream`: asserts `lines.Count == 20` but doesn't verify 20 distinct `eventId` values (spec says "verified by eventId") | BATCH-09 | Open |
 
 > P1 = Critical (blocks next batch), P2 = Should fix soon, P3 = Nice to fix eventually  
 > Resolved items are marked ✅ (never deleted)

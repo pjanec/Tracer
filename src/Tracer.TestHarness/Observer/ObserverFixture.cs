@@ -20,6 +20,7 @@ public sealed class ObserverFixtureOptions
 {
     public TimeSpan IntervalDuration { get; set; } = TimeSpan.FromMinutes(1);
     public int HttpPort { get; set; } = 0;
+    public Tracer.Core.Time.IClock? Clock { get; set; }
 }
 
 /// <summary>
@@ -81,7 +82,10 @@ public sealed class ObserverFixture : IAsyncDisposable
         });
 
         // Core services
-        builder.Services.AddSingleton<Tracer.Core.Time.IClock, Tracer.Agent.Time.SystemClock>();
+        if (options.Clock is not null)
+            builder.Services.AddSingleton<Tracer.Core.Time.IClock>(options.Clock);
+        else
+            builder.Services.AddSingleton<Tracer.Core.Time.IClock, Tracer.Agent.Time.SystemClock>();
         builder.Services.AddSingleton(sp =>
         {
             var obs = sp.GetRequiredService<ObserverConfig>();

@@ -12,6 +12,7 @@ namespace Tracer.WebApi.Streaming;
 public sealed class SseConnection : IAsyncDisposable
 {
     private readonly Channel<EventRecord> _channel;
+    private readonly int _bufferSize;
     private int _dropCount;
 
     public Guid Id { get; } = Guid.NewGuid();
@@ -21,6 +22,7 @@ public sealed class SseConnection : IAsyncDisposable
     public SseConnection(SseFilter filter, int bufferSize)
     {
         Filter = filter;
+        _bufferSize = bufferSize;
         _channel = Channel.CreateBounded<EventRecord>(new BoundedChannelOptions(bufferSize)
         {
             FullMode = BoundedChannelFullMode.DropOldest,
@@ -45,8 +47,12 @@ public sealed class SseConnection : IAsyncDisposable
                 return;
         }
 
-        if (!_channel.Writer.TryWrite(ev))
+        // With DropOldest mode, TryWrite always returns true (never rejects).
+        // We detect a drop by checking if the channel was already at capacity before writing.
+        if (_channel.Reader.Count >= _bufferSize)
             Interlocked.Increment(ref _dropCount);
+
+        _channel.Writer.TryWrite(ev);
     }
 
     /// <summary>Returns an async stream of events until cancellation or the channel is completed.</summary>

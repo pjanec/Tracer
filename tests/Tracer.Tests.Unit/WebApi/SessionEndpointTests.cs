@@ -186,6 +186,30 @@ public sealed class SessionEndpointTests : IAsyncDisposable
         json.Should().NotContain("session-old");
     }
 
+    [Fact]
+    public async Task ListSessions_OrderedByStartTimeDesc()
+    {
+        var earlier = BaseTime.AddHours(-1);
+        var later = BaseTime.AddHours(1);
+        await _fixture.PushAsync(MakeSessionStart("session-earlier", "node-1", earlier));
+        await _fixture.PushAsync(MakeSessionStart("session-later", "node-1", later));
+
+        var response = await _fixture.Client.GetAsync("/api/sessions");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var json = await response.Content.ReadAsStringAsync();
+        using var doc = JsonDocument.Parse(json);
+        var sessions = doc.RootElement.EnumerateArray().ToList();
+        sessions.Should().HaveCountGreaterOrEqualTo(2);
+
+        // The session with the later startUtc must be first (index 0)
+        var first = sessions[0];
+        var second = sessions[1];
+        var firstStart = DateTimeOffset.Parse(first.GetProperty("startUtc").GetString()!);
+        var secondStart = DateTimeOffset.Parse(second.GetProperty("startUtc").GetString()!);
+        firstStart.Should().BeAfter(secondStart);
+    }
+
     public async ValueTask DisposeAsync()
     {
         await _fixture.DisposeAsync();
