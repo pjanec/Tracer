@@ -81,7 +81,7 @@ public sealed class SchemaTests : IAsyncDisposable
         string[] expected =
         [
             "idx_events_trace",
-            "idx_events_parent",
+            "idx_events_parent_event_id",
             "idx_events_entity",
             "idx_events_player",
             "idx_events_topic_time",

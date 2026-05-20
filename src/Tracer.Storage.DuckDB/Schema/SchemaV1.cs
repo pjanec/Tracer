@@ -53,10 +53,10 @@ internal static class SchemaV1
         );
         """;
 
-    /// <summary>DDL for all six indexes.</summary>
+    /// <summary>DDL for all seven indexes.</summary>
     public const string CreateIndexes = """
         CREATE INDEX IF NOT EXISTS idx_events_trace ON events(trace_id);
-        CREATE INDEX IF NOT EXISTS idx_events_parent ON events(parent_event_id);
+        CREATE INDEX IF NOT EXISTS idx_events_parent_event_id ON events(parent_event_id);
         CREATE INDEX IF NOT EXISTS idx_events_entity ON events(entity_id);
         CREATE INDEX IF NOT EXISTS idx_events_player ON events(owning_player_id);
         CREATE INDEX IF NOT EXISTS idx_events_topic_time ON events(topic, publish_wallclock);
