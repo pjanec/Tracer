@@ -290,6 +290,20 @@ public sealed class DuckDbStorageWriter : IDiagnosticStorageWriter
             catch (Exception ex) { _logger.LogWarning(ex, "Error disposing FastStateParquetWriter."); }
         }
 
+        // Checkpoint WAL to the main file before closing so that the on-disk
+        // events.duckdb is fully populated even when READ_ONLY connections are open
+        // (which would otherwise suppress the automatic checkpoint-on-last-close).
+        try
+        {
+            await using var cmd = _connection.CreateCommand();
+            cmd.CommandText = "CHECKPOINT;";
+            await cmd.ExecuteNonQueryAsync().ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Error checkpointing WAL during dispose.");
+        }
+
         _connection.Dispose();
     }
 

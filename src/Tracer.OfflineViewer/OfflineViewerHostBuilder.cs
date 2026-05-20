@@ -60,6 +60,8 @@ public static class OfflineViewerHostBuilder
         builder.Services.AddSingleton<ScenarioQueryService>();
         builder.Services.AddSingleton<TopologyQueryService>();
         builder.Services.AddSingleton<EventLookupService>();
+        builder.Services.AddSingleton<EventQueryService>();
+        builder.Services.AddSingleton<EventAggregationService>();
 
         // Observer state reporter — inert instance (no events in bundle mode)
         builder.Services.AddSingleton<ObserverStateReporter>(_ => new InertObserverStateReporter());

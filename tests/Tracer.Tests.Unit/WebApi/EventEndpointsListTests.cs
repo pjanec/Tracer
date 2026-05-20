@@ -25,7 +25,7 @@ public sealed class EventEndpointsListTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task HandleListAsync_LimitOverMax_Returns400ProblemDetails()
+    public async Task GetEvents_LimitOver5000_Returns400ProblemDetails()
     {
         var response = await _fixture.Client.GetAsync("/api/events?sessionId=test&limit=9999");
 
@@ -33,7 +33,7 @@ public sealed class EventEndpointsListTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task HandleListAsync_LimitZero_Returns400ProblemDetails()
+    public async Task GetEvents_LimitZero_Returns400ProblemDetails()
     {
         var response = await _fixture.Client.GetAsync("/api/events?sessionId=test&limit=0");
 
@@ -52,7 +52,7 @@ public sealed class EventEndpointsListTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task HandleListAsync_MultipleTopicParams_PassedAsListToService()
+    public async Task GetEvents_MultipleTopicQueryParams_PassedAsListToQueryService()
     {
         // Multiple query-string params for the same key should parse as array
         var response = await _fixture.Client.GetAsync(
@@ -63,7 +63,7 @@ public sealed class EventEndpointsListTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task HandleListAsync_NoFilter_Returns200WithEventList()
+    public async Task GetEvents_ValidRequest_Returns200WithEventListDto()
     {
         // Uses ObserverFixture (real DuckDB) to get a real 200 response.
         // Push a session-start event so GetSessionTimeRangeAsync finds the session.
@@ -99,7 +99,7 @@ public sealed class EventEndpointsListTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task HandleListAsync_UnknownSessionId_Returns404ProblemDetails()
+    public async Task GetEvents_UnknownSessionId_Returns404ProblemDetails()
     {
         // ObserverFixture (real DuckDB) with a non-existent session → 404
         await using var obs = await ObserverFixture.CreateAsync();

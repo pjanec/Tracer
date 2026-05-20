@@ -127,6 +127,9 @@ public static class EventEndpoints
                 $"Invalid bucketDuration '{bucketDuration}'. Allowed values: {string.Join(", ", validBuckets.OrderBy(x => x))}",
                 statusCode: 400);
 
+        if (!from.HasValue || !to.HasValue)
+            return TypedResults.Problem("Both 'from' and 'to' query parameters are required for aggregate queries", statusCode: 400);
+
         var sessionRange = await sessionSvc.GetSessionTimeRangeAsync(sessionId, ct);
         if (sessionRange is null)
             return TypedResults.Problem($"Session '{sessionId}' not found", statusCode: 404);

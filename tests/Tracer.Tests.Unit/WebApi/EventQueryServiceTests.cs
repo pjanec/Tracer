@@ -67,7 +67,7 @@ public sealed class EventQueryServiceTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task ListAsync_NoFilter_ReturnsAllEventsInTimeOrder()
+    public async Task ListAsync_EmptyFilter_ReturnsEventsInPublishWallclockAscendingOrder()
     {
         var ev1 = MakeEvent(topic: "a.b", at: BaseTime);
         var ev2 = MakeEvent(topic: "c.d", at: BaseTime.AddSeconds(1));
@@ -81,7 +81,7 @@ public sealed class EventQueryServiceTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task ListAsync_TimeRange_ExcludesEventsOutsideRange()
+    public async Task ListAsync_TimeRange_ReturnsOnlyEventsWithinRange()
     {
         var inside = MakeEvent(topic: "time.inside", at: BaseTime);
         var outside = MakeEvent(topic: "time.outside", at: BaseTime.AddMinutes(10));
@@ -95,7 +95,7 @@ public sealed class EventQueryServiceTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task ListAsync_TopicFilter_ReturnsOnlyMatchingTopics()
+    public async Task ListAsync_SingleTopicFilter_ReturnsOnlyMatchingTopic()
     {
         var uniqueTopic = $"filter.topic.{_nextId}";
         var match = MakeEvent(topic: uniqueTopic, at: BaseTime);
@@ -110,7 +110,7 @@ public sealed class EventQueryServiceTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task ListAsync_MultiTopicFilter_OrsWithinFilter()
+    public async Task ListAsync_MultipleTopics_OredWithinFilter()
     {
         var topic1 = $"multi.t1.{_nextId}";
         var topic2 = $"multi.t2.{_nextId + 1UL}";
@@ -128,7 +128,7 @@ public sealed class EventQueryServiceTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task ListAsync_MultipleFilterTypes_AndsAcrossFilters()
+    public async Task ListAsync_TopicAndSeverity_AndedAcrossFilterTypes()
     {
         var uniqueTopic = $"multi.filter.{_nextId}";
         var matchNode = "node-match";
@@ -153,7 +153,7 @@ public sealed class EventQueryServiceTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task ListAsync_TraceIdFilter_ReturnsOnlyThatTrace()
+    public async Task ListAsync_TraceIdFilter_ReturnsOnlyEventsForThatTrace()
     {
         ulong traceVal = 0xFEEDFACE12345678UL;
         var match = MakeEvent(traceId: traceVal, at: BaseTime);
@@ -167,7 +167,7 @@ public sealed class EventQueryServiceTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task ListAsync_Limit_TruncatesAndSetsTruncatedFlag()
+    public async Task ListAsync_LimitHit_TotalMatchingReflectsTrueCount_TruncatedTrue()
     {
         var events = Enumerable.Range(0, 10)
             .Select(i => MakeEvent(topic: $"limit.topic.{(ulong)i + _nextId}", at: BaseTime.AddMilliseconds(i)))
@@ -182,7 +182,7 @@ public sealed class EventQueryServiceTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task ListAsync_OrderDescending_ReturnsByNewestFirst()
+    public async Task ListAsync_OrderDescending_ReturnsNewestFirst()
     {
         var ev1 = MakeEvent(topic: "order.asc", at: BaseTime);
         var ev2 = MakeEvent(topic: "order.desc.last", at: BaseTime.AddSeconds(5));
@@ -196,7 +196,7 @@ public sealed class EventQueryServiceTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task ListAsync_EmptyResult_ReturnsTotalMatchingZero()
+    public async Task ListAsync_EmptyResult_TotalMatchingIsZero_TruncatedFalse()
     {
         var uniqueTopic = $"empty.result.{Guid.NewGuid():N}";
         var query = BaseQuery() with { Topics = [uniqueTopic] };

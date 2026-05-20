@@ -9,6 +9,7 @@ using Tracer.Core.Records;
 using Tracer.Core.Time;
 using Tracer.Storage.DuckDB.MultiInterval;
 using Tracer.TestHarness.Observer;
+using Tracer.WebApi.Contracts.Dto;
 using Xunit;
 
 namespace Tracer.Tests.Integration;
@@ -27,6 +28,11 @@ public sealed class LiveMultiIntervalQueryTests : IAsyncLifetime
         new DateTimeOffset(2026, 1, 1, 12, 0, 0, TimeSpan.Zero);
 
     private static ulong _nextId = 9_000;
+
+    private static readonly JsonSerializerOptions _jsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+    };
 
     private EventRecord MakeSessionStart(string sessionId, string nodeId = "node-a")
     {
@@ -50,6 +56,23 @@ public sealed class LiveMultiIntervalQueryTests : IAsyncLifetime
         };
     }
 
+    private EventRecord MakeEvent(string sessionId, DateTimeOffset at, string topic, string nodeId = "node-a")
+    {
+        var payload = JsonSerializer.Serialize(new { sessionId });
+        return new EventRecord
+        {
+            SequenceNumber = _nextId++,
+            PublishWallclock = At(at),
+            ReceiveWallclock = At(at),
+            PublisherNode = new AgentId(nodeId),
+            SubscriberNode = new AgentId(nodeId),
+            Topic = new TopicName(topic),
+            EventId = new EventId(_nextId++),
+            TraceId = new TraceId(_nextId++),
+            PayloadJson = payload,
+        };
+    }
+
     public async Task InitializeAsync()
     {
         _fixture = await ObserverFixture.CreateAsync(
@@ -63,7 +86,7 @@ public sealed class LiveMultiIntervalQueryTests : IAsyncLifetime
 
     /// <summary>Sessions pushed across three intervals are all returned by the query API.</summary>
     [Fact]
-    public async Task QuerySpansThreeIntervals_AllSessionsReturned()
+    public async Task LiveQuery_EventsSpanThreeIntervals_AllReturnedByListEndpoint()
     {
         var session1 = $"lmq-iv1-{Guid.NewGuid():N}";
         var session2 = $"lmq-iv2-{Guid.NewGuid():N}";
@@ -97,7 +120,7 @@ public sealed class LiveMultiIntervalQueryTests : IAsyncLifetime
 
     /// <summary>After a rotation, events pushed in the new interval appear in queries.</summary>
     [Fact]
-    public async Task AfterRotation_NewIntervalEventsIncluded()
+    public async Task LiveQuery_AfterRotation_NewActiveIntervalQueriedImmediately()
     {
         var sessionBefore = $"lmq-before-{Guid.NewGuid():N}";
         var sessionAfter  = $"lmq-after-{Guid.NewGuid():N}";
@@ -125,7 +148,7 @@ public sealed class LiveMultiIntervalQueryTests : IAsyncLifetime
 
     /// <summary>After an interval is evicted from the tracker, its events are excluded from queries.</summary>
     [Fact]
-    public async Task AfterEviction_EvictedIntervalEventsExcluded()
+    public async Task LiveQuery_AfterEviction_EvictedIntervalExcludedFromResults()
     {
         var sessionEvicted = $"lmq-evict-{Guid.NewGuid():N}";
         var sessionKept    = $"lmq-kept-{Guid.NewGuid():N}";
@@ -169,5 +192,39 @@ public sealed class LiveMultiIntervalQueryTests : IAsyncLifetime
             "session from evicted interval must be excluded from queries");
         idsAfter.Should().Contain(sessionKept,
             "session from non-evicted active interval must still be visible");
+    }
+
+    /// <summary>Results from multiple intervals are ordered by publishWallclock ascending.</summary>
+    [Fact]
+    public async Task LiveQuery_ResultsOrderedAcrossIntervalBoundaries()
+    {
+        var sessionId = $"order-test-{Guid.NewGuid():N}";
+
+        // Push session_start + evLate into interval 1 (session_start required for session lookup)
+        var evLate = MakeEvent(sessionId, BaseTime.AddMinutes(1), "order-topic");
+        await _fixture.PushAsync([MakeSessionStart(sessionId), evLate]);
+        await _fixture.ForceRotationAsync();
+
+        // Push event at T+0 (earlier) into interval 2 (active)
+        var evEarly = MakeEvent(sessionId, BaseTime, "order-topic");
+        await _fixture.PushAsync([evEarly]);
+
+        var url = $"/api/events?sessionId={sessionId}&topic=order-topic&limit=100";
+        var response = await _fixture.Client.GetAsync(url);
+        response.EnsureSuccessStatusCode();
+
+        var json = await response.Content.ReadAsStringAsync();
+        var dto = JsonSerializer.Deserialize<EventListDto>(json, _jsonOptions);
+
+        dto.Should().NotBeNull();
+        dto!.Events.Should().HaveCountGreaterOrEqualTo(2,
+            "both events must appear regardless of which interval they're in");
+
+        // Verify ascending order by OccurredAtUtc (publishWallclock equivalent)
+        var times = dto.Events
+            .Select(e => e.OccurredAtUtc)
+            .ToList();
+        times.Should().BeInAscendingOrder(
+            "events from multiple intervals must be sorted by publishWallclock ascending");
     }
 }

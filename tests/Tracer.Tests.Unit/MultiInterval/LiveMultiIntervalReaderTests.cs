@@ -28,7 +28,7 @@ public sealed class LiveMultiIntervalReaderTests : IAsyncDisposable
 
     /// <summary>After Initialize with an empty snapshot, all pool slots are available.</summary>
     [Fact]
-    public async Task PoolSize_AfterInitialize_AllConnectionsAreAvailable()
+    public async Task InitializeAsync_BuildsPoolConnectionsEqualToConfiguredPoolSize()
     {
         const int poolSize = 4;
         var tracker = new ControllableTracker(
@@ -52,7 +52,7 @@ public sealed class LiveMultiIntervalReaderTests : IAsyncDisposable
 
     /// <summary>Connections from an empty snapshot produce the empty-result sentinel SQL.</summary>
     [Fact]
-    public async Task AcquireAsync_EmptySnapshot_ConnectionSqlIsEmptySentinel()
+    public async Task AcquireAsync_ReturnsConnectionWithCurrentIntervalsAttached()
     {
         var tracker = new ControllableTracker(
             CreateRotator(), new IntervalSetSnapshot([]), NullLogger<IntervalSetTracker>.Instance);
@@ -67,7 +67,7 @@ public sealed class LiveMultiIntervalReaderTests : IAsyncDisposable
 
     /// <summary>After SetChanged is fired, newly acquired connections reflect the new snapshot.</summary>
     [Fact]
-    public async Task SetChanged_TriggersPoolRebuild_NewConnectionsReflectNewSnapshot()
+    public async Task AfterSetChangedFires_NewAcquiredConnectionsHaveUpdatedIntervalSet()
     {
         var dbPath = await CreateTempEventsDbAsync();
         var ts = new IntervalTimestamp("20260101T000000Z");
@@ -98,7 +98,7 @@ public sealed class LiveMultiIntervalReaderTests : IAsyncDisposable
 
     /// <summary>A connection acquired before rebuild is disposed rather than returned to the new pool.</summary>
     [Fact]
-    public async Task StaleConnection_ReturnedAfterRebuild_IsDiscarded()
+    public async Task ConnectionIssuedFromOldPool_DisposesRatherThanReturnsToPool()
     {
         var tracker = new ControllableTracker(
             CreateRotator(), new IntervalSetSnapshot([]), NullLogger<IntervalSetTracker>.Instance);
@@ -127,7 +127,7 @@ public sealed class LiveMultiIntervalReaderTests : IAsyncDisposable
 
     /// <summary>Interleaved AcquireAsync and SetChanged calls complete without deadlock.</summary>
     [Fact]
-    public async Task ConcurrentAcquireAndRebuild_DoesNotDeadlock()
+    public async Task ConcurrentAcquireAndRebuild_CompletesWithoutExceptionOrLeak()
     {
         const int poolSize = 2;
         var tracker = new ControllableTracker(

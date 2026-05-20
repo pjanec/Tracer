@@ -63,7 +63,7 @@ public sealed class EventAggregationServiceTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task AggregateAsync_OneHourAt5sBuckets_ReturnsExpectedBucketCount()
+    public async Task AggregateAsync_OneHourViewportAt5sBuckets_Returns720Buckets()
     {
         // 1-hour range at 5s buckets yields at most 3600/5 = 720 buckets
         var hourStart = BaseTime;
@@ -125,7 +125,7 @@ public sealed class EventAggregationServiceTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task AggregateAsync_GroupByNone_EachBucketHasSingleGroupWithNullKey()
+    public async Task AggregateAsync_GroupByNone_EachBucketHasOnlyOneGroupWithNullKey()
     {
         var ev1 = MakeEvent(at: BaseTime);
         var ev2 = MakeEvent(at: BaseTime);
@@ -164,7 +164,7 @@ public sealed class EventAggregationServiceTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task AggregateAsync_EmptyRange_ReturnsEmptyBuckets()
+    public async Task AggregateAsync_EmptyTimeRange_ReturnsEmptyBucketList()
     {
         var uniqueTopic = $"empty.agg.{Guid.NewGuid():N}";
         var query = new AggregateQuery
@@ -182,7 +182,7 @@ public sealed class EventAggregationServiceTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task AggregateAsync_GroupByNode_GroupsArePublisherNodes()
+    public async Task AggregateAsync_GroupByNode_GroupsResultsByPublisherNode()
     {
         var nodeA = $"nodeA-{Guid.NewGuid():N}";
         var nodeB = $"nodeB-{Guid.NewGuid():N}";
@@ -203,7 +203,7 @@ public sealed class EventAggregationServiceTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task AggregateAsync_FilterAppliedBeforeAggregation_ExcludesNonMatchingEvents()
+    public async Task AggregateAsync_FilterAppliedBeforeGrouping_OnlyMatchingEventsCounted()
     {
         var keepTopic = $"keep.agg.{Guid.NewGuid():N}";
         var discardTopic = $"discard.agg.{Guid.NewGuid():N}";

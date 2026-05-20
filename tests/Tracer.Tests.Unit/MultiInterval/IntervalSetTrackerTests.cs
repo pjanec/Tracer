@@ -24,7 +24,7 @@ public sealed class IntervalSetTrackerTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task InitializeAsync_NoCompletedIntervals_SnapshotContainsOnlyActive()
+    public async Task InitializeAsync_NoCompletedIntervals_SnapshotContainsOnlyActiveInterval()
     {
         await using var rotator = CreateRotator(_tempDir);
         await rotator.OpenCurrentAsync(default);
@@ -39,7 +39,7 @@ public sealed class IntervalSetTrackerTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task InitializeAsync_FiveCompleted_CapThree_SnapshotContainsThreeNewestPlusActive()
+    public async Task InitializeAsync_FiveCompletedIntervals_CappedTo3InSnapshot()
     {
         await using var rotator = CreateRotator(_tempDir);
         await rotator.OpenCurrentAsync(default);
@@ -77,7 +77,7 @@ public sealed class IntervalSetTrackerTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task OnIntervalRotatedAsync_PreviousActiveBecomesCompleted()
+    public async Task OnIntervalRotatedAsync_DemotesPreviousActiveToCompleted_AddsNewActive()
     {
         await using var rotator = CreateRotator(_tempDir);
         await rotator.OpenCurrentAsync(default);
@@ -122,7 +122,31 @@ public sealed class IntervalSetTrackerTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task SetChanged_FiredAfterInitialize()
+    public async Task SetChanged_FiresAfterEviction()
+    {
+        await using var rotator = CreateRotator(_tempDir);
+        await rotator.OpenCurrentAsync(default);
+
+        // Create a completed interval that WILL be in the snapshot
+        var completedTs = "20260102T000000Z";
+        var completedDir = new IntervalDirectory(_tempDir, new IntervalTimestamp(completedTs));
+        completedDir.EnsureCreated();
+        completedDir.WriteReadySentinel();
+
+        var tracker = new IntervalSetTracker(rotator, 3, NullLogger<IntervalSetTracker>.Instance);
+        await tracker.InitializeAsync(default);
+
+        int fired = 0;
+        tracker.SetChanged += (_, _) => { fired++; return Task.CompletedTask; };
+
+        // Evict the completed interval that IS in the snapshot
+        await tracker.OnIntervalEvictedAsync(completedDir, default);
+
+        fired.Should().Be(1, "SetChanged must fire when an interval that was in the snapshot is evicted");
+    }
+
+    [Fact]
+    public async Task SetChanged_FiresAfterInitialize()
     {
         await using var rotator = CreateRotator(_tempDir);
         await rotator.OpenCurrentAsync(default);
@@ -138,7 +162,7 @@ public sealed class IntervalSetTrackerTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task SetChanged_FiredAfterRotation()
+    public async Task SetChanged_FiresAfterRotation()
     {
         await using var rotator = CreateRotator(_tempDir);
         await rotator.OpenCurrentAsync(default);
@@ -156,7 +180,7 @@ public sealed class IntervalSetTrackerTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task SetChanged_NotFiredIfEvictionTargetNotInSet()
+    public async Task SetChanged_DoesNotFireWhenEvictedIntervalWasNotInCurrentSet()
     {
         await using var rotator = CreateRotator(_tempDir);
         await rotator.OpenCurrentAsync(default);

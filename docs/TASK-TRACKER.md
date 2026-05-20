@@ -118,8 +118,8 @@
 - [x] **TRC-P5-008** Bundle Library UI [details](./TASK-DETAIL.md#trc-p5-008--bundle-library-ui)
 - [x] **TRC-P5-009** Shareable URLs & URL State [details](./TASK-DETAIL.md#trc-p5-009--shareable-urls--url-state)
 - [x] **TRC-P5-010** Auto-Follow Live Mode [details](./TASK-DETAIL.md#trc-p5-010--auto-follow-live-mode)
-- [ ] **TRC-P5-011** Backend Unit Tests [details](./TASK-DETAIL.md#trc-p5-011--backend-unit-tests)
-- [ ] **TRC-P5-012** Backend Integration Tests [details](./TASK-DETAIL.md#trc-p5-012--backend-integration-tests)
+- [x] **TRC-P5-011** Backend Unit Tests [details](./TASK-DETAIL.md#trc-p5-011--backend-unit-tests)
+- [x] **TRC-P5-012** Backend Integration Tests [details](./TASK-DETAIL.md#trc-p5-012--backend-integration-tests)
 - [ ] **TRC-P5-013** Frontend Tests [details](./TASK-DETAIL.md#trc-p5-013--frontend-tests)
 
 <!-- PHASE 5 TRACKER END -->

@@ -1,6 +1,6 @@
 {
   "Version": 1,
-  "Hash": "zlY/kAphwpVkVc514bGqc48DYEbNrZORREA3L4HzhmY=",
+  "Hash": "M4R66RGRg4iI9mbnGjGba8aJ8QC3002uFdgha8HNCkU=",
   "Source": "tracer-viewer",
   "BasePath": "_content/tracer-viewer",
   "Mode": "Default",
@@ -11,10 +11,10 @@
       "Version": 2,
       "Source": "tracer-observer",
       "GetPublishAssetsTargets": "ComputeReferencedStaticWebAssetsPublishManifest;GetCurrentProjectPublishStaticWebAssetItems",
-      "AdditionalPublishProperties": "Configuration=Release;Platform=AnyCPU",
+      "AdditionalPublishProperties": "",
       "AdditionalPublishPropertiesToRemove": "WebPublishProfileFile;TargetFramework",
       "GetBuildAssetsTargets": "GetCurrentProjectBuildStaticWebAssetItems",
-      "AdditionalBuildProperties": "Configuration=Release;Platform=AnyCPU",
+      "AdditionalBuildProperties": "",
       "AdditionalBuildPropertiesToRemove": "WebPublishProfileFile;TargetFramework"
     }
   ],

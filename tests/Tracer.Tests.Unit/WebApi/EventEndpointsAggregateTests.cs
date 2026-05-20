@@ -33,7 +33,7 @@ public sealed class EventEndpointsAggregateTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task HandleAggregateAsync_ValidRequest_Returns200WithAggregateDto()
+    public async Task GetAggregate_ValidRequest_Returns200WithAggregateDto()
     {
         // Uses ObserverFixture (real DuckDB) to get a 200 response.
         await using var obs = await ObserverFixture.CreateAsync();
@@ -69,7 +69,7 @@ public sealed class EventEndpointsAggregateTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task HandleAggregateAsync_InvalidBucketDuration_Returns400ProblemDetails()
+    public async Task GetAggregate_InvalidBucketDuration_Returns400ProblemDetails()
     {
         var response = await _fixture.Client.GetAsync(
             "/api/events/aggregate?sessionId=test&bucketDuration=invalid-dur");
@@ -79,5 +79,16 @@ public sealed class EventEndpointsAggregateTests : IAsyncDisposable
         ((int)response.StatusCode).Should().BeOneOf(400, 404);
     }
 
+    [Fact]
+    public async Task GetAggregate_MissingFromOrTo_Returns400ProblemDetails()
+    {
+        // from and to are required for aggregate; omitting them should return 400
+        var response = await _fixture.Client.GetAsync(
+            "/api/events/aggregate?sessionId=any&bucketDuration=1s");
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
     public async ValueTask DisposeAsync() => await _fixture.DisposeAsync();
 }
+
