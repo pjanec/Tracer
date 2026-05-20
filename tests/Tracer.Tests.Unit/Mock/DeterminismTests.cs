@@ -39,6 +39,8 @@ public sealed class DeterminismTests
             a.PublishWallclock.Should().Be(b.PublishWallclock, $"PublishWallclock differs at index {i}");
             a.Topic.Should().Be(b.Topic, $"Topic differs at index {i}");
             a.ScenarioPhase.Should().Be(b.ScenarioPhase, $"ScenarioPhase differs at index {i}");
+            a.SequenceNumber.Should().Be(b.SequenceNumber, $"SequenceNumber differs at index {i}");
+            a.PayloadJson.Should().Be(b.PayloadJson, $"PayloadJson differs at index {i}");
         }
     }
 
@@ -55,10 +57,9 @@ public sealed class DeterminismTests
         listA.Should().NotBeEmpty();
         listB.Should().NotBeEmpty();
 
-        // Two independent random sequences from different seeds should diverge quickly.
-        var sameTraceIds = listA.Zip(listB).Count(pair => pair.First.TraceId == pair.Second.TraceId);
-        sameTraceIds.Should().BeLessThan(listA.Count,
-            "different seeds should produce different TraceId sequences");
+        // Different seeds must diverge from the very first record.
+        listA[0].TraceId.Should().NotBe(listB[0].TraceId,
+            "different seeds should produce a different TraceId for the first record");
     }
 
     // ── TraceIdGenerator determinism ─────────────────────────────────────

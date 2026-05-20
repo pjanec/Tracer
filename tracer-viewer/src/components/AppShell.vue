@@ -1,0 +1,13 @@
+<template>
+  <div class="app-shell">
+    <slot />
+  </div>
+</template>
+
+<style>
+.app-shell {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+</style>

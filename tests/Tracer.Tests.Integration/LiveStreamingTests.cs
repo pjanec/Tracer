@@ -226,6 +226,7 @@ public sealed class LiveStreamingTests : IAsyncLifetime
     public async Task MultipleNodes_AllEventsAppearInUnifiedStream()
     {
         // SC5: 10 notables from node-alpha + 10 from node-beta concurrently, assert all 20 arrive
+        // with 20 distinct eventId values matching the explicitly assigned IDs
         var sessionId = $"sse-multinodes-{Guid.NewGuid():N}";
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
 
@@ -248,16 +249,39 @@ public sealed class LiveStreamingTests : IAsyncLifetime
             }
         }, cts.Token);
 
-        // Push 10 from each node concurrently
+        // Create 20 events with explicit, unique EventId values
+        var payload = JsonSerializer.Serialize(new { sessionId });
+        var baseSeq = Interlocked.Add(ref _nextId, 40) - 40; // reserve 40 ids
+
+        EventRecord MakeExplicit(int i, string nodeId)
+        {
+            var seq = baseSeq + (ulong)(i * 2);
+            return new EventRecord
+            {
+                SequenceNumber = seq,
+                PublishWallclock = At(BaseTime),
+                ReceiveWallclock = At(BaseTime),
+                PublisherNode = new AgentId(nodeId),
+                SubscriberNode = new AgentId(nodeId),
+                Topic = new TopicName("combat.event"),
+                EventId = new EventId((ulong)(i + 1)),
+                TraceId = new TraceId(seq + 1),
+                PayloadJson = payload,
+                NotableLabel = "TestHit",
+                Severity = Severity.Warning,
+            };
+        }
+
+        // Push 10 from each node concurrently (alpha: eventId 1-10, beta: eventId 11-20)
         var alphaTask = Task.Run(async () =>
         {
             for (int i = 0; i < 10; i++)
-                await _fixture.PushAsync(MakeNotable(sessionId, "node-alpha"));
+                await _fixture.PushAsync(MakeExplicit(i, "node-alpha"));
         });
         var betaTask = Task.Run(async () =>
         {
-            for (int i = 0; i < 10; i++)
-                await _fixture.PushAsync(MakeNotable(sessionId, "node-beta"));
+            for (int i = 10; i < 20; i++)
+                await _fixture.PushAsync(MakeExplicit(i, "node-beta"));
         });
         await Task.WhenAll(alphaTask, betaTask);
 
@@ -270,6 +294,25 @@ public sealed class LiveStreamingTests : IAsyncLifetime
         try { await readTask; } catch (OperationCanceledException) { }
 
         lines.Count.Should().Be(20, "all 20 events from both nodes must appear on the unified stream");
+
+        // Extract eventId from each SSE data line and verify 20 distinct values
+        var receivedIds = lines
+            .Select(line =>
+            {
+                var json = line.Substring("data: ".Length);
+                using var doc = JsonDocument.Parse(json);
+                return doc.RootElement.GetProperty("EventId").GetString()!;
+            })
+            .ToHashSet();
+
+        receivedIds.Should().HaveCount(20, "all 20 eventId values must be distinct");
+
+        // Verify the expected eventIds (1-20 formatted as X16)
+        var expectedIds = Enumerable.Range(1, 20)
+            .Select(i => ((ulong)i).ToString("X16"))
+            .ToHashSet();
+        receivedIds.Should().BeEquivalentTo(expectedIds,
+            "the received eventIds must exactly match the 20 explicitly assigned IDs");
     }
 
     [Fact]

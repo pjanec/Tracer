@@ -255,11 +255,23 @@ public sealed class WebApiQueryRoundTripTests : IAsyncLifetime
     [Fact]
     public async Task GetEvent_ById_ReturnsCorrectEventDto()
     {
-        // SC7: push event, GET /api/events/{eventId} (16-char hex) returns correct fields
-        var ev = MakeNotable($"rt-event-{Guid.NewGuid():N}", "TestLabel");
+        // SC7: push event with known fields; GET /api/events/{eventId} returns correct traceId, severity, occurredAtUtc
+        var ev = new EventRecord
+        {
+            SequenceNumber = _nextId++,
+            PublishWallclock = At(BaseTime),
+            ReceiveWallclock = At(BaseTime),
+            PublisherNode = new AgentId("node-alpha"),
+            SubscriberNode = new AgentId("node-alpha"),
+            Topic = new TopicName("combat.hit"),
+            EventId = new EventId(_nextId++),
+            TraceId = new TraceId(42),
+            PayloadJson = System.Text.Json.JsonSerializer.Serialize(new { sessionId = $"rt-event-{Guid.NewGuid():N}" }),
+            NotableLabel = "TestLabel",
+            Severity = Severity.Warning,
+        };
         await _fixture.PushAsync(ev);
 
-        // EventId is stored as X16 hex
         var eventIdHex = ev.EventId.Value.ToString("X16");
         var response = await _fixture.Client.GetAsync($"/api/events/{eventIdHex}");
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -268,6 +280,14 @@ public sealed class WebApiQueryRoundTripTests : IAsyncLifetime
         using var doc = JsonDocument.Parse(json);
         doc.RootElement.GetProperty("eventId").GetString().Should().NotBeNullOrEmpty();
         doc.RootElement.GetProperty("topic").GetString().Should().Be("combat.hit");
+        doc.RootElement.GetProperty("traceId").GetString().Should().Be("000000000000002A",
+            "TraceId(42) must serialise as 16-char uppercase hex");
+        doc.RootElement.GetProperty("severity").GetString().Should().Be("Warning");
+
+        var occurredAt = DateTimeOffset.Parse(
+            doc.RootElement.GetProperty("occurredAtUtc").GetString()!);
+        Math.Abs((occurredAt - BaseTime).TotalMilliseconds).Should().BeLessThan(1,
+            "occurredAtUtc should round-trip through WallclockTime within 1ms");
     }
 
     [Fact]
@@ -282,10 +302,13 @@ public sealed class WebApiQueryRoundTripTests : IAsyncLifetime
     [Fact]
     public async Task GetTopology_AfterIngestion_ReturnsNodeInfo()
     {
-        // SC9: two distinct publisher_node values → topology shows 2 nodes
+        // SC9: push exactly 3 events from alpha and 5 from beta; verify per-node eventsPublished and firstSeenUtc
         var session = $"rt-topo-{Guid.NewGuid():N}";
-        await _fixture.PushAsync(MakeNotable(session, "Evt", "rt-topo-alpha"));
-        await _fixture.PushAsync(MakeNotable(session, "Evt", "rt-topo-beta"));
+
+        for (int i = 0; i < 3; i++)
+            await _fixture.PushAsync(MakeNotable(session, "Evt", "rt-topo-alpha"));
+        for (int i = 0; i < 5; i++)
+            await _fixture.PushAsync(MakeNotable(session, "Evt", "rt-topo-beta"));
 
         var response = await _fixture.Client.GetAsync("/api/topology");
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -297,6 +320,19 @@ public sealed class WebApiQueryRoundTripTests : IAsyncLifetime
         var nodeIds = nodes.Select(n => n.GetProperty("nodeId").GetString()).ToHashSet();
         nodeIds.Should().Contain("rt-topo-alpha");
         nodeIds.Should().Contain("rt-topo-beta");
+
+        var alpha = nodes.First(n => n.GetProperty("nodeId").GetString() == "rt-topo-alpha");
+        var beta = nodes.First(n => n.GetProperty("nodeId").GetString() == "rt-topo-beta");
+
+        alpha.GetProperty("eventsPublished").GetInt64().Should().Be(3,
+            "exactly 3 events were pushed from rt-topo-alpha");
+        beta.GetProperty("eventsPublished").GetInt64().Should().Be(5,
+            "exactly 5 events were pushed from rt-topo-beta");
+
+        alpha.GetProperty("firstSeenUtc").GetDateTimeOffset().Should().NotBe(DateTimeOffset.MinValue,
+            "firstSeenUtc must be a real timestamp for rt-topo-alpha");
+        beta.GetProperty("firstSeenUtc").GetDateTimeOffset().Should().NotBe(DateTimeOffset.MinValue,
+            "firstSeenUtc must be a real timestamp for rt-topo-beta");
     }
 }
 

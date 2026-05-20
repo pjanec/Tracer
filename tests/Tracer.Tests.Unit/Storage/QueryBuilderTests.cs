@@ -37,10 +37,14 @@ public sealed class QueryBuilderTests
             Offset = 100,
         };
 
-        var (sql, _) = EventQueryBuilder.Build(query);
+        var (sql, parameters) = EventQueryBuilder.Build(query);
 
-        sql.Should().Contain("LIMIT 500");
-        sql.Should().Contain("OFFSET 100");
+        sql.Should().Contain("LIMIT $limit");
+        sql.Should().Contain("OFFSET $offset");
+        parameters.Should().Contain(p => p.ParameterName == "limit");
+        parameters.Should().Contain(p => p.ParameterName == "offset");
+        parameters.Single(p => p.ParameterName == "limit").Value.Should().Be(500);
+        parameters.Single(p => p.ParameterName == "offset").Value.Should().Be(100);
     }
 
     [Fact]
@@ -95,10 +99,10 @@ public sealed class QueryBuilderTests
 
         // Warning and above = Warning, Error
         sql.Should().Contain("severity IN (");
-        // Two parameters: sev0, sev1
+        // Two parameters: sev0, sev1 — plus limit and offset from DT-001
         parameters.Should().Contain(p => p.ParameterName == "sev0");
         parameters.Should().Contain(p => p.ParameterName == "sev1");
-        parameters.Should().HaveCount(2);
+        parameters.Should().HaveCount(4, "sev0, sev1, limit, offset");
 
         // Verify the parameter VALUES are correct
         var sev0 = parameters.Single(p => p.ParameterName == "sev0");
@@ -165,23 +169,24 @@ public sealed class QueryBuilderTests
     [Fact]
     public void Build_SqlInjectionAttempt_IsParameterized()
     {
-        // Attacker attempts to inject SQL via the OwningPlayerId filter
+        // Attacker attempts SQL injection via the PayloadSearch (LIKE) filter — most dangerous path
         var maliciousInput = "'; DROP TABLE events; --";
         var query = new EventQuery
         {
-            Filter = new EventFilter { OwningPlayerId = maliciousInput },
+            Filter = new EventFilter { PayloadSearch = maliciousInput },
             Limit = 100,
             Offset = 0,
         };
 
         var (sql, parameters) = EventQueryBuilder.Build(query);
 
-        // The SQL must use a parameter placeholder, not embed the raw value
-        sql.Should().Contain("owning_player_id = $owning_player_id");
-        sql.Should().NotContain("DROP TABLE");
+        // The SQL must NOT contain the raw injection string
         sql.Should().NotContain(maliciousInput);
+        sql.Should().Contain("payload LIKE $search");
 
-        var param = parameters.Single(p => p.ParameterName == "owning_player_id");
-        param.Value.Should().Be(maliciousInput);
+        // The $search parameter must contain the wrapped value (%...%)
+        var searchParam = parameters.Single(p => p.ParameterName == "search");
+        searchParam.Value!.ToString().Should().Be($"%{maliciousInput}%",
+            "the payload search value should be wrapped in % wildcards for LIKE");
     }
 }

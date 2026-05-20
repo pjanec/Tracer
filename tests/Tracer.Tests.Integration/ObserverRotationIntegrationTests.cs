@@ -84,19 +84,36 @@ public sealed class ObserverRotationIntegrationTests : IAsyncLifetime
     [Fact]
     public async Task SecondInterval_QueriesReturnCurrentIntervalEvents()
     {
-        // SC7: push 100 events, rotate, push 100 more, query should reflect new interval
+        // SC7: push 100 events, rotate, then push 100 session_start events in interval 2;
+        // /api/sessions must expose the unique sessionId from interval 2
         await _fixture.PushAsync(MakeEvents(100));
         await _fixture.ForceRotationAsync();
 
-        // Push 100 more events into the new interval
-        await _fixture.PushAsync(MakeEvents(100));
+        var sessionId = $"session-interval2-{Guid.NewGuid():N}";
+        var sessionEvents = Enumerable.Range(0, 100).Select(_ => new EventRecord
+        {
+            SequenceNumber = _nextId++,
+            PublishWallclock = At(BaseTime),
+            ReceiveWallclock = At(BaseTime),
+            PublisherNode = new AgentId("node-interval2"),
+            SubscriberNode = new AgentId("node-interval2"),
+            Topic = new TopicName("system.session_start"),
+            EventId = new EventId(_nextId++),
+            TraceId = new TraceId(_nextId++),
+            PayloadJson = System.Text.Json.JsonSerializer.Serialize(new { sessionId }),
+        }).ToList();
 
-        var response = await _fixture.Client.GetAsync("/api/live/status");
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        await _fixture.PushAsync(sessionEvents);
+        await Task.Delay(100, CancellationToken.None);
+
+        var response = await _fixture.Client.GetAsync("/api/sessions");
+        response.StatusCode.Should().Be(System.Net.HttpStatusCode.OK);
 
         var json = await response.Content.ReadAsStringAsync();
-        using var doc = JsonDocument.Parse(json);
-        doc.RootElement.GetProperty("ingestedTotal").GetInt64().Should().BeGreaterThan(0);
+        using var doc = System.Text.Json.JsonDocument.Parse(json);
+        var sessions = doc.RootElement.EnumerateArray().ToList();
+        sessions.Should().Contain(s => s.GetProperty("sessionId").GetString() == sessionId,
+            "a session_start event pushed in interval 2 must appear in /api/sessions");
     }
 
     [Fact]

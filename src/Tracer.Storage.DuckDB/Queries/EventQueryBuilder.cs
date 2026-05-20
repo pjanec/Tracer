@@ -21,7 +21,9 @@ internal static class EventQueryBuilder
             _ => "ORDER BY publish_wallclock ASC",
         };
 
-        var sql = $"SELECT * FROM events WHERE 1=1{whereSql} {order} LIMIT {query.Limit} OFFSET {query.Offset}";
+        var sql = $"SELECT * FROM events WHERE 1=1{whereSql} {order} LIMIT $limit OFFSET $offset";
+        parameters.Add(new DuckDBParameter("limit", query.Limit));
+        parameters.Add(new DuckDBParameter("offset", query.Offset));
         return (sql, parameters);
     }
 

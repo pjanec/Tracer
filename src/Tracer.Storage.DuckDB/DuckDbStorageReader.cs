@@ -104,6 +104,30 @@ public sealed class DuckDbStorageReader : IDiagnosticStorageReader
         }, ct).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Counts the number of rows in the <c>slow_state</c> table.
+    /// Returns 0 if the table does not exist or cannot be read.
+    /// </summary>
+    public async Task<long> CountSlowStateAsync(CancellationToken ct = default)
+    {
+        ct.ThrowIfCancellationRequested();
+
+        return await Task.Run(() =>
+        {
+            try
+            {
+                using var cmd = _connection.CreateCommand();
+                cmd.CommandText = "SELECT COUNT(*) FROM slow_state";
+                var result = cmd.ExecuteScalar();
+                return Convert.ToInt64(result);
+            }
+            catch
+            {
+                return 0L;
+            }
+        }, ct).ConfigureAwait(false);
+    }
+
     /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {

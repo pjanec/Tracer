@@ -11,10 +11,11 @@ using System;
 using System.Reflection;
 
 [assembly: System.Runtime.CompilerServices.InternalsVisibleToAttribute("Tracer.Tests.Unit")]
+[assembly: System.Runtime.CompilerServices.InternalsVisibleToAttribute("Tracer.Tests.Integration")]
 [assembly: System.Reflection.AssemblyCompanyAttribute("tracer-agent")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+eb65833dc19fba47081fa31f9920ce5c399b814a")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+74f97fdf8e4d38e20bc9e7d19c86bfe4944ef57f")]
 [assembly: System.Reflection.AssemblyProductAttribute("tracer-agent")]
 [assembly: System.Reflection.AssemblyTitleAttribute("tracer-agent")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

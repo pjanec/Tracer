@@ -6,7 +6,10 @@ using Tracer.Agent.Storage;
 using Tracer.Agent.Upload;
 using Tracer.Core.Abstractions;
 using Tracer.Core.Domain;
+using Tracer.Core.Identity;
+using Tracer.Core.Records;
 using Tracer.Core.Time;
+using Tracer.Storage.DuckDB;
 using Xunit;
 
 namespace Tracer.Tests.Unit.Agent;
@@ -171,6 +174,55 @@ public sealed class StartupRecoveryTests : IAsyncDisposable
             File.Exists(Path.Combine(_tempDir, "intervals", ts, "_ready"))
                 .Should().BeTrue($"interval {ts} should be finalized");
         }
+    }
+
+    [Fact]
+    public async Task StartupRecovery_OrphanWithSlowStateRows_SlowStateCountInManifest()
+    {
+        // DT-009: slow_state rows are in events.duckdb; manifest.SlowStateCount should reflect them
+        var config = MakeConfig(_tempDir);
+        var upload = new FakeUploadService();
+
+        const string ts = "20260519T140000Z";
+        var intervalPath = MakeIntervalDir(_tempDir, ts);
+
+        // Create a real DuckDB file with 3 slow_state rows
+        await using var writer = await DuckDbStorageWriter.CreateAsync(
+            intervalPath,
+            new Dictionary<string, Tracer.Storage.DuckDB.Parquet.ParquetTopicSchema>(),
+            NullLogger<DuckDbStorageWriter>.Instance);
+
+        var baseTime = WallclockTime.FromDateTimeOffset(
+            new DateTimeOffset(2026, 5, 19, 14, 0, 0, TimeSpan.Zero));
+
+        for (int i = 0; i < 3; i++)
+        {
+            await writer.AppendStateAsync(new StateSampleRecord
+            {
+                SequenceNumber = (ulong)i,
+                PublishWallclock = baseTime,
+                ReceiveWallclock = baseTime,
+                PublisherNode = new AgentId("test-node"),
+                SubscriberNode = new AgentId("test-node"),
+                Topic = new TopicName("game.state"),
+                InstanceKey = $"key-{i}",
+                PayloadJson = "{}",
+                Rate = StateSampleRate.Slow,
+            });
+        }
+
+        await writer.FlushAsync(CancellationToken.None);
+        await writer.DisposeAsync();
+
+        var service = BuildService(config, upload);
+        await service.RecoverAsync(CancellationToken.None);
+
+        var manifestPath = Path.Combine(_tempDir, "intervals", ts, "manifest.json");
+        var manifest = await ManifestWriter.ReadAsync(manifestPath, CancellationToken.None);
+
+        manifest.Should().NotBeNull();
+        manifest!.SlowStateCount.Should().Be(3,
+            "the manifest should reflect the 3 slow_state rows written to events.duckdb");
     }
 
     [Fact]

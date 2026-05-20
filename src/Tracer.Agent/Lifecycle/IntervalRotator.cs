@@ -39,8 +39,8 @@ public sealed class IntervalRotator : IIntervalContext, IAsyncDisposable
     private readonly object _markersLock = new();
     private readonly List<SessionMarker> _sessionMarkersInCurrent = new();
 
-    /// <summary>The writer for the current interval. Settable for test injection of faulting writers.</summary>
-    public IDiagnosticStorageWriter? CurrentWriter { get => _currentWriter; set => _currentWriter = value; }
+    /// <summary>The writer for the current interval. Settable internally for test injection of faulting writers.</summary>
+    public IDiagnosticStorageWriter? CurrentWriter { get => _currentWriter; internal set => _currentWriter = value; }
     public IntervalDirectory? CurrentDirectory => _currentDirectory;
 
     public IntervalRotator(

@@ -83,7 +83,7 @@ public sealed class StartupRecoveryService
         long eventCount = 0;
         long slowStateCount = 0;
 
-        // Try to read events.duckdb (best-effort)
+        // Try to read events.duckdb (best-effort) — contains both events and slow_state tables
         if (File.Exists(orphan.EventsDbPath))
         {
             try
@@ -93,32 +93,12 @@ public sealed class StartupRecoveryService
                     NullLogger<DuckDbStorageReader>.Instance,
                     ct);
                 eventCount = await reader.CountEventsAsync(EventFilter.All, ct);
+                slowStateCount = await reader.CountSlowStateAsync(ct);
             }
             catch (Exception ex)
             {
                 _logger.LogWarning(ex,
                     "Could not read events.duckdb from orphan {Interval}; using count=0",
-                    orphan.Timestamp.Value);
-            }
-        }
-
-        // Try to read slow_state.duckdb (best-effort)
-        if (File.Exists(orphan.SlowStateDbPath))
-        {
-            try
-            {
-                await using var reader = await DuckDbStorageReader.OpenAsync(
-                    orphan.SlowStateDbPath,
-                    NullLogger<DuckDbStorageReader>.Instance,
-                    ct);
-                // Count slow state by trying to read row count (if supported)
-                // The reader only supports CountEventsAsync; for slow state use 0 (safe default)
-                _ = reader; // opened OK; we have the file
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex,
-                    "Could not read slow_state.duckdb from orphan {Interval}",
                     orphan.Timestamp.Value);
             }
         }

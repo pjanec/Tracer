@@ -1,0 +1,21 @@
+// src/styles/tokens.scss
+:root {
+  // Backgrounds
+  --c-bg: #0e1015;
+  --c-bg-surface: #181b22;
+  --c-bg-subtle: #21242c;
+
+  // Text
+  --c-text: #e4e6eb;
+  --c-text-muted: #8a91a0;
+
+  // Accents
+  --c-accent: #5b9dff;
+  --c-success: #4ec97a;
+  --c-warning: #e8b048;
+  --c-danger: #e85c5c;
+
+  // Fonts
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Consolas', 'Cascadia Mono', monospace;
+}
