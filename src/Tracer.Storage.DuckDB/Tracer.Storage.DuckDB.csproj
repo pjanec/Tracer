@@ -18,6 +18,7 @@
     <PackageReference Include="DuckDB.NET.Data" />
     <PackageReference Include="DuckDB.NET.Bindings.Full" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Parquet.Net" />
   </ItemGroup>
 
 </Project>

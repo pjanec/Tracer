@@ -2,30 +2,39 @@ using DuckDB.NET.Data;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Tracer.Storage.DuckDB;
+using Tracer.Storage.DuckDB.Parquet;
 using Xunit;
 
 namespace Tracer.Tests.Unit.Storage;
 
 public sealed class SchemaTests : IAsyncDisposable
 {
+    private readonly string _intervalDir;
     private readonly string _dbPath;
 
     public SchemaTests()
     {
-        _dbPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".db");
+        _intervalDir = Path.Combine(Path.GetTempPath(), $"tracer-schema-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(_intervalDir);
+        _dbPath = Path.Combine(_intervalDir, "events.duckdb");
     }
 
     public async ValueTask DisposeAsync()
     {
         await Task.CompletedTask;
-        try { File.Delete(_dbPath); } catch { /* best-effort */ }
+        try { Directory.Delete(_intervalDir, recursive: true); } catch { /* best-effort */ }
     }
+
+    private static Task<DuckDbStorageWriter> CreateWriterAsync(string dir) =>
+        DuckDbStorageWriter.CreateAsync(
+            dir,
+            new Dictionary<string, ParquetTopicSchema>(),
+            NullLogger<DuckDbStorageWriter>.Instance);
 
     [Fact]
     public async Task CreateAsync_FreshDatabase_WritesSchemaMetaRow()
     {
-        await using (await DuckDbStorageWriter.CreateAsync(
-            _dbPath, NullLogger<DuckDbStorageWriter>.Instance))
+        await using (await CreateWriterAsync(_intervalDir))
         { /* schema initialised */ }
 
         long count = await QueryScalarAsync<long>(
@@ -37,13 +46,11 @@ public sealed class SchemaTests : IAsyncDisposable
     public async Task CreateAsync_ExistingDatabase_IsIdempotent()
     {
         // First open — creates schema
-        await using (await DuckDbStorageWriter.CreateAsync(
-            _dbPath, NullLogger<DuckDbStorageWriter>.Instance))
+        await using (await CreateWriterAsync(_intervalDir))
         { }
 
         // Second open — schema must not duplicate the meta row
-        await using (await DuckDbStorageWriter.CreateAsync(
-            _dbPath, NullLogger<DuckDbStorageWriter>.Instance))
+        await using (await CreateWriterAsync(_intervalDir))
         { }
 
         long count = await QueryScalarAsync<long>(
@@ -54,8 +61,7 @@ public sealed class SchemaTests : IAsyncDisposable
     [Fact]
     public async Task SchemaV1_Version_IsOne()
     {
-        await using (await DuckDbStorageWriter.CreateAsync(
-            _dbPath, NullLogger<DuckDbStorageWriter>.Instance))
+        await using (await CreateWriterAsync(_intervalDir))
         { }
 
         int version = await QueryScalarAsync<int>(
@@ -66,8 +72,7 @@ public sealed class SchemaTests : IAsyncDisposable
     [Fact]
     public async Task AllIndexes_AreCreated()
     {
-        await using (await DuckDbStorageWriter.CreateAsync(
-            _dbPath, NullLogger<DuckDbStorageWriter>.Instance))
+        await using (await CreateWriterAsync(_intervalDir))
         { }
 
         var indexes = await QueryListAsync<string>(

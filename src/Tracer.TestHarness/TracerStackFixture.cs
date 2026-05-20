@@ -4,6 +4,7 @@ using Tracer.Adapters.Mock.Scenarios;
 using Tracer.Core.Abstractions;
 using Tracer.Core.Records;
 using Tracer.Storage.DuckDB;
+using Tracer.Storage.DuckDB.Parquet;
 
 namespace Tracer.TestHarness;
 
@@ -62,7 +63,8 @@ public sealed class TracerStackFixture : IAsyncDisposable
 
         fixture.DataSource = new MockDataSource(scenarioName, config);
         fixture.Writer = await DuckDbStorageWriter.CreateAsync(
-            fixture.DbPath,
+            fixture._tempDir,
+            new Dictionary<string, ParquetTopicSchema>(),
             NullLogger<DuckDbStorageWriter>.Instance,
             ct).ConfigureAwait(false);
 

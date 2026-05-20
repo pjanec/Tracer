@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Tracer.Core.Abstractions;
 using Tracer.Core.Records;
 using Tracer.Storage.DuckDB.Internal;
+using Tracer.Storage.DuckDB.Parquet;
 using Tracer.Storage.DuckDB.Schema;
 
 namespace Tracer.Storage.DuckDB;
@@ -20,31 +21,53 @@ public sealed class DuckDbStorageWriter : IDiagnosticStorageWriter
     private DuckDBAppender _stateAppender;
     private bool _disposed;
 
+    // Fast-state Parquet writers, keyed by topic name. Null value = unknown topic (silently drop).
+    private readonly Dictionary<string, FastStateParquetWriter?> _fastStateWriters = new();
+    private readonly string _fastStateDirectory;
+    private readonly IReadOnlyDictionary<string, ParquetTopicSchema> _fastStateSchemas;
+    private readonly HashSet<string> _warnedTopics = new();
+
     private DuckDbStorageWriter(
         DuckDBConnection connection,
         DuckDBAppender eventsAppender,
         DuckDBAppender stateAppender,
+        string fastStateDirectory,
+        IReadOnlyDictionary<string, ParquetTopicSchema> fastStateSchemas,
         ILogger<DuckDbStorageWriter> logger)
     {
         _connection = connection;
         _eventsAppender = eventsAppender;
         _stateAppender = stateAppender;
+        _fastStateDirectory = fastStateDirectory;
+        _fastStateSchemas = fastStateSchemas;
         _logger = logger;
     }
 
     /// <summary>
-    /// Creates (or opens) a DuckDB database at <paramref name="dbPath"/> and initialises
-    /// schema version 1, returning a ready-to-use writer.
+    /// Creates (or opens) a DuckDB database inside <paramref name="intervalDirectory"/> and
+    /// initialises schema version 1, returning a ready-to-use writer.
     /// </summary>
+    /// <param name="intervalDirectory">
+    /// Root directory for this interval. DuckDB files are placed at
+    /// <c>events.duckdb</c> and <c>slow_state.duckdb</c> within this folder.
+    /// Fast-state Parquet files go in the <c>fast_state/</c> subdirectory.
+    /// </param>
     public static async Task<DuckDbStorageWriter> CreateAsync(
-        string dbPath,
+        string intervalDirectory,
+        IReadOnlyDictionary<string, ParquetTopicSchema> fastStateSchemas,
         ILogger<DuckDbStorageWriter> logger,
         CancellationToken ct = default)
     {
-        ArgumentNullException.ThrowIfNull(dbPath);
+        ArgumentNullException.ThrowIfNull(intervalDirectory);
+        ArgumentNullException.ThrowIfNull(fastStateSchemas);
         ArgumentNullException.ThrowIfNull(logger);
         ct.ThrowIfCancellationRequested();
 
+        Directory.CreateDirectory(intervalDirectory);
+        var fastStateDirectory = Path.Combine(intervalDirectory, "fast_state");
+        Directory.CreateDirectory(fastStateDirectory);
+
+        var dbPath = Path.Combine(intervalDirectory, "events.duckdb");
         var connection = new DuckDBConnection($"Data Source={dbPath}");
         connection.Open();
 
@@ -53,8 +76,10 @@ public sealed class DuckDbStorageWriter : IDiagnosticStorageWriter
         var eventsAppender = connection.CreateAppender("events");
         var stateAppender = connection.CreateAppender("slow_state");
 
-        logger.LogDebug("DuckDbStorageWriter opened at {DbPath}", dbPath);
-        return new DuckDbStorageWriter(connection, eventsAppender, stateAppender, logger);
+        logger.LogDebug("DuckDbStorageWriter opened at {IntervalDirectory}", intervalDirectory);
+        return new DuckDbStorageWriter(
+            connection, eventsAppender, stateAppender,
+            fastStateDirectory, fastStateSchemas, logger);
     }
 
     private static async Task InitialiseSchemaAsync(DuckDBConnection connection, CancellationToken ct)
@@ -128,6 +153,63 @@ public sealed class DuckDbStorageWriter : IDiagnosticStorageWriter
     }
 
     /// <inheritdoc/>
+    public async Task AppendFastStateAsync(StateSampleRecord record, CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(record);
+        ct.ThrowIfCancellationRequested();
+        ThrowIfDisposed();
+
+        if (record.Rate != StateSampleRate.Fast)
+            throw new ArgumentException(
+                "AppendFastStateAsync requires a fast-rate StateSampleRecord.", nameof(record));
+
+        var writer = await GetOrCreateFastStateWriterAsync(record.Topic.Value, ct).ConfigureAwait(false);
+        if (writer is null) return; // unknown topic, already warned
+
+        await writer.AppendAsync(record, ct).ConfigureAwait(false);
+    }
+
+    // Returns null when the topic has no registered schema (drop silently after warning once).
+    private async Task<FastStateParquetWriter?> GetOrCreateFastStateWriterAsync(
+        string topic, CancellationToken ct)
+    {
+        lock (_lock)
+        {
+            if (_fastStateWriters.TryGetValue(topic, out var cached))
+                return cached; // may be null for unknown topics
+        }
+
+        if (!_fastStateSchemas.TryGetValue(topic, out var schema))
+        {
+            lock (_lock)
+            {
+                if (_warnedTopics.Add(topic))
+                    _logger.LogWarning(
+                        "Fast state sample for unregistered topic '{Topic}' will be dropped", topic);
+                _fastStateWriters[topic] = null;
+            }
+            return null;
+        }
+
+        var safeFileName = MakeSafeFileName(topic);
+        var path = Path.Combine(_fastStateDirectory, $"{safeFileName}.parquet");
+        var newWriter = await FastStateParquetWriter.CreateAsync(path, schema, _logger, ct)
+            .ConfigureAwait(false);
+
+        lock (_lock)
+        {
+            if (_fastStateWriters.TryGetValue(topic, out var race))
+            {
+                // Another call raced; dispose the extra writer.
+                _ = newWriter.DisposeAsync();
+                return race; // may be null if schema was removed concurrently
+            }
+            _fastStateWriters[topic] = newWriter;
+        }
+        return newWriter;
+    }
+
+    /// <inheritdoc/>
     public Task AppendBatchAsync(IReadOnlyList<DiagnosticRecord> records, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(records);
@@ -180,10 +262,15 @@ public sealed class DuckDbStorageWriter : IDiagnosticStorageWriter
     /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {
+        List<FastStateParquetWriter>? fastWriters;
         lock (_lock)
         {
             if (_disposed) return;
             _disposed = true;
+            fastWriters = _fastStateWriters.Values
+                .Where(w => w is not null)
+                .Select(w => w!)
+                .ToList();
         }
 
         try
@@ -196,8 +283,23 @@ public sealed class DuckDbStorageWriter : IDiagnosticStorageWriter
             _logger.LogWarning(ex, "Error closing appenders during dispose.");
         }
 
+        // Finalize all fast-state Parquet writers before closing the connection.
+        foreach (var fsw in fastWriters)
+        {
+            try { await fsw.DisposeAsync().ConfigureAwait(false); }
+            catch (Exception ex) { _logger.LogWarning(ex, "Error disposing FastStateParquetWriter."); }
+        }
+
         _connection.Dispose();
-        await Task.CompletedTask.ConfigureAwait(false);
+    }
+
+    private static string MakeSafeFileName(string topic)
+        => string.Concat(topic.Select(c => char.IsLetterOrDigit(c) || c == '-' ? c : '_'));
+
+    private void ThrowIfDisposed()
+    {
+        if (_disposed)
+            throw new ObjectDisposedException(nameof(DuckDbStorageWriter));
     }
 
     // ── private write helpers ─────────────────────────────────────────────────

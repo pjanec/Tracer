@@ -1,0 +1,15 @@
+D:\Work\Tracer\src\Tracer.Storage.DuckDB\obj\Debug\net8.0\Tracer.Storage.DuckDB.csproj.AssemblyReference.cache
+D:\Work\Tracer\src\Tracer.Storage.DuckDB\obj\Debug\net8.0\Tracer.Storage.DuckDB.GeneratedMSBuildEditorConfig.editorconfig
+D:\Work\Tracer\src\Tracer.Storage.DuckDB\obj\Debug\net8.0\Tracer.Storage.DuckDB.AssemblyInfoInputs.cache
+D:\Work\Tracer\src\Tracer.Storage.DuckDB\obj\Debug\net8.0\Tracer.Storage.DuckDB.AssemblyInfo.cs
+D:\Work\Tracer\src\Tracer.Storage.DuckDB\obj\Debug\net8.0\Tracer.Storage.DuckDB.csproj.CoreCompileInputs.cache
+D:\Work\Tracer\src\Tracer.Storage.DuckDB\bin\Debug\net8.0\Tracer.Storage.DuckDB.deps.json
+D:\Work\Tracer\src\Tracer.Storage.DuckDB\bin\Debug\net8.0\Tracer.Storage.DuckDB.dll
+D:\Work\Tracer\src\Tracer.Storage.DuckDB\bin\Debug\net8.0\Tracer.Storage.DuckDB.pdb
+D:\Work\Tracer\src\Tracer.Storage.DuckDB\bin\Debug\net8.0\Tracer.Core.dll
+D:\Work\Tracer\src\Tracer.Storage.DuckDB\bin\Debug\net8.0\Tracer.Core.pdb
+D:\Work\Tracer\src\Tracer.Storage.DuckDB\obj\Debug\net8.0\Tracer.Storage.DuckDB.csproj.CopyComplete
+D:\Work\Tracer\src\Tracer.Storage.DuckDB\obj\Debug\net8.0\Tracer.Storage.DuckDB.dll
+D:\Work\Tracer\src\Tracer.Storage.DuckDB\obj\Debug\net8.0\refint\Tracer.Storage.DuckDB.dll
+D:\Work\Tracer\src\Tracer.Storage.DuckDB\obj\Debug\net8.0\Tracer.Storage.DuckDB.pdb
+D:\Work\Tracer\src\Tracer.Storage.DuckDB\obj\Debug\net8.0\ref\Tracer.Storage.DuckDB.dll

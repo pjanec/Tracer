@@ -1,4 +1,4 @@
-using DuckDB.NET.Data;
+﻿using DuckDB.NET.Data;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Tracer.Core.Domain;
@@ -7,26 +7,30 @@ using Tracer.Core.Queries;
 using Tracer.Core.Records;
 using Tracer.Core.Time;
 using Tracer.Storage.DuckDB;
+using Tracer.Storage.DuckDB.Parquet;
 using Xunit;
 
 namespace Tracer.Tests.Unit.Storage;
 
 public sealed class AppenderTests : IAsyncDisposable
 {
+    private readonly string _intervalDir;
     private readonly string _dbPath;
 
     public AppenderTests()
     {
-        _dbPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".db");
+        _intervalDir = Path.Combine(Path.GetTempPath(), $"tracer-appender-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(_intervalDir);
+        _dbPath = Path.Combine(_intervalDir, "events.duckdb");
     }
 
     public async ValueTask DisposeAsync()
     {
         await Task.CompletedTask;
-        try { File.Delete(_dbPath); } catch { /* best-effort */ }
+        try { Directory.Delete(_intervalDir, recursive: true); } catch { /* best-effort */ }
     }
 
-    // ── helpers ───────────────────────────────────────────────────────────────
+    // â”€â”€ helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private static WallclockTime T(int secondsOffset = 0) =>
         new WallclockTime(1_700_000_000_000_000_000L + (long)secondsOffset * 1_000_000_000L);
@@ -65,13 +69,18 @@ public sealed class AppenderTests : IAsyncDisposable
             PayloadJson = "{}",
         };
 
-    // ── tests ─────────────────────────────────────────────────────────────────
+    private Task<DuckDbStorageWriter> CreateWriterAsync() =>
+        DuckDbStorageWriter.CreateAsync(
+            _intervalDir,
+            new Dictionary<string, ParquetTopicSchema>(),
+            NullLogger<DuckDbStorageWriter>.Instance);
+
+    // â”€â”€ tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
     public async Task AppendEvent_1000Records_RoundTrip()
     {
-        await using var writer = await DuckDbStorageWriter.CreateAsync(
-            _dbPath, NullLogger<DuckDbStorageWriter>.Instance);
+        await using var writer = await CreateWriterAsync();
 
         for (ulong i = 1; i <= 1000; i++)
             await writer.AppendEventAsync(MakeEvent(i), default);
@@ -103,8 +112,7 @@ public sealed class AppenderTests : IAsyncDisposable
     [Fact]
     public async Task AppendEvent_NullFields_StoredAsNull()
     {
-        await using var writer = await DuckDbStorageWriter.CreateAsync(
-            _dbPath, NullLogger<DuckDbStorageWriter>.Instance);
+        await using var writer = await CreateWriterAsync();
 
         var ev = MakeEvent(1, withOptional: false);
         await writer.AppendEventAsync(ev, default);
@@ -128,8 +136,7 @@ public sealed class AppenderTests : IAsyncDisposable
     [Fact]
     public async Task AppendState_FastRate_ThrowsNotSupported()
     {
-        await using var writer = await DuckDbStorageWriter.CreateAsync(
-            _dbPath, NullLogger<DuckDbStorageWriter>.Instance);
+        await using var writer = await CreateWriterAsync();
 
         var fastState = MakeState(StateSampleRate.Fast);
         var act = async () => await writer.AppendStateAsync(fastState, default);
@@ -140,10 +147,9 @@ public sealed class AppenderTests : IAsyncDisposable
     [Fact]
     public async Task AppendBatch_MixedRecords_RoutesCorrectly()
     {
-        await using var writer = await DuckDbStorageWriter.CreateAsync(
-            _dbPath, NullLogger<DuckDbStorageWriter>.Instance);
+        await using var writer = await CreateWriterAsync();
 
-        // 5 events + 3 slow-state + 1 fast-state (fast silently skipped)
+        // 5 events + 3 slow-state + 1 fast-state (fast silently skipped by AppendBatchAsync)
         var batch = new List<DiagnosticRecord>
         {
             MakeEvent(1),
@@ -172,7 +178,7 @@ public sealed class AppenderTests : IAsyncDisposable
         slowStateCount.Should().Be(3, "exactly 3 slow-state records should be in slow_state table");
     }
 
-    // ── raw query helper ──────────────────────────────────────────────────────
+    // â”€â”€ raw query helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private Task<T> QueryScalarAsync<T>(string sql) =>
         Task.Run(() =>
@@ -187,8 +193,7 @@ public sealed class AppenderTests : IAsyncDisposable
     [Fact]
     public async Task Writer_DisposeAsync_IsIdempotent()
     {
-        var writer = await DuckDbStorageWriter.CreateAsync(
-            _dbPath, NullLogger<DuckDbStorageWriter>.Instance);
+        var writer = await CreateWriterAsync();
 
         var act = async () =>
         {
@@ -202,11 +207,10 @@ public sealed class AppenderTests : IAsyncDisposable
     [Fact]
     public async Task Reader_SeesData_OnlyAfterWriterFlush()
     {
-        await using var writer = await DuckDbStorageWriter.CreateAsync(
-            _dbPath, NullLogger<DuckDbStorageWriter>.Instance);
+        await using var writer = await CreateWriterAsync();
 
         await writer.AppendEventAsync(MakeEvent(1), default);
-        // No flush yet — data is buffered in the appender
+        // No flush yet â€” data is buffered in the appender
 
         long countBefore;
         await using (var reader = await DuckDbStorageReader.OpenAsync(

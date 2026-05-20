@@ -9,6 +9,7 @@
     <ProjectReference Include="..\..\src\Tracer.Core\Tracer.Core.csproj" />
     <ProjectReference Include="..\..\src\Tracer.Storage.DuckDB\Tracer.Storage.DuckDB.csproj" />
     <ProjectReference Include="..\..\src\Tracer.Adapters.Mock\Tracer.Adapters.Mock.csproj" />
+    <ProjectReference Include="..\..\src\Tracer.Agent\Tracer.Agent.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,13 +1,23 @@
+using Tracer.Core.Time;
+
 namespace Tracer.Core.Domain;
 
 /// <summary>
-/// Marks the beginning or end of a named session.
+/// Records a session start or end marker observed within an interval.
 /// </summary>
-public enum SessionMarker
+public sealed record SessionMarker
 {
-    /// <summary>Marks the start of a session.</summary>
-    Start,
+    public required string SessionId { get; init; }
+    public required SessionMarkerType Type { get; init; }
+    public required WallclockTime Wallclock { get; init; }
+    public string? Label { get; init; }
+}
 
-    /// <summary>Marks the end of a session.</summary>
+/// <summary>
+/// Whether a session marker records the start or end of a session.
+/// </summary>
+public enum SessionMarkerType
+{
+    Start,
     End
 }

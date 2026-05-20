@@ -1,0 +1,36 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v8.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v8.0": {
+      "Tracer.Adapters.Mock/1.0.0": {
+        "dependencies": {
+          "Tracer.Core": "1.0.0"
+        },
+        "runtime": {
+          "Tracer.Adapters.Mock.dll": {}
+        }
+      },
+      "Tracer.Core/1.0.0": {
+        "runtime": {
+          "Tracer.Core.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "Tracer.Adapters.Mock/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Tracer.Core/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

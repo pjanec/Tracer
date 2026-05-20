@@ -10,8 +10,11 @@ public interface IDiagnosticStorageWriter : IAsyncDisposable
     /// <summary>Appends a single event record.</summary>
     Task AppendEventAsync(EventRecord record, CancellationToken ct);
 
-    /// <summary>Appends a single state sample record.</summary>
+    /// <summary>Appends a single slow-state sample record.</summary>
     Task AppendStateAsync(StateSampleRecord record, CancellationToken ct);
+
+    /// <summary>Appends a single fast-state sample record to Parquet storage.</summary>
+    Task AppendFastStateAsync(StateSampleRecord record, CancellationToken ct);
 
     /// <summary>Appends a batch of diagnostic records, routing each to the correct table.</summary>
     Task AppendBatchAsync(IReadOnlyList<DiagnosticRecord> records, CancellationToken ct);
