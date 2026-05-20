@@ -17,6 +17,8 @@ const loadInitial = async () => {
   try {
     const api = useApi();
     initialEvents.value = await api.getScenarioNotables(props.sessionId, 100);
+  } catch {
+    // initialEvents remains empty; component shows "No notable events yet."
   } finally {
     loading.value = false;
   }

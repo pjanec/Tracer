@@ -71,8 +71,8 @@
 - [x] **TRC-P3-009** Observer+FakeNode Integration Tests [details](./TASK-DETAIL.md#trc-p3-009--observerfakenode-integration-tests)
 - [x] **TRC-P3-010** Web API Query Round-Trip Tests [details](./TASK-DETAIL.md#trc-p3-010--web-api-query-round-trip-tests)
 - [x] **TRC-P3-011** Live Streaming Integration Tests [details](./TASK-DETAIL.md#trc-p3-011--live-streaming-integration-tests)
-- [ ] **TRC-P3-012** Frontend Component Tests [details](./TASK-DETAIL.md#trc-p3-012--frontend-component-tests)
-- [ ] **TRC-P3-013** Playwright E2E Smoke Tests [details](./TASK-DETAIL.md#trc-p3-013--playwright-e2e-smoke-tests)
+- [x] **TRC-P3-012** Frontend Component Tests [details](./TASK-DETAIL.md#trc-p3-012--frontend-component-tests)
+- [x] **TRC-P3-013** Playwright E2E Smoke Tests [details](./TASK-DETAIL.md#trc-p3-013--playwright-e2e-smoke-tests)
 
 <!-- PHASE 3 TRACKER END -->
 

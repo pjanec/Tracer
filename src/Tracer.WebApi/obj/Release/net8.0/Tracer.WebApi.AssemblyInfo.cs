@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Tracer.WebApi")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a985cf5a989ecb265b0043c28d4b34da5f07f44a")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+6a8be9426aa9e7533683a8e1aa3c64783ae27a36")]
 [assembly: System.Reflection.AssemblyProductAttribute("Tracer.WebApi")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Tracer.WebApi")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

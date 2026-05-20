@@ -1,6 +1,6 @@
 {
   "Version": 1,
-  "Hash": "tDHrljhdED7x+equ6kfpulme7tWUoBSFdDkuCgt19WY=",
+  "Hash": "wT+XluJBAV9pP5iTOdXrbHQPKC8ynDgbyCFV135XOl0=",
   "Source": "tracer-observer",
   "BasePath": "_content/tracer-observer",
   "Mode": "Default",
@@ -16,44 +16,6 @@
     }
   ],
   "Assets": [
-    {
-      "Identity": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\index-DjmaErbW.js",
-      "SourceId": "tracer-observer",
-      "SourceType": "Discovered",
-      "ContentRoot": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\",
-      "BasePath": "_content/tracer-observer",
-      "RelativePath": "assets/index-DjmaErbW.js",
-      "AssetKind": "All",
-      "AssetMode": "All",
-      "AssetRole": "Primary",
-      "AssetMergeBehavior": "PreferTarget",
-      "AssetMergeSource": "",
-      "RelatedAsset": "",
-      "AssetTraitName": "",
-      "AssetTraitValue": "",
-      "CopyToOutputDirectory": "Never",
-      "CopyToPublishDirectory": "PreserveNewest",
-      "OriginalItemSpec": "wwwroot\\assets\\index-DjmaErbW.js"
-    },
-    {
-      "Identity": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\index-DjmaErbW.js.map",
-      "SourceId": "tracer-observer",
-      "SourceType": "Discovered",
-      "ContentRoot": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\",
-      "BasePath": "_content/tracer-observer",
-      "RelativePath": "assets/index-DjmaErbW.js.map",
-      "AssetKind": "All",
-      "AssetMode": "All",
-      "AssetRole": "Primary",
-      "AssetMergeBehavior": "PreferTarget",
-      "AssetMergeSource": "",
-      "RelatedAsset": "",
-      "AssetTraitName": "",
-      "AssetTraitValue": "",
-      "CopyToOutputDirectory": "Never",
-      "CopyToPublishDirectory": "PreserveNewest",
-      "OriginalItemSpec": "wwwroot\\assets\\index-DjmaErbW.js.map"
-    },
     {
       "Identity": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\index-Les8dNUs.css",
       "SourceId": "tracer-observer",
@@ -74,12 +36,12 @@
       "OriginalItemSpec": "wwwroot\\assets\\index-Les8dNUs.css"
     },
     {
-      "Identity": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\LoadingSpinner-BNmgNezg.js",
+      "Identity": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\index-pcT6bHt2.js",
       "SourceId": "tracer-observer",
       "SourceType": "Discovered",
       "ContentRoot": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\",
       "BasePath": "_content/tracer-observer",
-      "RelativePath": "assets/LoadingSpinner-BNmgNezg.js",
+      "RelativePath": "assets/index-pcT6bHt2.js",
       "AssetKind": "All",
       "AssetMode": "All",
       "AssetRole": "Primary",
@@ -90,15 +52,15 @@
       "AssetTraitValue": "",
       "CopyToOutputDirectory": "Never",
       "CopyToPublishDirectory": "PreserveNewest",
-      "OriginalItemSpec": "wwwroot\\assets\\LoadingSpinner-BNmgNezg.js"
+      "OriginalItemSpec": "wwwroot\\assets\\index-pcT6bHt2.js"
     },
     {
-      "Identity": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\LoadingSpinner-BNmgNezg.js.map",
+      "Identity": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\index-pcT6bHt2.js.map",
       "SourceId": "tracer-observer",
       "SourceType": "Discovered",
       "ContentRoot": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\",
       "BasePath": "_content/tracer-observer",
-      "RelativePath": "assets/LoadingSpinner-BNmgNezg.js.map",
+      "RelativePath": "assets/index-pcT6bHt2.js.map",
       "AssetKind": "All",
       "AssetMode": "All",
       "AssetRole": "Primary",
@@ -109,7 +71,45 @@
       "AssetTraitValue": "",
       "CopyToOutputDirectory": "Never",
       "CopyToPublishDirectory": "PreserveNewest",
-      "OriginalItemSpec": "wwwroot\\assets\\LoadingSpinner-BNmgNezg.js.map"
+      "OriginalItemSpec": "wwwroot\\assets\\index-pcT6bHt2.js.map"
+    },
+    {
+      "Identity": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\LoadingSpinner-BPR9tGHi.js",
+      "SourceId": "tracer-observer",
+      "SourceType": "Discovered",
+      "ContentRoot": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\",
+      "BasePath": "_content/tracer-observer",
+      "RelativePath": "assets/LoadingSpinner-BPR9tGHi.js",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "AssetMergeBehavior": "PreferTarget",
+      "AssetMergeSource": "",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "CopyToOutputDirectory": "Never",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot\\assets\\LoadingSpinner-BPR9tGHi.js"
+    },
+    {
+      "Identity": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\LoadingSpinner-BPR9tGHi.js.map",
+      "SourceId": "tracer-observer",
+      "SourceType": "Discovered",
+      "ContentRoot": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\",
+      "BasePath": "_content/tracer-observer",
+      "RelativePath": "assets/LoadingSpinner-BPR9tGHi.js.map",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "AssetMergeBehavior": "PreferTarget",
+      "AssetMergeSource": "",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "CopyToOutputDirectory": "Never",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot\\assets\\LoadingSpinner-BPR9tGHi.js.map"
     },
     {
       "Identity": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\LoadingSpinner-CzQ9zhca.css",
@@ -150,12 +150,12 @@
       "OriginalItemSpec": "wwwroot\\assets\\ScenarioView-70C7qU4Q.css"
     },
     {
-      "Identity": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\ScenarioView-DLHfgs1j.js",
+      "Identity": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\ScenarioView-DcyPpHv8.js",
       "SourceId": "tracer-observer",
       "SourceType": "Discovered",
       "ContentRoot": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\",
       "BasePath": "_content/tracer-observer",
-      "RelativePath": "assets/ScenarioView-DLHfgs1j.js",
+      "RelativePath": "assets/ScenarioView-DcyPpHv8.js",
       "AssetKind": "All",
       "AssetMode": "All",
       "AssetRole": "Primary",
@@ -166,15 +166,15 @@
       "AssetTraitValue": "",
       "CopyToOutputDirectory": "Never",
       "CopyToPublishDirectory": "PreserveNewest",
-      "OriginalItemSpec": "wwwroot\\assets\\ScenarioView-DLHfgs1j.js"
+      "OriginalItemSpec": "wwwroot\\assets\\ScenarioView-DcyPpHv8.js"
     },
     {
-      "Identity": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\ScenarioView-DLHfgs1j.js.map",
+      "Identity": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\ScenarioView-DcyPpHv8.js.map",
       "SourceId": "tracer-observer",
       "SourceType": "Discovered",
       "ContentRoot": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\",
       "BasePath": "_content/tracer-observer",
-      "RelativePath": "assets/ScenarioView-DLHfgs1j.js.map",
+      "RelativePath": "assets/ScenarioView-DcyPpHv8.js.map",
       "AssetKind": "All",
       "AssetMode": "All",
       "AssetRole": "Primary",
@@ -185,15 +185,15 @@
       "AssetTraitValue": "",
       "CopyToOutputDirectory": "Never",
       "CopyToPublishDirectory": "PreserveNewest",
-      "OriginalItemSpec": "wwwroot\\assets\\ScenarioView-DLHfgs1j.js.map"
+      "OriginalItemSpec": "wwwroot\\assets\\ScenarioView-DcyPpHv8.js.map"
     },
     {
-      "Identity": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\SessionBrowserView-Bd4ZWrJe.js",
+      "Identity": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\SessionBrowserView-Co7M4bA9.js",
       "SourceId": "tracer-observer",
       "SourceType": "Discovered",
       "ContentRoot": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\",
       "BasePath": "_content/tracer-observer",
-      "RelativePath": "assets/SessionBrowserView-Bd4ZWrJe.js",
+      "RelativePath": "assets/SessionBrowserView-Co7M4bA9.js",
       "AssetKind": "All",
       "AssetMode": "All",
       "AssetRole": "Primary",
@@ -204,15 +204,15 @@
       "AssetTraitValue": "",
       "CopyToOutputDirectory": "Never",
       "CopyToPublishDirectory": "PreserveNewest",
-      "OriginalItemSpec": "wwwroot\\assets\\SessionBrowserView-Bd4ZWrJe.js"
+      "OriginalItemSpec": "wwwroot\\assets\\SessionBrowserView-Co7M4bA9.js"
     },
     {
-      "Identity": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\SessionBrowserView-Bd4ZWrJe.js.map",
+      "Identity": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\SessionBrowserView-Co7M4bA9.js.map",
       "SourceId": "tracer-observer",
       "SourceType": "Discovered",
       "ContentRoot": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\",
       "BasePath": "_content/tracer-observer",
-      "RelativePath": "assets/SessionBrowserView-Bd4ZWrJe.js.map",
+      "RelativePath": "assets/SessionBrowserView-Co7M4bA9.js.map",
       "AssetKind": "All",
       "AssetMode": "All",
       "AssetRole": "Primary",
@@ -223,7 +223,7 @@
       "AssetTraitValue": "",
       "CopyToOutputDirectory": "Never",
       "CopyToPublishDirectory": "PreserveNewest",
-      "OriginalItemSpec": "wwwroot\\assets\\SessionBrowserView-Bd4ZWrJe.js.map"
+      "OriginalItemSpec": "wwwroot\\assets\\SessionBrowserView-Co7M4bA9.js.map"
     },
     {
       "Identity": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\SessionBrowserView-RvEcbfDI.css",
