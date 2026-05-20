@@ -1,97 +1,71 @@
-<template>
+﻿<template>
   <div class="bundles-view">
     <h1>Bundle Library</h1>
-    <div v-if="loading" class="bundles__loading">Loading…</div>
-    <div v-else-if="error" class="bundles__error">{{ error }}</div>
-    <ul v-else class="bundles__list">
-      <li
-        v-for="bundle in bundles"
-        :key="bundle.bundleId"
-        class="bundles__item"
-      >
-        <a :href="`/api/bundle/${bundle.bundleId}/download`">
-          {{ bundle.label ?? bundle.bundleId }}
-        </a>
-        <button @click="onBuildBundle(bundle.bundleId)">Build bundle</button>
-      </li>
-    </ul>
+
+    <div v-if="store.loading" class="bundles__loading">Loading…</div>
+
+    <div v-else-if="store.error" class="bundles__error">{{ store.error }}</div>
+
+    <template v-else>
+      <p v-if="!isLive.value" class="bundles__offline-hint">
+        To open a different bundle, return to the Open Bundle screen.
+      </p>
+
+      <div v-if="store.bundles.length === 0" class="bundles__empty">
+        No bundles built yet
+      </div>
+
+      <ul v-else class="bundles__list">
+        <li
+          v-for="bundle in store.bundles"
+          :key="bundle.bundleId"
+          class="bundles__item"
+        >
+          <div class="bundles__item-info">
+            <span class="bundles__item-label">{{ bundle.label ?? bundle.bundleId }}</span>
+            <span v-if="bundle.sizeBytes" class="bundles__item-size">
+              {{ formatSize(bundle.sizeBytes) }}
+            </span>
+          </div>
+          <a
+            v-if="isLive.value"
+            :href="`/api/bundles/${bundle.bundleId}/download`"
+            class="bundles__item-download"
+          >
+            Download
+          </a>
+        </li>
+      </ul>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { api } from '@/api/tracerApiClient';
+import { onMounted } from 'vue';
+import { useBundleStore } from '@/stores/bundleStore';
+import { useBundleMode } from '@/composables/useBundleMode';
 
-interface BundleItem {
-  bundleId: string;
-  label?: string;
-  createdAtUtc: string;
-}
+const store = useBundleStore();
+const { isLive } = useBundleMode();
 
-const bundles = ref<BundleItem[]>([]);
-const loading = ref(false);
-const error   = ref<string | null>(null);
-
-onMounted(async () => {
-  loading.value = true;
-  try {
-    bundles.value = await api.listBundles();
-  } catch (err: unknown) {
-    error.value = err instanceof Error ? err.message : 'Failed to load bundles';
-  } finally {
-    loading.value = false;
-  }
+onMounted(() => {
+  void store.load();
 });
 
-async function onBuildBundle(sessionId: string) {
-  try {
-    await api.buildBundle(sessionId);
-  } catch (err: unknown) {
-    error.value = err instanceof Error ? err.message : 'Failed to build bundle';
-  }
+function formatSize(bytes: number): string {
+  if (bytes < 1024)              return `${bytes} B`;
+  if (bytes < 1024 * 1024)       return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 </script>
 
 <style scoped>
-.bundles-view {
-  padding: 24px;
-}
-
-.bundles__list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.bundles__item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 12px;
-  background: #1e1e2e;
-  border-radius: 4px;
-}
-
-.bundles__item a {
-  flex: 1;
-  color: #89b4fa;
-  text-decoration: none;
-}
-
-.bundles__item a:hover {
-  text-decoration: underline;
-}
-
-.bundles__loading,
-.bundles__error {
-  padding: 8px 0;
-  color: #cdd6f4;
-}
-
-.bundles__error {
-  color: #f38ba8;
-}
+.bundles-view { padding: 24px; }
+.bundles__empty { color: #888; margin-top: 16px; }
+.bundles__offline-hint { color: #666; font-style: italic; margin-bottom: 16px; }
+.bundles__list { list-style: none; padding: 0; margin: 0; }
+.bundles__item { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
+.bundles__item-info { display: flex; gap: 8px; align-items: center; }
+.bundles__item-size { color: #888; font-size: 0.8rem; }
+.bundles__item-download { text-decoration: none; color: #1976d2; }
 </style>

@@ -1,56 +1,113 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+﻿import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { mount, flushPromises } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
-import BundlesView from '../../src/views/BundlesView.vue';
+import { useBundleStore } from '../../src/stores/bundleStore';
+import type { BundleListEntryDto } from '../../src/stores/bundleStore';
+
+const mockListBundles = vi.fn().mockResolvedValue([]);
+
+vi.mock('@/composables/useBundleMode', () => ({
+  useBundleMode: vi.fn(() => ({
+    isLive:     { value: true },
+    isBundle:   { value: false },
+    isNoBundle: { value: false },
+    mode:       { value: { kind: 'live' } },
+    refresh:    vi.fn(),
+  })),
+}));
 
 vi.mock('@/api/tracerApiClient', () => ({
   api: {
-    listBundles: vi.fn().mockResolvedValue([
-      { bundleId: 'b1', label: 'Alpha', createdAtUtc: '2026-01-01T00:00:00Z' },
-      { bundleId: 'b2', label: 'Beta',  createdAtUtc: '2026-01-02T00:00:00Z' },
-      { bundleId: 'b3', label: null,    createdAtUtc: '2026-01-03T00:00:00Z' },
-    ]),
-    buildBundle: vi.fn().mockResolvedValue({ bundleId: 'new-bundle' }),
+    listBundles: mockListBundles,
+    buildBundle: vi.fn(),
   },
 }));
 
+async function mountView(pinia: ReturnType<typeof createPinia>) {
+  const { default: BundlesView } = await import('../../src/views/BundlesView.vue');
+  const wrapper = mount(BundlesView, { global: { plugins: [pinia] } });
+  return wrapper;
+}
+
 describe('BundlesView', () => {
   beforeEach(() => {
+    mockListBundles.mockReset();
+    mockListBundles.mockResolvedValue([]);
     setActivePinia(createPinia());
+    vi.clearAllMocks();
+    // Restore default mock after clearAllMocks
+    mockListBundles.mockResolvedValue([]);
   });
 
-  it('bundlesView_listsAllBundlesFromApi', async () => {
-    const wrapper = mount(BundlesView, {
-      global: { plugins: [createPinia()] },
-    });
+  it('renders_bundle_list_from_store', async () => {
+    const entries: BundleListEntryDto[] = [
+      { bundleId: 'b1', label: 'Alpha', createdAtUtc: '2026-01-01T00:00:00Z' },
+      { bundleId: 'b2', label: 'Beta',  createdAtUtc: '2026-01-02T00:00:00Z' },
+    ];
+    mockListBundles.mockResolvedValueOnce(entries);
+
+    const pinia = createPinia();
+    setActivePinia(pinia);
+
+    const wrapper = await mountView(pinia);
     await flushPromises();
 
     const items = wrapper.findAll('.bundles__item');
-    expect(items.length).toBe(3);
+    expect(items.length).toBe(2);
+    expect(wrapper.text()).toContain('Alpha');
+    expect(wrapper.text()).toContain('Beta');
   });
 
-  it('bundlesView_downloadLink_containsBundleId', async () => {
-    const wrapper = mount(BundlesView, {
-      global: { plugins: [createPinia()] },
-    });
+  it('shows_empty_state_when_no_bundles', async () => {
+    mockListBundles.mockResolvedValueOnce([]);
+
+    const pinia = createPinia();
+    setActivePinia(pinia);
+
+    const wrapper = await mountView(pinia);
     await flushPromises();
 
-    const links = wrapper.findAll('.bundles__item a');
-    expect(links[0].attributes('href')).toContain('b1');
-    expect(links[1].attributes('href')).toContain('b2');
-    expect(links[2].attributes('href')).toContain('b3');
+    expect(wrapper.text()).toContain('No bundles built yet');
+    expect(wrapper.findAll('.bundles__item').length).toBe(0);
   });
 
-  it('bundlesView_buildBundleButton_callsBuildApi', async () => {
-    const { api } = await import('@/api/tracerApiClient');
-    const wrapper = mount(BundlesView, {
-      global: { plugins: [createPinia()] },
-    });
+  it('shows_error_state_on_fetch_failure', async () => {
+    mockListBundles.mockRejectedValueOnce(new Error('Connection refused'));
+
+    const pinia = createPinia();
+    setActivePinia(pinia);
+
+    const wrapper = await mountView(pinia);
     await flushPromises();
 
-    const buttons = wrapper.findAll('.bundles__item button');
-    await buttons[0].trigger('click');
+    expect(wrapper.text()).toContain('Connection refused');
+    expect(wrapper.findAll('.bundles__item').length).toBe(0);
+  });
 
-    expect(api.buildBundle).toHaveBeenCalledWith('b1');
+  it('shows_offline_hint_in_bundle_mode', async () => {
+    // Re-mock useBundleMode to return isLive = false
+    const { useBundleMode } = await import('@/composables/useBundleMode');
+    (useBundleMode as ReturnType<typeof vi.fn>).mockReturnValue({
+      isLive:     { value: false },
+      isBundle:   { value: true },
+      isNoBundle: { value: false },
+      mode:       { value: { kind: 'bundle', bundleId: 'b1' } },
+      refresh:    vi.fn(),
+    });
+
+    const bundles: BundleListEntryDto[] = [
+      { bundleId: 'b1', label: 'Alpha', createdAtUtc: '2026-01-01Z' },
+    ];
+    mockListBundles.mockResolvedValueOnce(bundles);
+
+    const pinia = createPinia();
+    setActivePinia(pinia);
+
+    const wrapper = await mountView(pinia);
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('To open a different bundle, return to the Open Bundle screen.');
+    // In offline mode, no download links shown
+    expect(wrapper.findAll('.bundles__item-download').length).toBe(0);
   });
 });

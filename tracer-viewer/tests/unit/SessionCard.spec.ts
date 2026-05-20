@@ -1,61 +1,45 @@
-import { describe, it, expect } from 'vitest';
-import { mount } from '@vue/test-utils';
-import SessionCard from '@/components/SessionCard.vue';
-import type { SessionDto } from '@/api/tracerApiClient';
+﻿import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { mount, flushPromises } from '@vue/test-utils';
+import { createPinia, setActivePinia } from 'pinia';
 
-function makeSession(overrides: Partial<SessionDto> = {}): SessionDto {
-  return {
-    sessionId: 'sess-1',
-    scenarioId: 'CombatEngagement',
-    startUtc: '2025-01-01T12:00:00Z',
-    status: 'Active',
-    participatingNodes: ['alpha', 'beta'],
-    eventCount: 42,
-    ...overrides,
-  };
-}
+const mockBuildBundle = vi.fn();
+vi.mock('@/api/tracerApiClient', () => ({
+  api: { buildBundle: mockBuildBundle },
+}));
 
 describe('SessionCard', () => {
-  it('RendersScenarioId', () => {
-    const wrapper = mount(SessionCard, {
-      props: { session: makeSession({ scenarioId: 'CombatEngagement' }) },
-    });
-
-    expect(wrapper.find('.session-card__scenario').text()).toBe('CombatEngagement');
+  beforeEach(() => {
+    setActivePinia(createPinia());
+    mockBuildBundle.mockReset();
   });
 
-  it('RendersFormattedStartUtc', () => {
+  it('buildBundle_showsProgressThenDownloadLink', async () => {
+    // First call: simulate in-progress (resolves after we check intermediate state)
+    let resolveBuild!: (value: { bundleId: string }) => void;
+    mockBuildBundle.mockReturnValue(
+      new Promise<{ bundleId: string }>((resolve) => { resolveBuild = resolve; }),
+    );
+
+    const { default: SessionCard } = await import('../../src/components/SessionCard.vue');
     const wrapper = mount(SessionCard, {
-      props: { session: makeSession({ startUtc: '2025-01-01T12:00:00Z' }) },
+      props: { sessionId: 'sess-1' },
+      global: { plugins: [createPinia()] },
     });
 
-    // formatTime returns a locale string; just assert something is rendered
-    expect(wrapper.find('.session-card__time').text().length).toBeGreaterThan(0);
-  });
+    // Click "Build bundle"
+    await wrapper.find('.session-card__build-btn').trigger('click');
 
-  it('RendersStatusBadge', () => {
-    const wrapper = mount(SessionCard, {
-      props: { session: makeSession({ status: 'Active' }) },
-    });
+    // Should show progress indicator
+    expect(wrapper.find('.session-card__progress').exists()).toBe(true);
+    expect(wrapper.find('.session-card__download').exists()).toBe(false);
 
-    const badge = wrapper.find('.session-card__status');
-    expect(badge.exists()).toBe(true);
-    expect(badge.text()).toBe('Active');
-  });
+    // Now resolve the build
+    resolveBuild({ bundleId: 'new-bundle-abc' });
+    await flushPromises();
 
-  it('RendersEventCount', () => {
-    const wrapper = mount(SessionCard, {
-      props: { session: makeSession({ eventCount: 42 }) },
-    });
-
-    expect(wrapper.text()).toContain('42');
-  });
-
-  it('RendersNodeCount', () => {
-    const wrapper = mount(SessionCard, {
-      props: { session: makeSession({ participatingNodes: ['alpha', 'beta'] }) },
-    });
-
-    expect(wrapper.text()).toContain('2 node(s)');
+    // Should now show download link
+    expect(wrapper.find('.session-card__download').exists()).toBe(true);
+    expect(wrapper.find('.session-card__download').attributes('href'))
+      .toContain('new-bundle-abc');
   });
 });
