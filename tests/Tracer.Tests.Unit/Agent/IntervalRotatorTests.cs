@@ -207,4 +207,32 @@ public sealed class IntervalRotatorTests : IAsyncDisposable
 
         rotator.CurrentWriter.Should().BeNull();
     }
+
+    // DT-007 fix ──────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task IntervalRotator_NotifyCaptureGap_AccumulatesInManifest()
+    {
+        var rotator = BuildRotator();
+        await rotator.OpenCurrentAsync(CancellationToken.None);
+
+        var gap = new CaptureGap
+        {
+            StartUtc = WallclockTime.Zero,
+            EndUtc = WallclockTime.Zero,
+            Reason = CaptureGapReason.TransportDisconnected,
+            DroppedRecordCount = 5,
+        };
+        rotator.NotifyCaptureGap(gap);
+
+        await rotator.RotateAsync(ManifestFinalizationReason.GracefulShutdown, CancellationToken.None);
+
+        var manifestPath = Directory.GetFiles(_tempDir, "manifest.json", SearchOption.AllDirectories)
+            .Should().ContainSingle().Which;
+
+        var manifest = await ManifestWriter.ReadAsync(manifestPath, CancellationToken.None);
+        manifest!.CaptureGaps.Should().ContainSingle()
+            .Which.Reason.Should().Be(CaptureGapReason.TransportDisconnected);
+    }
 }
+

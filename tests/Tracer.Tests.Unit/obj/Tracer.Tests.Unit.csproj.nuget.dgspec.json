@@ -50,6 +50,13 @@
       "frameworks": {
         "net8.0": {
           "targetAlias": "net8.0",
+          "dependencies": {
+            "Microsoft.Extensions.Logging.Abstractions": {
+              "target": "Package",
+              "version": "[8.0.0, )",
+              "versionCentrallyManaged": true
+            }
+          },
           "centralPackageVersions": {
             "DuckDB.NET.Bindings.Full": "[1.0.2, )",
             "DuckDB.NET.Data": "[1.0.2, )",

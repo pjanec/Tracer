@@ -137,4 +137,19 @@ public sealed class RecordRouterTests
         writer.FastStateAppendCount.Should().Be(1);
         context.NotifyCount.Should().Be(1);
     }
+
+    // DT-008 fix ──────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task RecordRouter_AfterWrite_NotifiesIntervalContext()
+    {
+        var writer = new FakeWriter();
+        var context = new FakeIntervalContext(writer);
+        var router = new RecordRouter(context, NullLogger<RecordRouter>.Instance);
+
+        await router.RouteAsync(MakeEvent(), CancellationToken.None);
+
+        context.NotifyCount.Should().Be(1,
+            because: "NotifyRecordWritten must be called exactly once per routed record");
+    }
 }

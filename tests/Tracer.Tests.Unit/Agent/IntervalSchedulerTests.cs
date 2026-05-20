@@ -83,4 +83,38 @@ public sealed class IntervalSchedulerTests
         var act = () => new IntervalScheduler(clock, config);
         act.Should().Throw<ArgumentException>();
     }
+
+    // DT-006 fixes ────────────────────────────────────────────────────────────
+
+    [Fact]
+    public void IntervalScheduler_LessThanOneMinute_Throws()
+    {
+        var config = new AgentConfig
+        {
+            NodeId = "n",
+            DataRoot = @"C:\d",
+            LogsRoot = @"C:\l",
+            IntervalDuration = TimeSpan.FromSeconds(30),
+        };
+        var clock = new FakeClock(WallclockTime.Zero);
+        var act = () => new IntervalScheduler(clock, config);
+        act.Should().Throw<ArgumentOutOfRangeException>();
+    }
+
+    [Fact]
+    public void IntervalScheduler_TimeUntilNextBoundary_DecreasesAsClockAdvances()
+    {
+        var t1 = new DateTimeOffset(2026, 5, 19, 14, 30, 0, TimeSpan.Zero);
+        var clock1 = new FakeClock(WallclockTime.FromDateTimeOffset(t1));
+        var scheduler1 = new IntervalScheduler(clock1, HourlyConfig());
+        var remaining1 = scheduler1.TimeUntilNextBoundary();
+
+        var t2 = new DateTimeOffset(2026, 5, 19, 14, 45, 0, TimeSpan.Zero);
+        var clock2 = new FakeClock(WallclockTime.FromDateTimeOffset(t2));
+        var scheduler2 = new IntervalScheduler(clock2, HourlyConfig());
+        var remaining2 = scheduler2.TimeUntilNextBoundary();
+
+        remaining2.Should().BeLessThan(remaining1);
+    }
 }
+

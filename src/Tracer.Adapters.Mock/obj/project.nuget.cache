@@ -1,8 +1,11 @@
 {
   "version": 2,
-  "dgSpecHash": "lruVG34p1YDcTn+Q1DGR9Uo0uvt0SykaQ5AIY/nNDUZwHRZSFkmB7yVltqARRRyxFDbHoT0f8UwKi9dkPnRNcw==",
+  "dgSpecHash": "htxnWjRXfsRISC4I8EtulBeI+LJ9j27OLQw6G/eLJrvoLXcgmf3QtIn2wHwrh+ssXGPNQq78jUA/lmsM1IYQNw==",
   "success": true,
   "projectFilePath": "D:\\Work\\Tracer\\src\\Tracer.Adapters.Mock\\Tracer.Adapters.Mock.csproj",
-  "expectedPackageFiles": [],
+  "expectedPackageFiles": [
+    "C:\\Users\\petr.janecek\\.nuget\\packages\\microsoft.extensions.dependencyinjection.abstractions\\8.0.0\\microsoft.extensions.dependencyinjection.abstractions.8.0.0.nupkg.sha512",
+    "C:\\Users\\petr.janecek\\.nuget\\packages\\microsoft.extensions.logging.abstractions\\8.0.0\\microsoft.extensions.logging.abstractions.8.0.0.nupkg.sha512"
+  ],
   "logs": []
 }

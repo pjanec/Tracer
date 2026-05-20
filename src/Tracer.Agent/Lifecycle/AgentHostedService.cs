@@ -76,7 +76,7 @@ public sealed class AgentHostedService : BackgroundService
         {
             try
             {
-                await _retention.ApplyAsync(ct);
+                await _retention.ApplyAsync(_rotator.CurrentDirectory?.Timestamp, ct);
             }
             catch (OperationCanceledException) { throw; }
             catch (Exception ex)

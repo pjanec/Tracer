@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using Tracer.Adapters.Mock.Upload;
 using Tracer.Agent.Configuration;
 using Tracer.Core.Abstractions;

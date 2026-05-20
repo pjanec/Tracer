@@ -561,6 +561,7 @@
       },
       "Tracer.Adapters.Mock/1.0.0": {
         "dependencies": {
+          "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
           "Tracer.Core": "1.0.0"
         },
         "runtime": {
