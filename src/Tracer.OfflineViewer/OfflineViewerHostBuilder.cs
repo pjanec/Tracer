@@ -5,6 +5,7 @@ using Serilog;
 using Tracer.Observer.Lifecycle;
 using Tracer.OfflineViewer.Lifecycle;
 using Tracer.OfflineViewer.WebApi;
+using Tracer.Storage.DuckDB.MultiInterval;
 using Tracer.WebApi.Endpoints;
 using Tracer.WebApi.Errors;
 using Tracer.WebApi.Lifecycle;
@@ -44,10 +45,15 @@ public static class OfflineViewerHostBuilder
         OpenApiConfiguration.Configure(builder);
 
         // Bundle management
+        builder.Services.AddSingleton<BundleIntervalSetTracker>();
         builder.Services.AddSingleton<BundleOpenManager>();
 
-        // Connection pool — same class as Observer uses
-        builder.Services.AddSingleton<ReadOnlyConnectionPool>();
+        // Multi-interval reader backed by the bundle tracker
+        builder.Services.AddSingleton<LiveMultiIntervalReader>(sp =>
+            new LiveMultiIntervalReader(
+                sp.GetRequiredService<BundleIntervalSetTracker>(),
+                sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<LiveMultiIntervalReader>>(),
+                poolSize: 4));
 
         // Query services — same classes as Observer uses
         builder.Services.AddSingleton<SessionQueryService>();

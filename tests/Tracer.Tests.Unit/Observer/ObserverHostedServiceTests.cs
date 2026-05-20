@@ -11,7 +11,7 @@ using Tracer.Core.Abstractions;
 using Tracer.Core.Domain;
 using Tracer.Core.Time;
 using Tracer.Observer.Lifecycle;
-using Tracer.WebApi.Lifecycle;
+using Tracer.Storage.DuckDB.MultiInterval;
 using Tracer.WebApi.Streaming;
 using Xunit;
 
@@ -62,51 +62,50 @@ public sealed class ObserverHostedServiceTests : IAsyncDisposable
     {
         var order = new List<string>();
         var recovery = new TrackingRecovery(order, "recovery");
-        var pool = new TrackingPool(order, "pool-init", NullLogger<ReadOnlyConnectionPool>.Instance);
+        var tracker = new TrackingTracker(order, "tracker-init", _rotator,
+            NullLogger<IntervalSetTracker>.Instance);
+        var reader = new NoOpReader(tracker, NullLogger<LiveMultiIntervalReader>.Instance);
 
         var svc = new ObserverHostedService(
-            recovery, _rotator, _scheduler, _ingestion, pool, _retention,
+            recovery, _rotator, _scheduler, _ingestion, tracker, reader, _retention,
             new SystemClock(), NullLogger<ObserverHostedService>.Instance);
 
-        // Start service, let initialization run, then stop
         await svc.StartAsync(default);
-        await Task.Delay(300); // allow ExecuteAsync to reach pool init
+        await Task.Delay(300); // allow ExecuteAsync to reach tracker init
         await svc.StopAsync(default);
 
-        // Both recovery and pool-init must appear in this order
-        order.Should().ContainInOrder("recovery", "pool-init");
+        order.Should().ContainInOrder("recovery", "tracker-init");
     }
 
     [Fact]
-    public async Task OnStart_PoolInitializedAfterIntervalOpen()
+    public async Task OnStart_TrackerInitializedAfterIntervalOpen()
     {
         var order = new List<string>();
         var recovery = new TrackingRecovery(order, "recovery");
-        var pool = new TrackingPool(order, "pool-init", NullLogger<ReadOnlyConnectionPool>.Instance);
+        var tracker = new TrackingTracker(order, "tracker-init", _rotator,
+            NullLogger<IntervalSetTracker>.Instance);
+        var reader = new NoOpReader(tracker, NullLogger<LiveMultiIntervalReader>.Instance);
 
-        using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(200));
         var svc = new ObserverHostedService(
-            recovery, _rotator, _scheduler, _ingestion, pool, _retention,
+            recovery, _rotator, _scheduler, _ingestion, tracker, reader, _retention,
             new SystemClock(), NullLogger<ObserverHostedService>.Instance);
 
         try { await svc.StartAsync(default); } catch { }
         try { await Task.Delay(300); } catch { }
         try { await svc.StopAsync(default); } catch { }
 
-        pool.InitializeCalled.Should().BeTrue("pool must be initialized on start");
-        pool.InitializedPath.Should().NotBeNullOrEmpty();
+        tracker.InitializeCalled.Should().BeTrue("tracker must be initialized on start");
     }
 
     [Fact]
     public async Task OnGracefulShutdown_FinalRotationHasGracefulReason()
     {
         var recovery = new FakeRecovery();
-        var pool = new TrackingPool(new List<string>(), "pool-init",
-            NullLogger<ReadOnlyConnectionPool>.Instance);
+        var tracker = new NoOpTracker(_rotator, NullLogger<IntervalSetTracker>.Instance);
+        var reader = new NoOpReader(tracker, NullLogger<LiveMultiIntervalReader>.Instance);
 
-        using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
         var svc = new ObserverHostedService(
-            recovery, _rotator, _scheduler, _ingestion, pool, _retention,
+            recovery, _rotator, _scheduler, _ingestion, tracker, reader, _retention,
             new SystemClock(), NullLogger<ObserverHostedService>.Instance);
 
         try { await svc.StartAsync(default); } catch { }
@@ -125,17 +124,17 @@ public sealed class ObserverHostedServiceTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task PoolRefreshFailure_Logged_HostNotCrashed()
+    public async Task TrackerRefreshFailure_Logged_HostNotCrashed()
     {
         var recovery = new FakeRecovery();
-        var pool = new FailingPool(NullLogger<ReadOnlyConnectionPool>.Instance);
+        var tracker = new FailingTracker(_rotator, NullLogger<IntervalSetTracker>.Instance);
+        var reader = new NoOpReader(tracker, NullLogger<LiveMultiIntervalReader>.Instance);
 
-        using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(150));
         var svc = new ObserverHostedService(
-            recovery, _rotator, _scheduler, _ingestion, pool, _retention,
+            recovery, _rotator, _scheduler, _ingestion, tracker, reader, _retention,
             new SystemClock(), NullLogger<ObserverHostedService>.Instance);
 
-        // Should not throw even when pool refresh fails
+        // Should not throw even when tracker refresh fails
         Func<Task> act = async () =>
         {
             await svc.StartAsync(default);
@@ -149,17 +148,16 @@ public sealed class ObserverHostedServiceTests : IAsyncDisposable
     public async Task OnStart_ServiceStartsWithoutException()
     {
         var recovery = new FakeRecovery();
-        var pool = new TrackingPool(new List<string>(), "pool-init",
-            NullLogger<ReadOnlyConnectionPool>.Instance);
+        var tracker = new NoOpTracker(_rotator, NullLogger<IntervalSetTracker>.Instance);
+        var reader = new NoOpReader(tracker, NullLogger<LiveMultiIntervalReader>.Instance);
 
-        using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
         var svc = new ObserverHostedService(
-            recovery, _rotator, _scheduler, _ingestion, pool, _retention,
+            recovery, _rotator, _scheduler, _ingestion, tracker, reader, _retention,
             new SystemClock(), NullLogger<ObserverHostedService>.Instance);
 
         Func<Task> act = async () =>
         {
-            await svc.StartAsync(cts.Token);
+            await svc.StartAsync(default);
             await Task.Delay(200);
             await svc.StopAsync(default);
         };
@@ -194,37 +192,63 @@ public sealed class ObserverHostedServiceTests : IAsyncDisposable
         }
     }
 
-    private sealed class TrackingPool : ReadOnlyConnectionPool
+    /// <summary>No-op tracker: overrides all virtual methods so no filesystem access occurs.</summary>
+    private sealed class NoOpTracker : IntervalSetTracker
+    {
+        public NoOpTracker(IntervalRotator rotator, ILogger<IntervalSetTracker> logger)
+            : base(rotator, 3, logger) { }
+
+        public override Task InitializeAsync(CancellationToken ct) => Task.CompletedTask;
+        public override Task OnIntervalRotatedAsync(CancellationToken ct) => Task.CompletedTask;
+        public override IntervalSetSnapshot CurrentSnapshot() =>
+            new(new List<IntervalReference>().AsReadOnly());
+    }
+
+    /// <summary>Tracking tracker: records when InitializeAsync is called.</summary>
+    private sealed class TrackingTracker : IntervalSetTracker
     {
         private readonly List<string> _order;
         private readonly string _label;
+
         public bool InitializeCalled { get; private set; }
-        public string? InitializedPath { get; private set; }
 
-        public TrackingPool(List<string> order, string label, ILogger<ReadOnlyConnectionPool> logger)
-            : base(logger) { _order = order; _label = label; }
+        public TrackingTracker(List<string> order, string label, IntervalRotator rotator,
+            ILogger<IntervalSetTracker> logger)
+            : base(rotator, 3, logger)
+        { _order = order; _label = label; }
 
-        public override Task InitializeAsync(string path, CancellationToken ct)
+        public override Task InitializeAsync(CancellationToken ct)
         {
             InitializeCalled = true;
-            InitializedPath = path;
             _order.Add(_label);
-            return Task.CompletedTask; // Don't actually open DuckDB
+            return Task.CompletedTask;
         }
 
-        public override Task OnIntervalRotatedAsync(string newPath, CancellationToken ct)
-            => Task.CompletedTask;
+        public override Task OnIntervalRotatedAsync(CancellationToken ct) => Task.CompletedTask;
+        public override IntervalSetSnapshot CurrentSnapshot() =>
+            new(new List<IntervalReference>().AsReadOnly());
     }
 
-    private sealed class FailingPool : ReadOnlyConnectionPool
+    /// <summary>Failing tracker: throws on OnIntervalRotatedAsync to test error resilience.</summary>
+    private sealed class FailingTracker : IntervalSetTracker
     {
-        public FailingPool(ILogger<ReadOnlyConnectionPool> logger) : base(logger) { }
+        public FailingTracker(IntervalRotator rotator, ILogger<IntervalSetTracker> logger)
+            : base(rotator, 3, logger) { }
 
-        public override Task InitializeAsync(string path, CancellationToken ct)
-            => Task.CompletedTask; // Must not fail on init
+        public override Task InitializeAsync(CancellationToken ct) => Task.CompletedTask;
+        public override Task OnIntervalRotatedAsync(CancellationToken ct)
+            => throw new InvalidOperationException("Simulated tracker update failure");
+        public override IntervalSetSnapshot CurrentSnapshot() =>
+            new(new List<IntervalReference>().AsReadOnly());
+    }
 
-        public override Task OnIntervalRotatedAsync(string newPath, CancellationToken ct)
-            => throw new InvalidOperationException("Simulated pool refresh failure");
+    /// <summary>No-op reader: overrides InitializeAsync to skip actual DuckDB connection setup.</summary>
+    private sealed class NoOpReader : LiveMultiIntervalReader
+    {
+        public NoOpReader(IntervalSetTracker tracker, ILogger<LiveMultiIntervalReader> logger)
+            : base(tracker, logger) { }
+
+        public override Task InitializeAsync(CancellationToken ct) => Task.CompletedTask;
     }
 
     private sealed class NoOpUploadService : ITelemetryUploadService

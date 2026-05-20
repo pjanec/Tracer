@@ -1,25 +1,25 @@
 using DuckDB.NET.Data;
+using Tracer.Storage.DuckDB.MultiInterval;
 using Tracer.WebApi.Contracts.Dto;
-using Tracer.WebApi.Lifecycle;
 
 namespace Tracer.WebApi.Queries;
 
-public sealed class SessionQueryService(ReadOnlyConnectionPool pool)
+public sealed class SessionQueryService(LiveMultiIntervalReader multiReader)
 {
-    private readonly ReadOnlyConnectionPool _pool = pool;
+    private readonly LiveMultiIntervalReader _multiReader = multiReader;
 
     public async Task<IReadOnlyList<SessionDto>> ListAsync(
         (DateTimeOffset From, DateTimeOffset To)? range,
         CancellationToken ct)
     {
-        await using var pooled = await _pool.AcquireAsync(ct);
+        await using var pooled = await _multiReader.AcquireAsync(ct);
         var conn = pooled.Connection;
 
         // 1. Find all session_start events with their payload data
         var starts = new List<(string SessionId, DateTimeOffset StartUtc, string? ScenarioId, string? Label)>();
         using (var cmd = conn.CreateCommand())
         {
-            cmd.CommandText = """
+            cmd.CommandText = pooled.WithEventsCte("""
                 SELECT json_extract_string(payload, '$.sessionId') as session_id,
                        publish_wallclock,
                        json_extract_string(payload, '$.scenarioId') as scenario_id,
@@ -28,7 +28,7 @@ public sealed class SessionQueryService(ReadOnlyConnectionPool pool)
                 WHERE topic = 'system.session_start'
                   AND json_extract_string(payload, '$.sessionId') IS NOT NULL
                 ORDER BY publish_wallclock DESC
-                """;
+                """);
             using var reader = cmd.ExecuteReader();
             while (reader.Read())
             {
@@ -47,13 +47,13 @@ public sealed class SessionQueryService(ReadOnlyConnectionPool pool)
         var ends = new Dictionary<string, DateTimeOffset>(StringComparer.Ordinal);
         using (var cmd = conn.CreateCommand())
         {
-            cmd.CommandText = """
+            cmd.CommandText = pooled.WithEventsCte("""
                 SELECT json_extract_string(payload, '$.sessionId') as session_id,
                        publish_wallclock
                 FROM events
                 WHERE topic = 'system.session_end'
                   AND json_extract_string(payload, '$.sessionId') IS NOT NULL
-                """;
+                """);
             using var reader = cmd.ExecuteReader();
             while (reader.Read())
             {
@@ -77,12 +77,12 @@ public sealed class SessionQueryService(ReadOnlyConnectionPool pool)
             var nodes = new List<string>();
             using (var cmd = conn.CreateCommand())
             {
-                cmd.CommandText = """
+                cmd.CommandText = pooled.WithEventsCte("""
                     SELECT COUNT(*) as event_count,
                            array_agg(DISTINCT publisher_node) as nodes
                     FROM events
                     WHERE json_extract_string(payload, '$.sessionId') = $sessionId
-                    """;
+                    """);
                 var p = cmd.CreateParameter();
                 p.ParameterName = "sessionId";
                 p.Value = sessionId;

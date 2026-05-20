@@ -4,7 +4,7 @@ using Tracer.Agent.Lifecycle;
 using Tracer.Agent.Storage;
 using Tracer.Core.Domain;
 using Tracer.Core.Time;
-using Tracer.WebApi.Lifecycle;
+using Tracer.Storage.DuckDB.MultiInterval;
 
 namespace Tracer.Observer.Lifecycle;
 
@@ -22,7 +22,8 @@ public sealed class ObserverHostedService : BackgroundService
     private readonly IntervalRotator _rotator;
     private readonly IntervalScheduler _scheduler;
     private readonly ObserverIngestionPipeline _ingestion;
-    private readonly ReadOnlyConnectionPool _pool;
+    private readonly IntervalSetTracker _tracker;
+    private readonly LiveMultiIntervalReader _multiReader;
     private readonly RetentionManager _retention;
     private readonly IClock _clock;
     private readonly ILogger<ObserverHostedService> _logger;
@@ -32,7 +33,8 @@ public sealed class ObserverHostedService : BackgroundService
         IntervalRotator rotator,
         IntervalScheduler scheduler,
         ObserverIngestionPipeline ingestion,
-        ReadOnlyConnectionPool pool,
+        IntervalSetTracker tracker,
+        LiveMultiIntervalReader multiReader,
         RetentionManager retention,
         IClock clock,
         ILogger<ObserverHostedService> logger)
@@ -41,7 +43,8 @@ public sealed class ObserverHostedService : BackgroundService
         _rotator = rotator;
         _scheduler = scheduler;
         _ingestion = ingestion;
-        _pool = pool;
+        _tracker = tracker;
+        _multiReader = multiReader;
         _retention = retention;
         _clock = clock;
         _logger = logger;
@@ -57,9 +60,9 @@ public sealed class ObserverHostedService : BackgroundService
         // 2. Open the current interval
         await _rotator.OpenCurrentAsync(stoppingToken);
 
-        // 3. Initialize the read-only connection pool against the active interval
-        var activeDb = _rotator.CurrentDirectory!.EventsDbPath;
-        await _pool.InitializeAsync(activeDb, stoppingToken);
+        // 3. Initialize tracker and reader
+        await _tracker.InitializeAsync(stoppingToken);
+        await _multiReader.InitializeAsync(stoppingToken);
 
         // 4. Start ingestion and retention in background
         var ingestionTask = _ingestion.RunAsync(stoppingToken);
@@ -89,14 +92,13 @@ public sealed class ObserverHostedService : BackgroundService
             }
             await _rotator.RotateAsync(ManifestFinalizationReason.ScheduledRotation, ct);
 
-            var newActiveDb = _rotator.CurrentDirectory!.EventsDbPath;
             try
             {
-                await _pool.OnIntervalRotatedAsync(newActiveDb, ct);
+                await _tracker.OnIntervalRotatedAsync(ct);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Connection pool refresh failed after rotation");
+                _logger.LogError(ex, "Tracker update failed after rotation");
             }
         }
     }

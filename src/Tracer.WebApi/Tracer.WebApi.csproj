@@ -13,7 +13,8 @@
     <ProjectReference Include="..\Tracer.Storage.DuckDB\Tracer.Storage.DuckDB.csproj" />
     <ProjectReference Include="..\Tracer.Aggregator\Tracer.Aggregator.csproj" />
     <ProjectReference Include="..\Tracer.Bundle\Tracer.Bundle.csproj" />
-    <ProjectReference Include="..\Tracer.Adapters.Mock\Tracer.Adapters.Mock.csproj" />  </ItemGroup>
+    <ProjectReference Include="..\Tracer.Adapters.Mock\Tracer.Adapters.Mock.csproj" />
+    <ProjectReference Include="..\Tracer.Storage.DuckDB.MultiInterval\Tracer.Storage.DuckDB.MultiInterval.csproj" />  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="NSwag.AspNetCore" />

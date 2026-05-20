@@ -23,3 +23,8 @@ D:\Work\Tracer\src\Tracer.WebApi\bin\Release\net8.0\Tracer.Aggregator.pdb
 D:\Work\Tracer\src\Tracer.WebApi\bin\Release\net8.0\Tracer.Bundle.pdb
 D:\Work\Tracer\src\Tracer.WebApi\bin\Release\net8.0\Tracer.Adapters.Mock.pdb
 D:\Work\Tracer\src\Tracer.WebApi\bin\Release\net8.0\Tracer.Storage.DuckDB.MultiInterval.pdb
+D:\Work\Tracer\src\Tracer.WebApi\bin\Release\net8.0\tracer-agent.deps.json
+D:\Work\Tracer\src\Tracer.WebApi\bin\Release\net8.0\tracer-agent.runtimeconfig.json
+D:\Work\Tracer\src\Tracer.WebApi\bin\Release\net8.0\tracer-agent.exe
+D:\Work\Tracer\src\Tracer.WebApi\bin\Release\net8.0\tracer-agent.dll
+D:\Work\Tracer\src\Tracer.WebApi\bin\Release\net8.0\tracer-agent.pdb

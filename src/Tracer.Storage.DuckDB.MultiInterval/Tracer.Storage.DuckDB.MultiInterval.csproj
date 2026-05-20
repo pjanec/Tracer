@@ -13,6 +13,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Tracer.Core\Tracer.Core.csproj" />
     <ProjectReference Include="..\Tracer.Storage.DuckDB\Tracer.Storage.DuckDB.csproj" />
+    <ProjectReference Include="..\Tracer.Agent\Tracer.Agent.csproj" />
   </ItemGroup>
 
   <ItemGroup>

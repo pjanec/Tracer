@@ -9,6 +9,9 @@ public sealed class RetentionManager
     private readonly AgentConfig _config;
     private readonly ILogger<RetentionManager> _logger;
 
+    private Func<IntervalDirectory, CancellationToken, Task>? _onBeforeDelete;
+    private TimeSpan _preDeletionDelay = TimeSpan.FromSeconds(30);
+
     public RetentionManager(AgentConfig config, ILogger<RetentionManager> logger)
     {
         ArgumentNullException.ThrowIfNull(config);
@@ -18,14 +21,27 @@ public sealed class RetentionManager
     }
 
     /// <summary>
+    /// Sets a callback that is invoked before each interval is deleted.
+    /// Used to drain in-flight query connections before filesystem removal.
+    /// </summary>
+    public void SetPreDeletionCallback(Func<IntervalDirectory, CancellationToken, Task> callback)
+    {
+        ArgumentNullException.ThrowIfNull(callback);
+        _onBeforeDelete = callback;
+    }
+
+    /// <summary>Overrides the pre-deletion grace period (default: 30 s). Useful for testing.</summary>
+    public void SetPreDeletionDelay(TimeSpan delay) => _preDeletionDelay = delay;
+
+    /// <summary>
     /// Applies retention policy. The caller passes the currently-open interval timestamp
     /// to prevent it from being deleted even if it meets eviction criteria.
     /// </summary>
-    public Task ApplyAsync(IntervalTimestamp? openIntervalTimestamp, CancellationToken ct)
+    public async Task ApplyAsync(IntervalTimestamp? openIntervalTimestamp, CancellationToken ct)
     {
         var intervalsRoot = Path.Combine(_config.DataRoot, "intervals");
         if (!Directory.Exists(intervalsRoot))
-            return Task.CompletedTask;
+            return;
 
         var readyDirs = Directory.EnumerateDirectories(intervalsRoot)
             .Where(d =>
@@ -47,14 +63,24 @@ public sealed class RetentionManager
         if (openValue is not null)
             toDelete.RemoveAll(d => Path.GetFileName(d) == openValue);
 
-        foreach (var dir in toDelete)
+        foreach (var dirPath in toDelete)
         {
             ct.ThrowIfCancellationRequested();
-            TryDeleteInterval(dir);
+            var name = Path.GetFileName(dirPath);
+            if (!IntervalTimestamp.TryParse(name, out var ts)) continue;
+            var intervalDir = new IntervalDirectory(_config.DataRoot, ts);
+
+            if (_onBeforeDelete is not null)
+            {
+                await _onBeforeDelete(intervalDir, ct);
+                try { await Task.Delay(_preDeletionDelay, ct); }
+                catch (OperationCanceledException) { return; }
+            }
+
+            TryDeleteInterval(dirPath);
         }
 
         EnforceDiskWatermark(intervalsRoot, openValue, ct);
-        return Task.CompletedTask;
     }
 
     private void TryDeleteInterval(string dirPath)

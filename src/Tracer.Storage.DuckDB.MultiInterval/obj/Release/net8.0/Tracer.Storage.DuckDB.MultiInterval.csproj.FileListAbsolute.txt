@@ -15,3 +15,10 @@ D:\Work\Tracer\src\Tracer.Storage.DuckDB.MultiInterval\obj\Release\net8.0\Tracer
 D:\Work\Tracer\src\Tracer.Storage.DuckDB.MultiInterval\obj\Release\net8.0\refint\Tracer.Storage.DuckDB.MultiInterval.dll
 D:\Work\Tracer\src\Tracer.Storage.DuckDB.MultiInterval\obj\Release\net8.0\Tracer.Storage.DuckDB.MultiInterval.pdb
 D:\Work\Tracer\src\Tracer.Storage.DuckDB.MultiInterval\obj\Release\net8.0\ref\Tracer.Storage.DuckDB.MultiInterval.dll
+D:\Work\Tracer\src\Tracer.Storage.DuckDB.MultiInterval\bin\Release\net8.0\tracer-agent.deps.json
+D:\Work\Tracer\src\Tracer.Storage.DuckDB.MultiInterval\bin\Release\net8.0\tracer-agent.runtimeconfig.json
+D:\Work\Tracer\src\Tracer.Storage.DuckDB.MultiInterval\bin\Release\net8.0\tracer-agent.exe
+D:\Work\Tracer\src\Tracer.Storage.DuckDB.MultiInterval\bin\Release\net8.0\tracer-agent.dll
+D:\Work\Tracer\src\Tracer.Storage.DuckDB.MultiInterval\bin\Release\net8.0\Tracer.Adapters.Mock.dll
+D:\Work\Tracer\src\Tracer.Storage.DuckDB.MultiInterval\bin\Release\net8.0\tracer-agent.pdb
+D:\Work\Tracer\src\Tracer.Storage.DuckDB.MultiInterval\bin\Release\net8.0\Tracer.Adapters.Mock.pdb

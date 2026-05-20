@@ -31,6 +31,15 @@ public sealed class ObserverConfig
 
     /// <summary>Where the mock-NAS data lives (read source).</summary>
     public string NasMockRoot { get; set; } = "";
+
+    /// <summary>Controls how many completed intervals are included in live queries.</summary>
+    public LiveQueryWindowConfig LiveQueryWindow { get; set; } = new();
+}
+
+public sealed class LiveQueryWindowConfig
+{
+    /// <summary>Number of completed intervals to include alongside the active one.</summary>
+    public int CompletedIntervalsToInclude { get; set; } = 3;
 }
 
 public sealed class DataSourcesConfig

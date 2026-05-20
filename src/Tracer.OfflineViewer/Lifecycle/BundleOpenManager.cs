@@ -1,22 +1,21 @@
 using Tracer.Bundle.Format;
 using Tracer.Bundle.Packaging;
 using Tracer.Bundle.Validation;
-using Tracer.WebApi.Lifecycle;
 using Microsoft.Extensions.Logging;
 
 namespace Tracer.OfflineViewer.Lifecycle;
 
 public sealed class BundleOpenManager : IAsyncDisposable
 {
-    private readonly ReadOnlyConnectionPool _pool;
+    private readonly BundleIntervalSetTracker _tracker;
     private readonly ILogger<BundleOpenManager> _logger;
     private readonly SemaphoreSlim _switchLock = new(1, 1);
 
     private OpenedBundle? _current;
 
-    public BundleOpenManager(ReadOnlyConnectionPool pool, ILogger<BundleOpenManager> logger)
+    public BundleOpenManager(BundleIntervalSetTracker tracker, ILogger<BundleOpenManager> logger)
     {
-        _pool = pool;
+        _tracker = tracker;
         _logger = logger;
     }
 
@@ -60,17 +59,12 @@ public sealed class BundleOpenManager : IAsyncDisposable
                     $"Bundle validation failed: {string.Join("; ", validation.Errors.Select(e => e.Message))}");
             }
 
-            // 3. Open events.duckdb via the connection pool
+            // 3. Switch the reader pool to the bundle's events database
             var eventsDb = Path.Combine(workingDirectory, "events.duckdb");
-            if (_current is not null)
-            {
-                await _pool.OnIntervalRotatedAsync(eventsDb, ct);
-                await CleanUpPreviousAsync(_current);
-            }
-            else
-            {
-                await _pool.InitializeAsync(eventsDb, ct);
-            }
+            var previous = _current;
+            await _tracker.SwitchToBundleAsync(eventsDb, ct);
+            if (previous is not null)
+                await CleanUpPreviousAsync(previous);
 
             _current = new OpenedBundle
             {
@@ -90,6 +84,7 @@ public sealed class BundleOpenManager : IAsyncDisposable
         try
         {
             if (_current is null) return;
+            await _tracker.ClearAsync(ct);
             await CleanUpPreviousAsync(_current);
             _current = null;
         }

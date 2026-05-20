@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Tracer.Core.Records;
 using Tracer.Observer.Configuration;
 using Tracer.Observer.Lifecycle;
+using Tracer.Storage.DuckDB.MultiInterval;
 using Tracer.WebApi.Endpoints;
 using Tracer.WebApi.Lifecycle;
 using Tracer.WebApi.Queries;
@@ -37,8 +38,8 @@ public sealed class ObserverFixture : IAsyncDisposable
     public string DataRoot { get; private set; } = null!;
     public ObserverStateReporter StateReporter =>
         App.Services.GetRequiredService<ObserverStateReporter>();
-    public ReadOnlyConnectionPool Pool =>
-        App.Services.GetRequiredService<ReadOnlyConnectionPool>();
+    public LiveMultiIntervalReader MultiReader =>
+        App.Services.GetRequiredService<LiveMultiIntervalReader>();
     public SseConnectionManager SseConnections =>
         App.Services.GetRequiredService<SseConnectionManager>();
     public LiveEventBroadcaster Broadcaster =>
@@ -111,11 +112,27 @@ public sealed class ObserverFixture : IAsyncDisposable
         builder.Services.AddSingleton<Tracer.Agent.Upload.UploadIntentDispatcher>();
         builder.Services.AddSingleton<Tracer.Agent.Lifecycle.IntervalScheduler>();
         builder.Services.AddSingleton<Tracer.Agent.Lifecycle.IntervalRotator>();
-        builder.Services.AddSingleton<Tracer.Agent.Storage.RetentionManager>();
+        builder.Services.AddSingleton<Tracer.Agent.Storage.RetentionManager>(sp =>
+        {
+            var agentCfg = sp.GetRequiredService<Tracer.Agent.Configuration.AgentConfig>();
+            var rmLogger = sp.GetRequiredService<ILogger<Tracer.Agent.Storage.RetentionManager>>();
+            var rm = new Tracer.Agent.Storage.RetentionManager(agentCfg, rmLogger);
+            var tracker = sp.GetRequiredService<IntervalSetTracker>();
+            rm.SetPreDeletionCallback((dir, ct) => tracker.OnIntervalEvictedAsync(dir, ct));
+            return rm;
+        });
         builder.Services.AddSingleton<ObserverStateReporter>();
         builder.Services.AddSingleton<ILiveStatusProvider>(sp =>
             sp.GetRequiredService<ObserverStateReporter>());
-        builder.Services.AddSingleton<ReadOnlyConnectionPool>();
+        builder.Services.AddSingleton<IntervalSetTracker>(sp =>
+            new IntervalSetTracker(
+                sp.GetRequiredService<Tracer.Agent.Lifecycle.IntervalRotator>(),
+                sp.GetRequiredService<ObserverConfig>().LiveQueryWindow.CompletedIntervalsToInclude,
+                sp.GetRequiredService<ILogger<IntervalSetTracker>>()));
+        builder.Services.AddSingleton<LiveMultiIntervalReader>(sp =>
+            new LiveMultiIntervalReader(
+                sp.GetRequiredService<IntervalSetTracker>(),
+                sp.GetRequiredService<ILogger<LiveMultiIntervalReader>>()));
 
         // Query services
         builder.Services.AddSingleton<SessionQueryService>();
@@ -148,11 +165,13 @@ public sealed class ObserverFixture : IAsyncDisposable
 
         fixture.App = app;
 
-        // Open the initial interval and init pool
+        // Open the initial interval and init tracker + reader
         var rotator = app.Services.GetRequiredService<Tracer.Agent.Lifecycle.IntervalRotator>();
         await rotator.OpenCurrentAsync(ct);
-        var pool = app.Services.GetRequiredService<ReadOnlyConnectionPool>();
-        await pool.InitializeAsync(rotator.CurrentDirectory!.EventsDbPath, ct);
+        var tracker = app.Services.GetRequiredService<IntervalSetTracker>();
+        await tracker.InitializeAsync(ct);
+        var reader = app.Services.GetRequiredService<LiveMultiIntervalReader>();
+        await reader.InitializeAsync(ct);
 
         await app.StartAsync(ct);
         fixture.Client = app.GetTestClient();
@@ -193,11 +212,10 @@ public sealed class ObserverFixture : IAsyncDisposable
     public async Task ForceRotationAsync(CancellationToken ct = default)
     {
         var rotator = App.Services.GetRequiredService<Tracer.Agent.Lifecycle.IntervalRotator>();
-        var pool = Pool;
+        var tracker = App.Services.GetRequiredService<IntervalSetTracker>();
         await rotator.RotateAsync(
             Tracer.Core.Domain.ManifestFinalizationReason.ScheduledRotation, ct);
-        if (rotator.CurrentDirectory is not null)
-            await pool.OnIntervalRotatedAsync(rotator.CurrentDirectory.EventsDbPath, ct);
+        await tracker.OnIntervalRotatedAsync(ct);
     }
 
     public async ValueTask DisposeAsync()

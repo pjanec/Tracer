@@ -1,19 +1,19 @@
+using Tracer.Storage.DuckDB.MultiInterval;
 using Tracer.WebApi.Contracts.Dto;
-using Tracer.WebApi.Lifecycle;
 
 namespace Tracer.WebApi.Queries;
 
-public sealed class ScenarioQueryService(ReadOnlyConnectionPool pool)
+public sealed class ScenarioQueryService(LiveMultiIntervalReader multiReader)
 {
-    private readonly ReadOnlyConnectionPool _pool = pool;
+    private readonly LiveMultiIntervalReader _multiReader = multiReader;
 
     public async Task<DateTimeOffset?> GetEventTimestampAsync(ulong eventId, CancellationToken ct)
     {
-        await using var pooled = await _pool.AcquireAsync(ct);
+        await using var pooled = await _multiReader.AcquireAsync(ct);
         var conn = pooled.Connection;
 
         using var cmd = conn.CreateCommand();
-        cmd.CommandText = "SELECT publish_wallclock FROM events WHERE event_id = $id LIMIT 1";
+        cmd.CommandText = pooled.WithEventsCte("SELECT publish_wallclock FROM events WHERE event_id = $id LIMIT 1");
         var p = cmd.CreateParameter();
         p.ParameterName = "id";
         p.Value = eventId;
@@ -27,7 +27,7 @@ public sealed class ScenarioQueryService(ReadOnlyConnectionPool pool)
     public async Task<IReadOnlyList<NotableEventDto>> GetNotablesAsync(
         string sessionId, int limit, DateTimeOffset? before, CancellationToken ct)
     {
-        await using var pooled = await _pool.AcquireAsync(ct);
+        await using var pooled = await _multiReader.AcquireAsync(ct);
         var conn = pooled.Connection;
 
         var results = new List<NotableEventDto>();
@@ -35,7 +35,7 @@ public sealed class ScenarioQueryService(ReadOnlyConnectionPool pool)
 
         if (before.HasValue)
         {
-            cmd.CommandText = """
+            cmd.CommandText = pooled.WithEventsCte("""
                 SELECT event_id, trace_id, parent_event_id, sequence_number,
                        publish_wallclock, receive_wallclock, publisher_node, subscriber_node,
                        topic, entity_id, owning_player_id, scenario_phase, severity, notable_label, payload
@@ -45,7 +45,7 @@ public sealed class ScenarioQueryService(ReadOnlyConnectionPool pool)
                   AND publish_wallclock < $before
                 ORDER BY publish_wallclock DESC
                 LIMIT $limit
-                """;
+                """);
             var p1 = cmd.CreateParameter();
             p1.ParameterName = "sessionId"; p1.Value = sessionId;
             cmd.Parameters.Add(p1);
@@ -59,7 +59,7 @@ public sealed class ScenarioQueryService(ReadOnlyConnectionPool pool)
         }
         else
         {
-            cmd.CommandText = """
+            cmd.CommandText = pooled.WithEventsCte("""
                 SELECT event_id, trace_id, parent_event_id, sequence_number,
                        publish_wallclock, receive_wallclock, publisher_node, subscriber_node,
                        topic, entity_id, owning_player_id, scenario_phase, severity, notable_label, payload
@@ -68,7 +68,7 @@ public sealed class ScenarioQueryService(ReadOnlyConnectionPool pool)
                   AND notable_label IS NOT NULL
                 ORDER BY publish_wallclock DESC
                 LIMIT $limit
-                """;
+                """);
             var p1 = cmd.CreateParameter();
             p1.ParameterName = "sessionId"; p1.Value = sessionId;
             cmd.Parameters.Add(p1);
@@ -103,21 +103,21 @@ public sealed class ScenarioQueryService(ReadOnlyConnectionPool pool)
     public async Task<IReadOnlyList<ScenarioPhaseDto>> GetPhasesAsync(
         string sessionId, CancellationToken ct)
     {
-        await using var pooled = await _pool.AcquireAsync(ct);
+        await using var pooled = await _multiReader.AcquireAsync(ct);
         var conn = pooled.Connection;
 
         // Collect phase_started events
         var starts = new List<(string Phase, DateTimeOffset StartedAt)>();
         using (var cmd = conn.CreateCommand())
         {
-            cmd.CommandText = """
+            cmd.CommandText = pooled.WithEventsCte("""
                 SELECT json_extract_string(payload, '$.phaseName') as phase_name,
                        publish_wallclock
                 FROM events
                 WHERE json_extract_string(payload, '$.sessionId') = $sessionId
                   AND topic = 'scenario.phase_started'
                 ORDER BY publish_wallclock ASC
-                """;
+                """);
             var p = cmd.CreateParameter();
             p.ParameterName = "sessionId"; p.Value = sessionId;
             cmd.Parameters.Add(p);
@@ -134,14 +134,14 @@ public sealed class ScenarioQueryService(ReadOnlyConnectionPool pool)
         var ends = new Dictionary<string, DateTimeOffset>(StringComparer.Ordinal);
         using (var cmd = conn.CreateCommand())
         {
-            cmd.CommandText = """
+            cmd.CommandText = pooled.WithEventsCte("""
                 SELECT json_extract_string(payload, '$.phaseName') as phase_name,
                        publish_wallclock
                 FROM events
                 WHERE json_extract_string(payload, '$.sessionId') = $sessionId
                   AND topic = 'scenario.phase_ended'
                 ORDER BY publish_wallclock ASC
-                """;
+                """);
             var p = cmd.CreateParameter();
             p.ParameterName = "sessionId"; p.Value = sessionId;
             cmd.Parameters.Add(p);
@@ -165,7 +165,7 @@ public sealed class ScenarioQueryService(ReadOnlyConnectionPool pool)
 
     public async Task<ScenarioStateDto?> GetCurrentStateAsync(string sessionId, CancellationToken ct)
     {
-        await using var pooled = await _pool.AcquireAsync(ct);
+        await using var pooled = await _multiReader.AcquireAsync(ct);
         var conn = pooled.Connection;
 
         long totalEvents = 0;
@@ -175,13 +175,13 @@ public sealed class ScenarioQueryService(ReadOnlyConnectionPool pool)
 
         using (var cmd = conn.CreateCommand())
         {
-            cmd.CommandText = """
+            cmd.CommandText = pooled.WithEventsCte("""
                 SELECT COUNT(*) as total_events,
                        COUNT(CASE WHEN notable_label IS NOT NULL THEN 1 END) as notable_count,
                        array_agg(DISTINCT publisher_node) as nodes
                 FROM events
                 WHERE json_extract_string(payload, '$.sessionId') = $sessionId
-                """;
+                """);
             var p = cmd.CreateParameter();
             p.ParameterName = "sessionId"; p.Value = sessionId;
             cmd.Parameters.Add(p);
@@ -203,7 +203,7 @@ public sealed class ScenarioQueryService(ReadOnlyConnectionPool pool)
         // Find most recent active phase
         using (var cmd = conn.CreateCommand())
         {
-            cmd.CommandText = """
+            cmd.CommandText = pooled.WithEventsCte("""
                 SELECT json_extract_string(payload, '$.phaseName') as phase_name
                 FROM events
                 WHERE json_extract_string(payload, '$.sessionId') = $sessionId
@@ -217,7 +217,7 @@ public sealed class ScenarioQueryService(ReadOnlyConnectionPool pool)
                   )
                 ORDER BY publish_wallclock DESC
                 LIMIT 1
-                """;
+                """);
             var p = cmd.CreateParameter();
             p.ParameterName = "sessionId"; p.Value = sessionId;
             cmd.Parameters.Add(p);

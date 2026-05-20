@@ -21,3 +21,8 @@ D:\Work\Tracer\src\Tracer.Aggregator\obj\Release\net8.0\Tracer.Aggregator.dll
 D:\Work\Tracer\src\Tracer.Aggregator\obj\Release\net8.0\refint\Tracer.Aggregator.dll
 D:\Work\Tracer\src\Tracer.Aggregator\obj\Release\net8.0\Tracer.Aggregator.pdb
 D:\Work\Tracer\src\Tracer.Aggregator\obj\Release\net8.0\ref\Tracer.Aggregator.dll
+D:\Work\Tracer\src\Tracer.Aggregator\bin\Release\net8.0\tracer-agent.deps.json
+D:\Work\Tracer\src\Tracer.Aggregator\bin\Release\net8.0\tracer-agent.runtimeconfig.json
+D:\Work\Tracer\src\Tracer.Aggregator\bin\Release\net8.0\tracer-agent.exe
+D:\Work\Tracer\src\Tracer.Aggregator\bin\Release\net8.0\tracer-agent.dll
+D:\Work\Tracer\src\Tracer.Aggregator\bin\Release\net8.0\tracer-agent.pdb

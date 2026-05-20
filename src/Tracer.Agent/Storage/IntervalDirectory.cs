@@ -30,6 +30,33 @@ public sealed class IntervalDirectory
         ReadySentinelPath = Path.Combine(RootPath, "_ready");
     }
 
+    /// <summary>
+    /// Creates an <see cref="IntervalDirectory"/> that wraps an events.duckdb at an arbitrary
+    /// path, using a synthetic timestamp for alias generation only.
+    /// Intended for the offline bundle viewer which stores events outside the standard
+    /// interval directory structure.
+    /// </summary>
+    public static IntervalDirectory ForEventsDb(string eventsDbPath)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(eventsDbPath);
+        var fullPath = Path.GetFullPath(eventsDbPath);
+        var dir = Path.GetDirectoryName(fullPath) ?? string.Empty;
+        return new IntervalDirectory(fullPath, dir);
+    }
+
+    // Private constructor for ForEventsDb — bypasses standard path computation.
+    private IntervalDirectory(string eventsDbPath, string containingDir)
+    {
+        DataRoot = containingDir;
+        Timestamp = new IntervalTimestamp("19700101T000000Z");
+        RootPath = containingDir;
+        EventsDbPath = eventsDbPath;
+        SlowStateDbPath = Path.Combine(containingDir, "slow_state.duckdb");
+        FastStateDirectory = Path.Combine(containingDir, "fast_state");
+        ManifestPath = Path.Combine(containingDir, "manifest.json");
+        ReadySentinelPath = Path.Combine(containingDir, "_ready");
+    }
+
     public void EnsureCreated()
     {
         Directory.CreateDirectory(RootPath);

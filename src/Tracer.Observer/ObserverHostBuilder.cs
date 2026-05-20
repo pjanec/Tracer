@@ -18,6 +18,7 @@ using Tracer.Observer.Configuration;
 using Tracer.Observer.Lifecycle;
 using Tracer.Observer.Sources;
 using Tracer.Storage.DuckDB.Parquet;
+using Tracer.Storage.DuckDB.MultiInterval;
 using Tracer.WebApi.Bundles;
 using Tracer.WebApi.Endpoints;
 using Tracer.WebApi.Errors;
@@ -126,7 +127,15 @@ public static class ObserverHostBuilder
             new StartupRecoveryAdapter(sp.GetRequiredService<StartupRecoveryService>()));
 
         // ── Storage ───────────────────────────────────────────────────────────
-        builder.Services.AddSingleton<RetentionManager>();
+        builder.Services.AddSingleton<RetentionManager>(sp =>
+        {
+            var cfg = sp.GetRequiredService<AgentConfig>();
+            var logger = sp.GetRequiredService<ILogger<RetentionManager>>();
+            var rm = new RetentionManager(cfg, logger);
+            var tracker = sp.GetRequiredService<IntervalSetTracker>();
+            rm.SetPreDeletionCallback((dir, ct) => tracker.OnIntervalEvictedAsync(dir, ct));
+            return rm;
+        });
 
         // ── Observer services ─────────────────────────────────────────────────
         builder.Services.AddSingleton<ObserverStateReporter>();
@@ -135,7 +144,13 @@ public static class ObserverHostBuilder
         builder.Services.AddSingleton<ObserverIngestionPipeline>();
 
         // ── WebApi services ───────────────────────────────────────────────────
-        builder.Services.AddSingleton<ReadOnlyConnectionPool>();
+        // ── Multi-interval query infrastructure ──────────────────────────────
+        builder.Services.AddSingleton<IntervalSetTracker>(sp =>
+            new IntervalSetTracker(
+                sp.GetRequiredService<IntervalRotator>(),
+                sp.GetRequiredService<ObserverConfig>().LiveQueryWindow.CompletedIntervalsToInclude,
+                sp.GetRequiredService<ILogger<IntervalSetTracker>>()));
+        builder.Services.AddSingleton<LiveMultiIntervalReader>();
         builder.Services.AddSingleton<SessionQueryService>();
         builder.Services.AddSingleton<ScenarioQueryService>();
         builder.Services.AddSingleton<TopologyQueryService>();

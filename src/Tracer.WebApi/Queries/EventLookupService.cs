@@ -1,32 +1,32 @@
 using System.Globalization;
 using Tracer.Core.Identity;
 using Tracer.Core.Time;
+using Tracer.Storage.DuckDB.MultiInterval;
 using Tracer.WebApi.Contracts.Dto;
-using Tracer.WebApi.Lifecycle;
 
 namespace Tracer.WebApi.Queries;
 
-public sealed class EventLookupService(ReadOnlyConnectionPool pool)
+public sealed class EventLookupService(LiveMultiIntervalReader multiReader)
 {
-    private readonly ReadOnlyConnectionPool _pool = pool;
+    private readonly LiveMultiIntervalReader _multiReader = multiReader;
 
     public async Task<EventDto?> GetByIdAsync(string eventIdHex, CancellationToken ct)
     {
         if (!ulong.TryParse(eventIdHex, NumberStyles.HexNumber, null, out var rawId))
             return null;
 
-        await using var pooled = await _pool.AcquireAsync(ct);
+        await using var pooled = await _multiReader.AcquireAsync(ct);
         var conn = pooled.Connection;
 
         using var cmd = conn.CreateCommand();
-        cmd.CommandText = """
+        cmd.CommandText = pooled.WithEventsCte("""
             SELECT event_id, trace_id, parent_event_id, sequence_number,
                    publish_wallclock, receive_wallclock, publisher_node, subscriber_node,
                    topic, entity_id, owning_player_id, scenario_phase, severity, notable_label, payload
             FROM events
             WHERE event_id = $id
             LIMIT 1
-            """;
+            """);
         var p = cmd.CreateParameter();
         p.ParameterName = "id";
         p.Value = rawId;

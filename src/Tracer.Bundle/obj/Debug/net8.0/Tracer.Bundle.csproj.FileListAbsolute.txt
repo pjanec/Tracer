@@ -1,0 +1,15 @@
+D:\Work\Tracer\src\Tracer.Bundle\bin\Debug\net8.0\Tracer.Bundle.deps.json
+D:\Work\Tracer\src\Tracer.Bundle\bin\Debug\net8.0\Tracer.Bundle.dll
+D:\Work\Tracer\src\Tracer.Bundle\bin\Debug\net8.0\Tracer.Bundle.pdb
+D:\Work\Tracer\src\Tracer.Bundle\bin\Debug\net8.0\Tracer.Core.dll
+D:\Work\Tracer\src\Tracer.Bundle\bin\Debug\net8.0\Tracer.Core.pdb
+D:\Work\Tracer\src\Tracer.Bundle\obj\Debug\net8.0\Tracer.Bundle.csproj.AssemblyReference.cache
+D:\Work\Tracer\src\Tracer.Bundle\obj\Debug\net8.0\Tracer.Bundle.GeneratedMSBuildEditorConfig.editorconfig
+D:\Work\Tracer\src\Tracer.Bundle\obj\Debug\net8.0\Tracer.Bundle.AssemblyInfoInputs.cache
+D:\Work\Tracer\src\Tracer.Bundle\obj\Debug\net8.0\Tracer.Bundle.AssemblyInfo.cs
+D:\Work\Tracer\src\Tracer.Bundle\obj\Debug\net8.0\Tracer.Bundle.csproj.CoreCompileInputs.cache
+D:\Work\Tracer\src\Tracer.Bundle\obj\Debug\net8.0\Tracer.Bundle.csproj.CopyComplete
+D:\Work\Tracer\src\Tracer.Bundle\obj\Debug\net8.0\Tracer.Bundle.dll
+D:\Work\Tracer\src\Tracer.Bundle\obj\Debug\net8.0\refint\Tracer.Bundle.dll
+D:\Work\Tracer\src\Tracer.Bundle\obj\Debug\net8.0\Tracer.Bundle.pdb
+D:\Work\Tracer\src\Tracer.Bundle\obj\Debug\net8.0\ref\Tracer.Bundle.dll

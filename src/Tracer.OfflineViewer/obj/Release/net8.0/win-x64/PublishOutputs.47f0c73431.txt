@@ -1,0 +1,13 @@
+C:\Users\petr.janecek\AppData\Local\Temp\dist-smoke-19600bc9ba744016b115c6febdacbbac\tracer-viewer.pdb
+C:\Users\petr.janecek\AppData\Local\Temp\dist-smoke-19600bc9ba744016b115c6febdacbbac\tracer-observer.runtimeconfig.json
+C:\Users\petr.janecek\AppData\Local\Temp\dist-smoke-19600bc9ba744016b115c6febdacbbac\tracer-agent.runtimeconfig.json
+C:\Users\petr.janecek\AppData\Local\Temp\dist-smoke-19600bc9ba744016b115c6febdacbbac\tracer-observer.pdb
+C:\Users\petr.janecek\AppData\Local\Temp\dist-smoke-19600bc9ba744016b115c6febdacbbac\Tracer.WebApi.pdb
+C:\Users\petr.janecek\AppData\Local\Temp\dist-smoke-19600bc9ba744016b115c6febdacbbac\Tracer.Bundle.pdb
+C:\Users\petr.janecek\AppData\Local\Temp\dist-smoke-19600bc9ba744016b115c6febdacbbac\Tracer.Storage.DuckDB.MultiInterval.pdb
+C:\Users\petr.janecek\AppData\Local\Temp\dist-smoke-19600bc9ba744016b115c6febdacbbac\tracer-agent.pdb
+C:\Users\petr.janecek\AppData\Local\Temp\dist-smoke-19600bc9ba744016b115c6febdacbbac\Tracer.Adapters.Mock.pdb
+C:\Users\petr.janecek\AppData\Local\Temp\dist-smoke-19600bc9ba744016b115c6febdacbbac\Tracer.Aggregator.pdb
+C:\Users\petr.janecek\AppData\Local\Temp\dist-smoke-19600bc9ba744016b115c6febdacbbac\Tracer.Core.pdb
+C:\Users\petr.janecek\AppData\Local\Temp\dist-smoke-19600bc9ba744016b115c6febdacbbac\Tracer.Storage.DuckDB.pdb
+C:\Users\petr.janecek\AppData\Local\Temp\dist-smoke-19600bc9ba744016b115c6febdacbbac\tracer-viewer.exe

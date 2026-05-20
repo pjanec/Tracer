@@ -2,7 +2,11 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+using Tracer.Agent.Storage;
 using Tracer.Observer.Configuration;
+using Tracer.Observer.Lifecycle;
+using Tracer.Storage.DuckDB.MultiInterval;
 using Tracer.WebApi.Endpoints;
 using Tracer.WebApi.Lifecycle;
 using Tracer.WebApi.Queries;
@@ -13,7 +17,7 @@ namespace Tracer.TestHarness.Observer;
 /// <summary>
 /// Lightweight fixture that hosts the WebApi layer in-process for unit-level HTTP tests.
 /// Uses a minimal web application with no Observer hosted services or DuckDB.
-/// The ReadOnlyConnectionPool is NOT initialized — endpoint tests that need real data
+/// The LiveMultiIntervalReader is NOT initialized — endpoint tests that need real data
 /// should use <see cref="ObserverFixture"/> instead.
 /// </summary>
 public sealed class WebApiFixture : IAsyncDisposable
@@ -44,7 +48,12 @@ public sealed class WebApiFixture : IAsyncDisposable
         var streaming = sseOptions ?? new SseStreamingOptions();
         builder.Services.AddSingleton(streaming);
         builder.Services.AddSingleton<SseConnectionManager>();
-        builder.Services.AddSingleton<ReadOnlyConnectionPool>();
+        builder.Services.AddSingleton<IntervalSetTracker>(sp =>
+            new NullIntervalSetTracker(NullLogger<IntervalSetTracker>.Instance));
+        builder.Services.AddSingleton<LiveMultiIntervalReader>(sp =>
+            new LiveMultiIntervalReader(
+                sp.GetRequiredService<IntervalSetTracker>(),
+                NullLogger<LiveMultiIntervalReader>.Instance));
         builder.Services.AddSingleton<SessionQueryService>();
         builder.Services.AddSingleton<TopologyQueryService>();
         builder.Services.AddSingleton<ScenarioQueryService>();
@@ -87,6 +96,19 @@ public sealed class WebApiFixture : IAsyncDisposable
         public long IngestedTotal => 0;
         public long DroppedTotal => 0;
         public DateTimeOffset? LastEventUtc => null;
+    }
+
+    /// <summary>Stub tracker for unit-level tests that never initializes or queries DuckDB.</summary>
+    private sealed class NullIntervalSetTracker : IntervalSetTracker
+    {
+        public NullIntervalSetTracker(ILogger<IntervalSetTracker> logger)
+            : base(null!, 0, logger) { }
+
+        public override Task InitializeAsync(CancellationToken ct) => Task.CompletedTask;
+        public override Task OnIntervalRotatedAsync(CancellationToken ct) => Task.CompletedTask;
+        public override Task OnIntervalEvictedAsync(IntervalDirectory evicted, CancellationToken ct) => Task.CompletedTask;
+        public override IntervalSetSnapshot CurrentSnapshot() =>
+            new(new System.Collections.Generic.List<IntervalReference>().AsReadOnly());
     }
 }
 

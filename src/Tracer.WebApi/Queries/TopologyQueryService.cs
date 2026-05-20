@@ -1,20 +1,20 @@
+using Tracer.Storage.DuckDB.MultiInterval;
 using Tracer.WebApi.Contracts.Dto;
-using Tracer.WebApi.Lifecycle;
 
 namespace Tracer.WebApi.Queries;
 
-public sealed class TopologyQueryService(ReadOnlyConnectionPool pool)
+public sealed class TopologyQueryService(LiveMultiIntervalReader multiReader)
 {
-    private readonly ReadOnlyConnectionPool _pool = pool;
+    private readonly LiveMultiIntervalReader _multiReader = multiReader;
 
     public async Task<TopologyDto> GetAsync(CancellationToken ct)
     {
-        await using var pooled = await _pool.AcquireAsync(ct);
+        await using var pooled = await _multiReader.AcquireAsync(ct);
         var conn = pooled.Connection;
 
         var nodes = new List<NodeInfoDto>();
         using var cmd = conn.CreateCommand();
-        cmd.CommandText = """
+        cmd.CommandText = pooled.WithEventsCte("""
             SELECT publisher_node,
                    MIN(publish_wallclock) AS first_seen,
                    MAX(publish_wallclock) AS last_seen,
@@ -22,7 +22,7 @@ public sealed class TopologyQueryService(ReadOnlyConnectionPool pool)
             FROM events
             GROUP BY publisher_node
             ORDER BY publisher_node
-            """;
+            """);
         using var reader = cmd.ExecuteReader();
         while (reader.Read())
         {

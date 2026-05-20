@@ -2327,6 +2327,7 @@
           "Tracer.Bundle": "1.0.0",
           "Tracer.Core": "1.0.0",
           "Tracer.Storage.DuckDB": "1.0.0",
+          "Tracer.Storage.DuckDB.MultiInterval": "1.0.0",
           "Tracer.WebApi": "1.0.0",
           "tracer-agent": "1.0.0"
         },
@@ -2392,7 +2393,8 @@
           "DuckDB.NET.Data": "1.0.2",
           "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
           "Tracer.Core": "1.0.0",
-          "Tracer.Storage.DuckDB": "1.0.0"
+          "Tracer.Storage.DuckDB": "1.0.0",
+          "tracer-agent": "1.0.0"
         },
         "runtime": {
           "Tracer.Storage.DuckDB.MultiInterval.dll": {}
@@ -2406,7 +2408,8 @@
           "Tracer.Aggregator": "1.0.0",
           "Tracer.Bundle": "1.0.0",
           "Tracer.Core": "1.0.0",
-          "Tracer.Storage.DuckDB": "1.0.0"
+          "Tracer.Storage.DuckDB": "1.0.0",
+          "Tracer.Storage.DuckDB.MultiInterval": "1.0.0"
         },
         "runtime": {
           "Tracer.WebApi.dll": {}

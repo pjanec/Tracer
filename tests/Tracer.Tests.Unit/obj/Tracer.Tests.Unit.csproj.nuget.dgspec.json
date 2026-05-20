@@ -788,6 +788,9 @@
               "D:\\Work\\Tracer\\src\\Tracer.Core\\Tracer.Core.csproj": {
                 "projectPath": "D:\\Work\\Tracer\\src\\Tracer.Core\\Tracer.Core.csproj"
               },
+              "D:\\Work\\Tracer\\src\\Tracer.Storage.DuckDB.MultiInterval\\Tracer.Storage.DuckDB.MultiInterval.csproj": {
+                "projectPath": "D:\\Work\\Tracer\\src\\Tracer.Storage.DuckDB.MultiInterval\\Tracer.Storage.DuckDB.MultiInterval.csproj"
+              },
               "D:\\Work\\Tracer\\src\\Tracer.Storage.DuckDB\\Tracer.Storage.DuckDB.csproj": {
                 "projectPath": "D:\\Work\\Tracer\\src\\Tracer.Storage.DuckDB\\Tracer.Storage.DuckDB.csproj"
               },
@@ -917,6 +920,9 @@
           "net8.0": {
             "targetAlias": "net8.0",
             "projectReferences": {
+              "D:\\Work\\Tracer\\src\\Tracer.Agent\\Tracer.Agent.csproj": {
+                "projectPath": "D:\\Work\\Tracer\\src\\Tracer.Agent\\Tracer.Agent.csproj"
+              },
               "D:\\Work\\Tracer\\src\\Tracer.Core\\Tracer.Core.csproj": {
                 "projectPath": "D:\\Work\\Tracer\\src\\Tracer.Core\\Tracer.Core.csproj"
               },
@@ -1172,6 +1178,9 @@
               "D:\\Work\\Tracer\\src\\Tracer.Observer\\Tracer.Observer.csproj": {
                 "projectPath": "D:\\Work\\Tracer\\src\\Tracer.Observer\\Tracer.Observer.csproj"
               },
+              "D:\\Work\\Tracer\\src\\Tracer.Storage.DuckDB.MultiInterval\\Tracer.Storage.DuckDB.MultiInterval.csproj": {
+                "projectPath": "D:\\Work\\Tracer\\src\\Tracer.Storage.DuckDB.MultiInterval\\Tracer.Storage.DuckDB.MultiInterval.csproj"
+              },
               "D:\\Work\\Tracer\\src\\Tracer.Storage.DuckDB\\Tracer.Storage.DuckDB.csproj": {
                 "projectPath": "D:\\Work\\Tracer\\src\\Tracer.Storage.DuckDB\\Tracer.Storage.DuckDB.csproj"
               },
@@ -1307,6 +1316,9 @@
               },
               "D:\\Work\\Tracer\\src\\Tracer.Core\\Tracer.Core.csproj": {
                 "projectPath": "D:\\Work\\Tracer\\src\\Tracer.Core\\Tracer.Core.csproj"
+              },
+              "D:\\Work\\Tracer\\src\\Tracer.Storage.DuckDB.MultiInterval\\Tracer.Storage.DuckDB.MultiInterval.csproj": {
+                "projectPath": "D:\\Work\\Tracer\\src\\Tracer.Storage.DuckDB.MultiInterval\\Tracer.Storage.DuckDB.MultiInterval.csproj"
               },
               "D:\\Work\\Tracer\\src\\Tracer.Storage.DuckDB\\Tracer.Storage.DuckDB.csproj": {
                 "projectPath": "D:\\Work\\Tracer\\src\\Tracer.Storage.DuckDB\\Tracer.Storage.DuckDB.csproj"
