@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Tracer.Storage.DuckDB.MultiInterval")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+79c9aea008656cb53611840e72cc7ed7942313b5")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f83cdaed8ee4686fb24e0abd7f0929ad21a29d23")]
 [assembly: System.Reflection.AssemblyProductAttribute("Tracer.Storage.DuckDB.MultiInterval")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Tracer.Storage.DuckDB.MultiInterval")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

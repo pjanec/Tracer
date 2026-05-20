@@ -1,5 +1,6 @@
 using System.IO.Compression;
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using Tracer.Adapters.Mock.Storage;
 using Tracer.Agent.Storage;
 using Tracer.Aggregator;
@@ -8,6 +9,7 @@ using Tracer.Aggregator.Progress;
 using Tracer.Core.Domain;
 using Tracer.Core.Identity;
 using Tracer.Core.Time;
+using Tracer.Storage.DuckDB;
 using Xunit;
 
 namespace Tracer.Tests.Unit.Aggregator;
@@ -143,11 +145,15 @@ public class AggregationOrchestratorTests : IDisposable
         var manifestPath = Path.Combine(staging, "manifest.json");
         await ManifestWriter.WriteAsync(manifestPath, manifest, CancellationToken.None);
 
-        // Write empty placeholder database files
-        var eventsPath = Path.Combine(staging, "events.duckdb");
-        var slowStatePath = Path.Combine(staging, "slow_state.duckdb");
-        await File.WriteAllBytesAsync(eventsPath, Array.Empty<byte>());
-        await File.WriteAllBytesAsync(slowStatePath, Array.Empty<byte>());
+        // Write real DuckDB schema (both events and slow_state tables live in events.duckdb)
+        // Must be fully disposed before ZipFile.CreateFromDirectory to release file lock
+        {
+            await using var writer = await DuckDbStorageWriter.CreateAsync(
+                staging,
+                new Dictionary<string, Tracer.Storage.DuckDB.Parquet.ParquetTopicSchema>(),
+                NullLogger<DuckDbStorageWriter>.Instance);
+            await writer.FlushAsync();
+        }
 
         var zipPath = Path.Combine(nodeDir, $"{ts.Value}.zip");
         ZipFile.CreateFromDirectory(staging, zipPath);
