@@ -10,7 +10,11 @@
 | DT-006 | P2 | BATCH-03 | `IntervalSchedulerTests` missing `LessThan1Minute_Throws` and `TimeUntilNextBoundary_Decreases` tests (TRC-P2-011 SC1) | BATCH-04 | ✅ Resolved |
 | DT-007 | P2 | BATCH-03 | `IntervalRotatorTests` missing `NotifyCaptureGap_AccumulatesInManifest` test (TRC-P2-011 SC2) | BATCH-04 | ✅ Resolved |
 | DT-008 | P2 | BATCH-03 | `RecordRouterTests` missing `RecordRouter_AfterWrite_NotifiesRotator` test (TRC-P2-011 SC3) | BATCH-04 | ✅ Resolved |
-| DT-009 | P3 | BATCH-04 | `StartupRecoveryService.TryFinalizeAsync` reads `slow_state.duckdb` but records `SlowStateCount = 0` regardless | BATCH-05 | Open |
+| DT-009 | P3 | BATCH-04 | `StartupRecoveryService.TryFinalizeAsync` reads `slow_state.duckdb` but records `SlowStateCount = 0` regardless | BATCH-09 | Open |
+
+| DT-010 | P1 | BATCH-06 | `ObserverIngestionTests`: 5 of 6 tests bypass `ObserverIngestionPipeline.RunAsync`; pipeline is constructed but never called; tests manually invoke writer/broadcaster directly | BATCH-07 corrective | Open |
+| DT-011 | P1 | BATCH-06 | Integration test stub method names in `ObserverFakeNodeEndToEndTests` and `ObserverRotationIntegrationTests` don't match TRC-P3-001 SC14/SC15 spec — must be renamed exactly | BATCH-07 corrective | Open |
+| DT-012 | P2 | BATCH-06 | `OnGracefulShutdown_FinalRotationHasGracefulReason` has no assertion (`await Task.CompletedTask`) — must read manifest and assert `FinalizationReason == GracefulShutdown` | BATCH-07 | Open |
 
 > P1 = Critical (blocks next batch), P2 = Should fix soon, P3 = Nice to fix eventually  
 > Resolved items are marked ✅ (never deleted)

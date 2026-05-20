@@ -1,0 +1,18 @@
+{
+  "runtime": "Net80",
+  "defaultVariables": null,
+  "documentGenerator": {
+    "aspNetCoreToOpenApi": {
+      "project": "Tracer.WebApi.csproj",
+      "output": "openapi.json"
+    }
+  },
+  "codeGenerators": {
+    "openApiToTypeScriptClient": {
+      "template": "Fetch",
+      "generateClientClasses": true,
+      "generateClientInterfaces": false,
+      "output": "../../tracer-viewer/src/api/tracerApiClient.ts"
+    }
+  }
+}

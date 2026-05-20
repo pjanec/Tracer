@@ -1,0 +1,17 @@
+D:\Work\Tracer\src\Tracer.WebApi\obj\Debug\net8.0\Tracer.WebApi.csproj.AssemblyReference.cache
+D:\Work\Tracer\src\Tracer.WebApi\obj\Debug\net8.0\Tracer.WebApi.GeneratedMSBuildEditorConfig.editorconfig
+D:\Work\Tracer\src\Tracer.WebApi\obj\Debug\net8.0\Tracer.WebApi.AssemblyInfoInputs.cache
+D:\Work\Tracer\src\Tracer.WebApi\obj\Debug\net8.0\Tracer.WebApi.AssemblyInfo.cs
+D:\Work\Tracer\src\Tracer.WebApi\obj\Debug\net8.0\Tracer.WebApi.csproj.CoreCompileInputs.cache
+D:\Work\Tracer\src\Tracer.WebApi\bin\Debug\net8.0\Tracer.WebApi.deps.json
+D:\Work\Tracer\src\Tracer.WebApi\bin\Debug\net8.0\Tracer.WebApi.dll
+D:\Work\Tracer\src\Tracer.WebApi\bin\Debug\net8.0\Tracer.WebApi.pdb
+D:\Work\Tracer\src\Tracer.WebApi\bin\Debug\net8.0\Tracer.Core.dll
+D:\Work\Tracer\src\Tracer.WebApi\bin\Debug\net8.0\Tracer.Storage.DuckDB.dll
+D:\Work\Tracer\src\Tracer.WebApi\bin\Debug\net8.0\Tracer.Core.pdb
+D:\Work\Tracer\src\Tracer.WebApi\bin\Debug\net8.0\Tracer.Storage.DuckDB.pdb
+D:\Work\Tracer\src\Tracer.WebApi\obj\Debug\net8.0\Tracer.WebApi.csproj.CopyComplete
+D:\Work\Tracer\src\Tracer.WebApi\obj\Debug\net8.0\Tracer.WebApi.dll
+D:\Work\Tracer\src\Tracer.WebApi\obj\Debug\net8.0\refint\Tracer.WebApi.dll
+D:\Work\Tracer\src\Tracer.WebApi\obj\Debug\net8.0\Tracer.WebApi.pdb
+D:\Work\Tracer\src\Tracer.WebApi\obj\Debug\net8.0\ref\Tracer.WebApi.dll
