@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <PackageReference Include="Ulid" />
+    <PackageReference Include="System.IO.Compression.ZipFile" />
   </ItemGroup>
 
 </Project>

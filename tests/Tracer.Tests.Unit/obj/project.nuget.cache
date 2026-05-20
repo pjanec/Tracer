@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "1TGWJMrOZfulhRoU0tQL72myWVOV2m+/20r4AEvu/J8Xk29IGzn/DNJz1Nz/i797U8BAUo7yOfmpnj7gATpbYw==",
+  "dgSpecHash": "wsvCARFNC6XsYCReYLW1/z/343rR6ODGTUk3f4eI3UwrUnku5igExlbJCtfpoaj0BLstSpgzUrCJoTnflx6KeQ==",
   "success": true,
   "projectFilePath": "D:\\Work\\Tracer\\tests\\Tracer.Tests.Unit\\Tracer.Tests.Unit.csproj",
   "expectedPackageFiles": [
@@ -70,6 +70,8 @@
     "C:\\Users\\petr.janecek\\.nuget\\packages\\nswag.generation.aspnetcore\\14.0.7\\nswag.generation.aspnetcore.14.0.7.nupkg.sha512",
     "C:\\Users\\petr.janecek\\.nuget\\packages\\nuget.frameworks\\6.5.0\\nuget.frameworks.6.5.0.nupkg.sha512",
     "C:\\Users\\petr.janecek\\.nuget\\packages\\parquet.net\\4.24.0\\parquet.net.4.24.0.nupkg.sha512",
+    "C:\\Users\\petr.janecek\\.nuget\\packages\\runtime.native.system\\4.3.0\\runtime.native.system.4.3.0.nupkg.sha512",
+    "C:\\Users\\petr.janecek\\.nuget\\packages\\runtime.native.system.io.compression\\4.3.0\\runtime.native.system.io.compression.4.3.0.nupkg.sha512",
     "C:\\Users\\petr.janecek\\.nuget\\packages\\serilog\\3.1.1\\serilog.3.1.1.nupkg.sha512",
     "C:\\Users\\petr.janecek\\.nuget\\packages\\serilog.aspnetcore\\8.0.2\\serilog.aspnetcore.8.0.2.nupkg.sha512",
     "C:\\Users\\petr.janecek\\.nuget\\packages\\serilog.extensions.hosting\\8.0.0\\serilog.extensions.hosting.8.0.0.nupkg.sha512",
@@ -90,6 +92,10 @@
     "C:\\Users\\petr.janecek\\.nuget\\packages\\system.dynamic.runtime\\4.3.0\\system.dynamic.runtime.4.3.0.nupkg.sha512",
     "C:\\Users\\petr.janecek\\.nuget\\packages\\system.globalization\\4.3.0\\system.globalization.4.3.0.nupkg.sha512",
     "C:\\Users\\petr.janecek\\.nuget\\packages\\system.io\\4.3.0\\system.io.4.3.0.nupkg.sha512",
+    "C:\\Users\\petr.janecek\\.nuget\\packages\\system.io.compression\\4.3.0\\system.io.compression.4.3.0.nupkg.sha512",
+    "C:\\Users\\petr.janecek\\.nuget\\packages\\system.io.compression.zipfile\\4.3.0\\system.io.compression.zipfile.4.3.0.nupkg.sha512",
+    "C:\\Users\\petr.janecek\\.nuget\\packages\\system.io.filesystem\\4.3.0\\system.io.filesystem.4.3.0.nupkg.sha512",
+    "C:\\Users\\petr.janecek\\.nuget\\packages\\system.io.filesystem.primitives\\4.3.0\\system.io.filesystem.primitives.4.3.0.nupkg.sha512",
     "C:\\Users\\petr.janecek\\.nuget\\packages\\system.io.pipelines\\8.0.0\\system.io.pipelines.8.0.0.nupkg.sha512",
     "C:\\Users\\petr.janecek\\.nuget\\packages\\system.linq\\4.3.0\\system.linq.4.3.0.nupkg.sha512",
     "C:\\Users\\petr.janecek\\.nuget\\packages\\system.linq.expressions\\4.3.0\\system.linq.expressions.4.3.0.nupkg.sha512",

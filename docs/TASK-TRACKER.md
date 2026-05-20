@@ -85,8 +85,8 @@
 **Phase success criteria:** All conditions from [tracer_phase4_design.md §1.3](./tracer_phase4_design.md#13-success-criteria) AND all Phase 1–4 integration tests pass.
 
 - [x] **TRC-P4-001** Bundle Format [details](./TASK-DETAIL.md#trc-p4-001--bundle-format)
-- [ ] **TRC-P4-002** Bundle Packaging [details](./TASK-DETAIL.md#trc-p4-002--bundle-packaging)
-- [ ] **TRC-P4-003** Bundle Validation [details](./TASK-DETAIL.md#trc-p4-003--bundle-validation)
+- [x] **TRC-P4-002** Bundle Packaging [details](./TASK-DETAIL.md#trc-p4-002--bundle-packaging)
+- [x] **TRC-P4-003** Bundle Validation [details](./TASK-DETAIL.md#trc-p4-003--bundle-validation)
 - [x] **TRC-P4-004** MultiIntervalReader [details](./TASK-DETAIL.md#trc-p4-004--multiintervalreader)
 - [ ] **TRC-P4-005** Aggregation Core [details](./TASK-DETAIL.md#trc-p4-005--aggregation-core)
 - [ ] **TRC-P4-006** Aggregation Consolidators [details](./TASK-DETAIL.md#trc-p4-006--aggregation-consolidators)
