@@ -3,7 +3,7 @@ using Tracer.WebApi.Lifecycle;
 
 namespace Tracer.Observer.Lifecycle;
 
-public sealed class ObserverStateReporter : ILiveStatusProvider
+public class ObserverStateReporter : ILiveStatusProvider
 {
     private long _ingestedTotal;
     private long _droppedTotal;

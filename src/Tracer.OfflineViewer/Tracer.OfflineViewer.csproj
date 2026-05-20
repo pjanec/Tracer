@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>tracer-viewer</AssemblyName>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>Tracer.OfflineViewer</RootNamespace>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Tracer.Observer\Tracer.Observer.csproj" />
+    <ProjectReference Include="..\Tracer.WebApi\Tracer.WebApi.csproj" />
+    <ProjectReference Include="..\Tracer.Bundle\Tracer.Bundle.csproj" />
+    <ProjectReference Include="..\Tracer.Storage.DuckDB.MultiInterval\Tracer.Storage.DuckDB.MultiInterval.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Serilog.AspNetCore" />
+    <PackageReference Include="Serilog.Sinks.File" />
+    <PackageReference Include="Serilog.Formatting.Compact" />
+  </ItemGroup>
+
+</Project>

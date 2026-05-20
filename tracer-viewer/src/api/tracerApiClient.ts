@@ -1,6 +1,20 @@
 // tracer-viewer/src/api/tracerApiClient.ts
 // Hand-authored stub matching the backend DTOs
 
+export interface CurrentBundleDto {
+  bundleId: string;
+  label?: string;
+  timeRange: { startUtc: string; endUtc: string };
+}
+
+export interface OpenBundleRequestDto {
+  path: string;
+}
+
+export interface OpenBundleResponseDto {
+  bundleId: string;
+}
+
 export interface SessionDto {
   sessionId: string;
   scenarioId: string;
@@ -127,6 +141,27 @@ export class TracerApiClient {
     const res = await fetch('/api/live/status');
     if (!res.ok) throw new Error(`getLiveStatus: ${res.status}`);
     return res.json() as Promise<LiveStatusDto>;
+  }
+
+  async getCurrentBundle(): Promise<CurrentBundleDto | null> {
+    const res = await fetch('/api/bundle/current');
+    if (!res.ok) throw new Error(`getCurrentBundle: ${res.status}`);
+    return res.json() as Promise<CurrentBundleDto | null>;
+  }
+
+  async openBundle(request: OpenBundleRequestDto): Promise<OpenBundleResponseDto> {
+    const res = await fetch('/api/bundle/open', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(request),
+    });
+    if (!res.ok) throw new Error(`openBundle: ${res.status}`);
+    return res.json() as Promise<OpenBundleResponseDto>;
+  }
+
+  async closeBundle(): Promise<void> {
+    const res = await fetch('/api/bundle/close', { method: 'POST' });
+    if (!res.ok) throw new Error(`closeBundle: ${res.status}`);
   }
 }
 

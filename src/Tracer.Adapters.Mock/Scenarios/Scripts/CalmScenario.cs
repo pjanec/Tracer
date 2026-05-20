@@ -64,11 +64,14 @@ public sealed class CalmScenario : IScenarioScript
         }
     }
 
-    private static EventRecord MakeSessionStart(ScenarioContext ctx, ulong sequence, AgentId node) =>
-        new()
+    private static EventRecord MakeSessionStart(ScenarioContext ctx, ulong sequence, AgentId node)
+    {
+        var traceId = ctx.TraceIdGen.NewTrace();
+        var sessionId = traceId.Value.ToString("x16");
+        return new EventRecord
         {
             EventId = ctx.TraceIdGen.NewEvent(),
-            TraceId = ctx.TraceIdGen.NewTrace(),
+            TraceId = traceId,
             ParentEventId = null,
             SequenceNumber = sequence,
             PublishWallclock = ctx.Clock.Now,
@@ -81,8 +84,9 @@ public sealed class CalmScenario : IScenarioScript
             ScenarioPhase = ScenarioPhaseName,
             Severity = null,
             NotableLabel = SessionStartLabel,
-            PayloadJson = "{\"scenarioId\":\"calm\",\"label\":\"Calm scenario test session\"}",
+            PayloadJson = $"{{\"sessionId\":\"{sessionId}\",\"scenarioId\":\"calm\",\"label\":\"Calm scenario test session\"}}",
         };
+    }
 
     private static AgentId[] BuildNodes(int count) =>
         Enumerable.Range(0, count)
