@@ -18,6 +18,17 @@ const router = createRouter({
       component: () => import('@/views/ScenarioView.vue'),
       props: true,
     },
+    {
+      path: '/v/timeline/:sessionId',
+      name: 'timeline',
+      component: () => import('@/views/TimelineView.vue'),
+      props: true,
+    },
+    {
+      path: '/bundles',
+      name: 'bundles',
+      component: () => import('@/views/BundlesView.vue'),
+    },
   ],
 });
 

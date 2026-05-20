@@ -1,6 +1,8 @@
 // tracer-viewer/src/api/tracerApiClient.ts
 // Hand-authored stub matching the backend DTOs
 
+import type { EventListDto, EventAggregateDto } from '@/types/timeline';
+
 export interface CurrentBundleDto {
   bundleId: string;
   label?: string;
@@ -79,6 +81,35 @@ export interface LiveStatusDto {
   ingestedTotal: number;
   connectedSources: number;
   currentInterval: string;
+}
+
+export interface EventListRequestDto {
+  sessionId: string;
+  from?: Date;
+  to?: Date;
+  topics?: string[];
+  nodes?: string[];
+  traceId?: string;
+  entityIds?: string[];
+  playerIds?: string[];
+  severities?: string[];
+  notablesOnly?: boolean;
+  limit?: number;
+}
+
+export interface EventAggregateRequestDto {
+  sessionId: string;
+  from: Date;
+  to:   Date;
+  bucketDuration: string;  // '100ms' | '1s' | '5s' | '30s' | '1m' | '5m' | '30m' | '1h'
+  groupBy?: 'node' | 'topic' | 'severity' | 'none';
+  topics?: string[];
+  nodes?: string[];
+  traceId?: string;
+  entityIds?: string[];
+  playerIds?: string[];
+  severities?: string[];
+  notablesOnly?: boolean;
 }
 
 export class TracerApiClient {
@@ -162,6 +193,62 @@ export class TracerApiClient {
   async closeBundle(): Promise<void> {
     const res = await fetch('/api/bundle/close', { method: 'POST' });
     if (!res.ok) throw new Error(`closeBundle: ${res.status}`);
+  }
+
+  async listEvents(req: EventListRequestDto, opts?: { signal?: AbortSignal }): Promise<EventListDto> {
+    const params = new URLSearchParams({ sessionId: req.sessionId });
+    if (req.from)          params.set('from',  req.from.toISOString());
+    if (req.to)            params.set('to',    req.to.toISOString());
+    if (req.traceId)       params.set('traceId', req.traceId);
+    if (req.notablesOnly)  params.set('notablesOnly', 'true');
+    if (req.limit != null) params.set('limit', String(req.limit));
+    req.topics?.forEach((t) => params.append('topic', t));
+    req.nodes?.forEach((n) => params.append('node', n));
+    req.severities?.forEach((s) => params.append('severity', s));
+    req.entityIds?.forEach((e) => params.append('entityId', e));
+    req.playerIds?.forEach((p) => params.append('playerId', p));
+
+    const res = await fetch(`/api/events?${params.toString()}`, { signal: opts?.signal });
+    if (!res.ok) throw new Error(`listEvents: ${res.status}`);
+    return res.json() as Promise<EventListDto>;
+  }
+
+  async aggregateEvents(req: EventAggregateRequestDto, opts?: { signal?: AbortSignal }): Promise<EventAggregateDto> {
+    const params = new URLSearchParams({
+      sessionId:      req.sessionId,
+      from:           req.from.toISOString(),
+      to:             req.to.toISOString(),
+      bucketDuration: req.bucketDuration,
+    });
+    if (req.groupBy)       params.set('groupBy', req.groupBy);
+    if (req.traceId)       params.set('traceId', req.traceId);
+    if (req.notablesOnly)  params.set('notablesOnly', 'true');
+    req.topics?.forEach((t) => params.append('topic', t));
+    req.nodes?.forEach((n) => params.append('node', n));
+    req.severities?.forEach((s) => params.append('severity', s));
+    req.entityIds?.forEach((e) => params.append('entityId', e));
+    req.playerIds?.forEach((p) => params.append('playerId', p));
+
+    const res = await fetch(`/api/events/aggregate?${params.toString()}`, { signal: opts?.signal });
+    if (!res.ok) throw new Error(`aggregateEvents: ${res.status}`);
+    return res.json() as Promise<EventAggregateDto>;
+  }
+
+  async listBundles(): Promise<{ bundleId: string; label?: string; createdAtUtc: string }[]> {
+    const res = await fetch('/api/bundle/list');
+    if (res.status === 404) return [];
+    if (!res.ok) throw new Error(`listBundles: ${res.status}`);
+    return res.json() as Promise<{ bundleId: string; label?: string; createdAtUtc: string }[]>;
+  }
+
+  async buildBundle(sessionId: string): Promise<{ bundleId: string }> {
+    const res = await fetch('/api/bundle/build', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionId }),
+    });
+    if (!res.ok) throw new Error(`buildBundle: ${res.status}`);
+    return res.json() as Promise<{ bundleId: string }>;
   }
 }
 
