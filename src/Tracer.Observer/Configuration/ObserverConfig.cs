@@ -25,6 +25,12 @@ public sealed class ObserverConfig
     public required DataSourcesConfig DataSources { get; set; }
 
     public LiveStreamingConfig LiveStreaming { get; set; } = new();
+
+    /// <summary>Where built bundles are stored on the observer's disk.</summary>
+    public string BundlesRoot { get; set; } = "";
+
+    /// <summary>Where the mock-NAS data lives (read source).</summary>
+    public string NasMockRoot { get; set; } = "";
 }
 
 public sealed class DataSourcesConfig

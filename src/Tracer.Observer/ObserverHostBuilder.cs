@@ -4,7 +4,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
 using Serilog;
+using Tracer.Adapters.Mock.Storage;
 using Tracer.Adapters.Mock.Upload;
+using Tracer.Aggregator;
 using Tracer.Agent.Configuration;
 using Tracer.Agent.Lifecycle;
 using Tracer.Agent.Storage;
@@ -16,6 +18,7 @@ using Tracer.Observer.Configuration;
 using Tracer.Observer.Lifecycle;
 using Tracer.Observer.Sources;
 using Tracer.Storage.DuckDB.Parquet;
+using Tracer.WebApi.Bundles;
 using Tracer.WebApi.Endpoints;
 using Tracer.WebApi.Errors;
 using Tracer.WebApi.Lifecycle;
@@ -144,6 +147,31 @@ public static class ObserverHostBuilder
         builder.Services.AddSingleton<LiveEventBroadcaster>();
         builder.Services.AddHostedService(sp => sp.GetRequiredService<LiveEventBroadcaster>());
 
+        // ── Bundle services ───────────────────────────────────────────────────
+        builder.Services.AddSingleton<BundleCatalog>(sp =>
+        {
+            var cfg = sp.GetRequiredService<ObserverConfig>();
+            var bundlesRoot = string.IsNullOrWhiteSpace(cfg.BundlesRoot)
+                ? Path.Combine(cfg.DataRoot, "bundles")
+                : cfg.BundlesRoot;
+            Directory.CreateDirectory(bundlesRoot);
+            return new BundleCatalog(bundlesRoot, sp.GetRequiredService<ILogger<BundleCatalog>>());
+        });
+        builder.Services.AddSingleton<ITelemetryStorageReader>(sp =>
+        {
+            var cfg = sp.GetRequiredService<ObserverConfig>();
+            var nasRoot = string.IsNullOrWhiteSpace(cfg.NasMockRoot)
+                ? Path.Combine(cfg.DataRoot, "nas-mock")
+                : cfg.NasMockRoot;
+            return new LocalFileSystemStorageReader(nasRoot,
+                sp.GetRequiredService<ILogger<LocalFileSystemStorageReader>>());
+        });
+        builder.Services.AddSingleton<IAggregationOrchestrator>(sp =>
+            new AggregationOrchestrator(
+                sp.GetRequiredService<ITelemetryStorageReader>(),
+                sp.GetRequiredService<ILogger<AggregationOrchestrator>>()));
+        builder.Services.AddSingleton<BundleBuildService>();
+
         // ── Hosted service ────────────────────────────────────────────────────
         builder.Services.AddHostedService<ObserverHostedService>();
 
@@ -177,6 +205,7 @@ public static class ObserverHostBuilder
         ScenarioEndpoints.Map(app);
         TopologyEndpoints.Map(app);
         SseEndpoints.Map(app);
+        BundleEndpoints.Map(app);
 
         // ── SPA static files (if present) ─────────────────────────────────────
         var spaPath = Path.Combine(app.Environment.ContentRootPath, "wwwroot");

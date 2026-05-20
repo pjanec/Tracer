@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "foDvhlkW7sXWGbj5ojwNJkKi2EbNmZHfCHEimTuatrSEUGjbREwH3OyuPXtwYUHGphzGk3WkgrB9nA5waRzllg==",
+  "dgSpecHash": "J+G4ACdfjsmzFcq87V5SUFKriC3cVLwHBRXFa+0GWix8DyVMTrRXeVpLtxfEbOo0uN5Q2EkqWJ6GLV82m0v5ag==",
   "success": true,
   "projectFilePath": "D:\\Work\\Tracer\\src\\Tracer.Storage.DuckDB\\Tracer.Storage.DuckDB.csproj",
   "expectedPackageFiles": [

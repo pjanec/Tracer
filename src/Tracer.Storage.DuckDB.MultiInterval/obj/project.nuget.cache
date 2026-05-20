@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "GTczJ9g3Xyz+bC5UasLaFlF/gcd36OUdO26rHuoXb8dgMtQlzUJiuQ6X49+fArguxoEc3WbuLYkGRYm1mrrctA==",
+  "dgSpecHash": "t57Ul6yMg7kmhx1eM2ajvBG/0l+pygQuTzPmhN8VxgGXJO3984HN6l0rG/gSFV2bD+gTxKPljDVWb4nIx/IFHg==",
   "success": true,
   "projectFilePath": "D:\\Work\\Tracer\\src\\Tracer.Storage.DuckDB.MultiInterval\\Tracer.Storage.DuckDB.MultiInterval.csproj",
   "expectedPackageFiles": [

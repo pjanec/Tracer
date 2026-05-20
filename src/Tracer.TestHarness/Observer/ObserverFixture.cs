@@ -21,6 +21,8 @@ public sealed class ObserverFixtureOptions
     public TimeSpan IntervalDuration { get; set; } = TimeSpan.FromMinutes(1);
     public int HttpPort { get; set; } = 0;
     public Tracer.Core.Time.IClock? Clock { get; set; }
+    public string? NasMockRoot { get; set; }
+    public string? BundlesRoot { get; set; }
 }
 
 /// <summary>
@@ -51,6 +53,8 @@ public sealed class ObserverFixture : IAsyncDisposable
     public static async Task<ObserverFixture> CreateAsync(
         ObserverFixtureOptions? options = null,
         SseStreamingOptions? sseOptions = null,
+        Action<IServiceCollection>? configureExtraServices = null,
+        Action<WebApplication>? configureExtraApp = null,
         CancellationToken ct = default)
     {
         options ??= new ObserverFixtureOptions();
@@ -78,7 +82,9 @@ public sealed class ObserverFixture : IAsyncDisposable
             IntervalDuration = options.IntervalDuration,
             KeepLastNIntervals = 4,
             DiskWatermarkPercent = 10,
-            DataSources = new DataSourcesConfig { Kind = "Mock" }
+            DataSources = new DataSourcesConfig { Kind = "Mock" },
+            NasMockRoot = options.NasMockRoot ?? "",
+            BundlesRoot = options.BundlesRoot ?? Path.Combine(fixture._tempDir, "bundles"),
         });
 
         // Core services
@@ -124,6 +130,8 @@ public sealed class ObserverFixture : IAsyncDisposable
         builder.Services.AddSingleton<LiveEventBroadcaster>();
         builder.Services.AddHostedService(sp => sp.GetRequiredService<LiveEventBroadcaster>());
 
+        configureExtraServices?.Invoke(builder.Services);
+
         var app = builder.Build();
 
         app.UseExceptionHandler(eb =>
@@ -135,6 +143,8 @@ public sealed class ObserverFixture : IAsyncDisposable
         ScenarioEndpoints.Map(app);
         EventEndpoints.Map(app);
         SseEndpoints.Map(app);
+
+        configureExtraApp?.Invoke(app);
 
         fixture.App = app;
 

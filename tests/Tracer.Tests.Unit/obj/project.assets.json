@@ -2521,6 +2521,8 @@
           "Serilog.Sinks.Console": "5.0.1",
           "Serilog.Sinks.File": "5.0.0",
           "Tracer.Adapters.Mock": "1.0.0",
+          "Tracer.Aggregator": "1.0.0",
+          "Tracer.Bundle": "1.0.0",
           "Tracer.Core": "1.0.0",
           "Tracer.Storage.DuckDB": "1.0.0",
           "Tracer.WebApi": "1.0.0",
@@ -2664,6 +2666,9 @@
         "dependencies": {
           "Microsoft.AspNetCore.OpenApi": "8.0.0",
           "NSwag.AspNetCore": "14.0.7",
+          "Tracer.Adapters.Mock": "1.0.0",
+          "Tracer.Aggregator": "1.0.0",
+          "Tracer.Bundle": "1.0.0",
           "Tracer.Core": "1.0.0",
           "Tracer.Storage.DuckDB": "1.0.0"
         },
@@ -7533,7 +7538,6 @@
         }
       },
       "warningProperties": {
-        "allWarningsAsErrors": true,
         "warnAsError": [
           "NU1605"
         ]

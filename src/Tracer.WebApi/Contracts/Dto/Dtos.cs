@@ -100,3 +100,87 @@ public sealed record LiveStatusDto
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public DateTimeOffset? LastEventUtc { get; init; }
 }
+
+public sealed record TimeRangeDto
+{
+    public required DateTimeOffset StartUtc { get; init; }
+    public required DateTimeOffset EndUtc { get; init; }
+}
+
+public sealed record BundleBuildRequestDto
+{
+    public string? SessionId { get; init; }
+    public TimeRangeDto? TimeRange { get; init; }
+    public IReadOnlyList<string>? NodeFilter { get; init; }
+    public string FastStateScope { get; init; } = "None";
+    public IReadOnlyList<string>? FastStateEntities { get; init; }
+    public string? LabelOverride { get; init; }
+}
+
+public sealed record BundleBuildAcceptedDto
+{
+    public required string BundleId { get; init; }
+}
+
+public sealed record BundleBuildStatusDto
+{
+    public required string BundleId { get; init; }
+    public required string State { get; init; }
+    public required DateTimeOffset QueuedAtUtc { get; init; }
+    public DateTimeOffset? StartedAtUtc { get; init; }
+    public DateTimeOffset? CompletedAtUtc { get; init; }
+    public string? Error { get; init; }
+    public string? CurrentStage { get; init; }
+    public string? OutputPath { get; init; }
+}
+
+public sealed record BundleListDto
+{
+    public required IReadOnlyList<BundleListEntryDto> Bundles { get; init; }
+}
+
+public sealed record BundleListEntryDto
+{
+    public required string BundleId { get; init; }
+    public required DateTimeOffset CreatedAtUtc { get; init; }
+    public required TimeRangeDto TimeRange { get; init; }
+    public required long SizeBytes { get; init; }
+    public string? Label { get; init; }
+    public string? SessionId { get; init; }
+}
+
+public sealed record BundleWriterInfoDto
+{
+    public required string Tool { get; init; }
+    public required string Version { get; init; }
+    public required string Host { get; init; }
+}
+
+public sealed record BundleSessionContextDto
+{
+    public string? SessionId { get; init; }
+    public string? ScenarioId { get; init; }
+    public string? Label { get; init; }
+}
+
+public sealed record BundleStatisticsDto
+{
+    public required long TotalEvents { get; init; }
+    public required long TotalSlowStateSamples { get; init; }
+    public required long TotalFastStateRows { get; init; }
+    public required long UncompressedBytes { get; init; }
+}
+
+public sealed record BundleManifestDto
+{
+    public required string BundleId { get; init; }
+    public required int SchemaVersion { get; init; }
+    public required DateTimeOffset CreatedAtUtc { get; init; }
+    public required string TracerVersion { get; init; }
+    public required BundleWriterInfoDto Writer { get; init; }
+    public required TimeRangeDto TimeRange { get; init; }
+    public required BundleSessionContextDto SessionContext { get; init; }
+    public required IReadOnlyList<string> ParticipatingNodes { get; init; }
+    public required string FastStateScope { get; init; }
+    public required BundleStatisticsDto Statistics { get; init; }
+}

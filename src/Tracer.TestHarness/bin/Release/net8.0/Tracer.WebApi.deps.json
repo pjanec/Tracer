@@ -10,6 +10,9 @@
         "dependencies": {
           "Microsoft.AspNetCore.OpenApi": "8.0.0",
           "NSwag.AspNetCore": "14.0.7",
+          "Tracer.Adapters.Mock": "1.0.0",
+          "Tracer.Aggregator": "1.0.0",
+          "Tracer.Bundle": "1.0.0",
           "Tracer.Core": "1.0.0",
           "Tracer.Storage.DuckDB": "1.0.0"
         },
@@ -358,6 +361,18 @@
           }
         }
       },
+      "runtime.native.System/4.3.0": {
+        "dependencies": {
+          "Microsoft.NETCore.Platforms": "1.1.0",
+          "Microsoft.NETCore.Targets": "1.1.0"
+        }
+      },
+      "runtime.native.System.IO.Compression/4.3.0": {
+        "dependencies": {
+          "Microsoft.NETCore.Platforms": "1.1.0",
+          "Microsoft.NETCore.Targets": "1.1.0"
+        }
+      },
       "Snappier/1.1.6": {
         "runtime": {
           "lib/net8.0/Snappier.dll": {
@@ -414,6 +429,55 @@
           "System.Runtime": "4.3.0",
           "System.Text.Encoding": "4.3.0",
           "System.Threading.Tasks": "4.3.0"
+        }
+      },
+      "System.IO.Compression/4.3.0": {
+        "dependencies": {
+          "Microsoft.NETCore.Platforms": "1.1.0",
+          "System.Buffers": "4.5.1",
+          "System.Collections": "4.3.0",
+          "System.Diagnostics.Debug": "4.3.0",
+          "System.IO": "4.3.0",
+          "System.Resources.ResourceManager": "4.3.0",
+          "System.Runtime": "4.3.0",
+          "System.Runtime.Extensions": "4.3.0",
+          "System.Runtime.Handles": "4.3.0",
+          "System.Runtime.InteropServices": "4.3.0",
+          "System.Text.Encoding": "4.3.0",
+          "System.Threading": "4.3.0",
+          "System.Threading.Tasks": "4.3.0",
+          "runtime.native.System": "4.3.0",
+          "runtime.native.System.IO.Compression": "4.3.0"
+        }
+      },
+      "System.IO.Compression.ZipFile/4.3.0": {
+        "dependencies": {
+          "System.Buffers": "4.5.1",
+          "System.IO": "4.3.0",
+          "System.IO.Compression": "4.3.0",
+          "System.IO.FileSystem": "4.3.0",
+          "System.IO.FileSystem.Primitives": "4.3.0",
+          "System.Resources.ResourceManager": "4.3.0",
+          "System.Runtime": "4.3.0",
+          "System.Runtime.Extensions": "4.3.0",
+          "System.Text.Encoding": "4.3.0"
+        }
+      },
+      "System.IO.FileSystem/4.3.0": {
+        "dependencies": {
+          "Microsoft.NETCore.Platforms": "1.1.0",
+          "Microsoft.NETCore.Targets": "1.1.0",
+          "System.IO": "4.3.0",
+          "System.IO.FileSystem.Primitives": "4.3.0",
+          "System.Runtime": "4.3.0",
+          "System.Runtime.Handles": "4.3.0",
+          "System.Text.Encoding": "4.3.0",
+          "System.Threading.Tasks": "4.3.0"
+        }
+      },
+      "System.IO.FileSystem.Primitives/4.3.0": {
+        "dependencies": {
+          "System.Runtime": "4.3.0"
         }
       },
       "System.Linq/4.3.0": {
@@ -570,6 +634,14 @@
           "System.Runtime": "4.3.0"
         }
       },
+      "Ulid/1.3.4": {
+        "runtime": {
+          "lib/net8.0/Ulid.dll": {
+            "assemblyVersion": "1.3.4.0",
+            "fileVersion": "1.3.4.0"
+          }
+        }
+      },
       "YamlDotNet/13.7.1": {
         "runtime": {
           "lib/net7.0/YamlDotNet.dll": {
@@ -584,6 +656,41 @@
             "assemblyVersion": "0.8.1.0",
             "fileVersion": "0.8.1.0"
           }
+        }
+      },
+      "Tracer.Adapters.Mock/1.0.0": {
+        "dependencies": {
+          "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
+          "Tracer.Core": "1.0.0"
+        },
+        "runtime": {
+          "Tracer.Adapters.Mock.dll": {}
+        }
+      },
+      "Tracer.Aggregator/1.0.0": {
+        "dependencies": {
+          "DuckDB.NET.Bindings.Full": "1.0.2",
+          "DuckDB.NET.Data": "1.0.2",
+          "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
+          "System.IO.Compression.ZipFile": "4.3.0",
+          "Tracer.Adapters.Mock": "1.0.0",
+          "Tracer.Bundle": "1.0.0",
+          "Tracer.Core": "1.0.0",
+          "Tracer.Storage.DuckDB": "1.0.0",
+          "Tracer.Storage.DuckDB.MultiInterval": "1.0.0"
+        },
+        "runtime": {
+          "Tracer.Aggregator.dll": {}
+        }
+      },
+      "Tracer.Bundle/1.0.0": {
+        "dependencies": {
+          "System.IO.Compression.ZipFile": "4.3.0",
+          "Tracer.Core": "1.0.0",
+          "Ulid": "1.3.4"
+        },
+        "runtime": {
+          "Tracer.Bundle.dll": {}
         }
       },
       "Tracer.Core/1.0.0": {
@@ -601,6 +708,18 @@
         },
         "runtime": {
           "Tracer.Storage.DuckDB.dll": {}
+        }
+      },
+      "Tracer.Storage.DuckDB.MultiInterval/1.0.0": {
+        "dependencies": {
+          "DuckDB.NET.Bindings.Full": "1.0.2",
+          "DuckDB.NET.Data": "1.0.2",
+          "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
+          "Tracer.Core": "1.0.0",
+          "Tracer.Storage.DuckDB": "1.0.0"
+        },
+        "runtime": {
+          "Tracer.Storage.DuckDB.MultiInterval.dll": {}
         }
       }
     }
@@ -842,6 +961,20 @@
       "path": "parquet.net/4.24.0",
       "hashPath": "parquet.net.4.24.0.nupkg.sha512"
     },
+    "runtime.native.System/4.3.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-c/qWt2LieNZIj1jGnVNsE2Kl23Ya2aSTBuXMD6V7k9KWr6l16Tqdwq+hJScEpWER9753NWC8h96PaVNY5Ld7Jw==",
+      "path": "runtime.native.system/4.3.0",
+      "hashPath": "runtime.native.system.4.3.0.nupkg.sha512"
+    },
+    "runtime.native.System.IO.Compression/4.3.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-INBPonS5QPEgn7naufQFXJEp3zX6L4bwHgJ/ZH78aBTpeNfQMtf7C6VrAFhlq2xxWBveIOWyFzQjJ8XzHMhdOQ==",
+      "path": "runtime.native.system.io.compression/4.3.0",
+      "hashPath": "runtime.native.system.io.compression.4.3.0.nupkg.sha512"
+    },
     "Snappier/1.1.6": {
       "type": "package",
       "serviceable": true,
@@ -897,6 +1030,34 @@
       "sha512": "sha512-3qjaHvxQPDpSOYICjUoTsmoq5u6QJAFRUITgeT/4gqkF1bajbSmb1kwSxEA8AHlofqgcKJcM8udgieRNhaJ5Cg==",
       "path": "system.io/4.3.0",
       "hashPath": "system.io.4.3.0.nupkg.sha512"
+    },
+    "System.IO.Compression/4.3.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-YHndyoiV90iu4iKG115ibkhrG+S3jBm8Ap9OwoUAzO5oPDAWcr0SFwQFm0HjM8WkEZWo0zvLTyLmbvTkW1bXgg==",
+      "path": "system.io.compression/4.3.0",
+      "hashPath": "system.io.compression.4.3.0.nupkg.sha512"
+    },
+    "System.IO.Compression.ZipFile/4.3.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-G4HwjEsgIwy3JFBduZ9quBkAu+eUwjIdJleuNSgmUojbH6O3mlvEIme+GHx/cLlTAPcrnnL7GqvB9pTlWRfhOg==",
+      "path": "system.io.compression.zipfile/4.3.0",
+      "hashPath": "system.io.compression.zipfile.4.3.0.nupkg.sha512"
+    },
+    "System.IO.FileSystem/4.3.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-3wEMARTnuio+ulnvi+hkRNROYwa1kylvYahhcLk4HSoVdl+xxTFVeVlYOfLwrDPImGls0mDqbMhrza8qnWPTdA==",
+      "path": "system.io.filesystem/4.3.0",
+      "hashPath": "system.io.filesystem.4.3.0.nupkg.sha512"
+    },
+    "System.IO.FileSystem.Primitives/4.3.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-6QOb2XFLch7bEc4lIcJH49nJN2HV+OC3fHDgsLVsBVBk3Y4hFAnOBGzJ2lUu7CyDDFo9IBWkSsnbkT6IBwwiMw==",
+      "path": "system.io.filesystem.primitives/4.3.0",
+      "hashPath": "system.io.filesystem.primitives.4.3.0.nupkg.sha512"
     },
     "System.Linq/4.3.0": {
       "type": "package",
@@ -1038,6 +1199,13 @@
       "path": "system.threading.tasks/4.3.0",
       "hashPath": "system.threading.tasks.4.3.0.nupkg.sha512"
     },
+    "Ulid/1.3.4": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-6IaGquwjjfW+BoHSV844y12Uy2kxbboYNmsibxr2lotcSPAA3LKy1CKcAQ8JOdAdL4xMoDNXA1oxG41w7fbr6Q==",
+      "path": "ulid/1.3.4",
+      "hashPath": "ulid.1.3.4.nupkg.sha512"
+    },
     "YamlDotNet/13.7.1": {
       "type": "package",
       "serviceable": true,
@@ -1052,12 +1220,32 @@
       "path": "zstdsharp.port/0.8.1",
       "hashPath": "zstdsharp.port.0.8.1.nupkg.sha512"
     },
+    "Tracer.Adapters.Mock/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Tracer.Aggregator/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Tracer.Bundle/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
     "Tracer.Core/1.0.0": {
       "type": "project",
       "serviceable": false,
       "sha512": ""
     },
     "Tracer.Storage.DuckDB/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Tracer.Storage.DuckDB.MultiInterval/1.0.0": {
       "type": "project",
       "serviceable": false,
       "sha512": ""

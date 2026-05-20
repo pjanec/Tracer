@@ -17,7 +17,7 @@ namespace Tracer.Aggregator;
 /// The single public entry point for the aggregation library.
 /// Orchestrates the nine-stage bundle build process.
 /// </summary>
-public sealed class AggregationOrchestrator
+public sealed class AggregationOrchestrator : IAggregationOrchestrator
 {
     private readonly ITelemetryStorageReader _nasReader;
     private readonly ILogger<AggregationOrchestrator> _logger;

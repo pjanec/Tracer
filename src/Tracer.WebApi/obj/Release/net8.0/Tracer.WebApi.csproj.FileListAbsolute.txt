@@ -15,3 +15,11 @@ D:\Work\Tracer\src\Tracer.WebApi\obj\Release\net8.0\Tracer.WebApi.dll
 D:\Work\Tracer\src\Tracer.WebApi\obj\Release\net8.0\refint\Tracer.WebApi.dll
 D:\Work\Tracer\src\Tracer.WebApi\obj\Release\net8.0\Tracer.WebApi.pdb
 D:\Work\Tracer\src\Tracer.WebApi\obj\Release\net8.0\ref\Tracer.WebApi.dll
+D:\Work\Tracer\src\Tracer.WebApi\bin\Release\net8.0\Tracer.Adapters.Mock.dll
+D:\Work\Tracer\src\Tracer.WebApi\bin\Release\net8.0\Tracer.Aggregator.dll
+D:\Work\Tracer\src\Tracer.WebApi\bin\Release\net8.0\Tracer.Bundle.dll
+D:\Work\Tracer\src\Tracer.WebApi\bin\Release\net8.0\Tracer.Storage.DuckDB.MultiInterval.dll
+D:\Work\Tracer\src\Tracer.WebApi\bin\Release\net8.0\Tracer.Aggregator.pdb
+D:\Work\Tracer\src\Tracer.WebApi\bin\Release\net8.0\Tracer.Bundle.pdb
+D:\Work\Tracer\src\Tracer.WebApi\bin\Release\net8.0\Tracer.Adapters.Mock.pdb
+D:\Work\Tracer\src\Tracer.WebApi\bin\Release\net8.0\Tracer.Storage.DuckDB.MultiInterval.pdb

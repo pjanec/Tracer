@@ -15,7 +15,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Tracer.Bundle")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+28bd8bc189e64070457c61ba3bd259991c66a61e")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f63bd8cb317d8dfb443316c418e22991d306b01c")]
 [assembly: System.Reflection.AssemblyProductAttribute("Tracer.Bundle")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Tracer.Bundle")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

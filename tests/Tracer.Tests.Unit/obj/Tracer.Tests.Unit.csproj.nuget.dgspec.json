@@ -41,7 +41,6 @@
           }
         },
         "warningProperties": {
-          "allWarningsAsErrors": true,
           "warnAsError": [
             "NU1605"
           ]
@@ -150,7 +149,6 @@
           }
         },
         "warningProperties": {
-          "allWarningsAsErrors": true,
           "warnAsError": [
             "NU1605"
           ]
@@ -315,7 +313,6 @@
           }
         },
         "warningProperties": {
-          "allWarningsAsErrors": true,
           "warnAsError": [
             "NU1605"
           ]
@@ -433,7 +430,6 @@
           }
         },
         "warningProperties": {
-          "allWarningsAsErrors": true,
           "warnAsError": [
             "NU1605"
           ]
@@ -537,7 +533,6 @@
           }
         },
         "warningProperties": {
-          "allWarningsAsErrors": true,
           "warnAsError": [
             "NU1605"
           ]
@@ -642,7 +637,6 @@
           }
         },
         "warningProperties": {
-          "allWarningsAsErrors": true,
           "warnAsError": [
             "NU1605"
           ]
@@ -779,6 +773,12 @@
               "D:\\Work\\Tracer\\src\\Tracer.Agent\\Tracer.Agent.csproj": {
                 "projectPath": "D:\\Work\\Tracer\\src\\Tracer.Agent\\Tracer.Agent.csproj"
               },
+              "D:\\Work\\Tracer\\src\\Tracer.Aggregator\\Tracer.Aggregator.csproj": {
+                "projectPath": "D:\\Work\\Tracer\\src\\Tracer.Aggregator\\Tracer.Aggregator.csproj"
+              },
+              "D:\\Work\\Tracer\\src\\Tracer.Bundle\\Tracer.Bundle.csproj": {
+                "projectPath": "D:\\Work\\Tracer\\src\\Tracer.Bundle\\Tracer.Bundle.csproj"
+              },
               "D:\\Work\\Tracer\\src\\Tracer.Core\\Tracer.Core.csproj": {
                 "projectPath": "D:\\Work\\Tracer\\src\\Tracer.Core\\Tracer.Core.csproj"
               },
@@ -792,7 +792,6 @@
           }
         },
         "warningProperties": {
-          "allWarningsAsErrors": true,
           "warnAsError": [
             "NU1605"
           ]
@@ -921,7 +920,6 @@
           }
         },
         "warningProperties": {
-          "allWarningsAsErrors": true,
           "warnAsError": [
             "NU1605"
           ]
@@ -1034,7 +1032,6 @@
           }
         },
         "warningProperties": {
-          "allWarningsAsErrors": true,
           "warnAsError": [
             "NU1605"
           ]
@@ -1176,7 +1173,6 @@
           }
         },
         "warningProperties": {
-          "allWarningsAsErrors": true,
           "warnAsError": [
             "NU1605"
           ]
@@ -1290,6 +1286,15 @@
           "net8.0": {
             "targetAlias": "net8.0",
             "projectReferences": {
+              "D:\\Work\\Tracer\\src\\Tracer.Adapters.Mock\\Tracer.Adapters.Mock.csproj": {
+                "projectPath": "D:\\Work\\Tracer\\src\\Tracer.Adapters.Mock\\Tracer.Adapters.Mock.csproj"
+              },
+              "D:\\Work\\Tracer\\src\\Tracer.Aggregator\\Tracer.Aggregator.csproj": {
+                "projectPath": "D:\\Work\\Tracer\\src\\Tracer.Aggregator\\Tracer.Aggregator.csproj"
+              },
+              "D:\\Work\\Tracer\\src\\Tracer.Bundle\\Tracer.Bundle.csproj": {
+                "projectPath": "D:\\Work\\Tracer\\src\\Tracer.Bundle\\Tracer.Bundle.csproj"
+              },
               "D:\\Work\\Tracer\\src\\Tracer.Core\\Tracer.Core.csproj": {
                 "projectPath": "D:\\Work\\Tracer\\src\\Tracer.Core\\Tracer.Core.csproj"
               },
@@ -1300,7 +1305,6 @@
           }
         },
         "warningProperties": {
-          "allWarningsAsErrors": true,
           "warnAsError": [
             "NU1605"
           ]
@@ -1438,7 +1442,6 @@
           }
         },
         "warningProperties": {
-          "allWarningsAsErrors": true,
           "warnAsError": [
             "NU1605"
           ]

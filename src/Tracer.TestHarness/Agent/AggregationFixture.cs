@@ -26,6 +26,9 @@ public sealed class AggregationFixture : IAsyncDisposable
             NullLogger<AggregationOrchestrator>.Instance);
     }
 
+    /// <summary>Path to the mock NAS root directory.</summary>
+    public string NasRoot => _nasRoot;
+
     /// <summary>
     /// The aggregation orchestrator wired to the populated mock-NAS root.
     /// Valid only after <see cref="InitializeAsync"/> completes.

@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "7gokFbdyVwi3832XRWU8FkiWMd9oSN4mfzl33gnYC1DoXLkcXPOoU+S/1CttML0k310AA4zvHZjW6jZskFSXKw==",
+  "dgSpecHash": "1Lqyj//MvDzjlyIXni1xXCM3t8nuOfSb5fLbX/dPw75aoMABAdPj24AOA59Z3HLHHrhgXoC+R4sTm3L7CydlKw==",
   "success": true,
   "projectFilePath": "D:\\Work\\Tracer\\src\\Tracer.WebApi\\Tracer.WebApi.csproj",
   "expectedPackageFiles": [
@@ -37,6 +37,8 @@
     "C:\\Users\\petr.janecek\\.nuget\\packages\\nswag.generation\\14.0.7\\nswag.generation.14.0.7.nupkg.sha512",
     "C:\\Users\\petr.janecek\\.nuget\\packages\\nswag.generation.aspnetcore\\14.0.7\\nswag.generation.aspnetcore.14.0.7.nupkg.sha512",
     "C:\\Users\\petr.janecek\\.nuget\\packages\\parquet.net\\4.24.0\\parquet.net.4.24.0.nupkg.sha512",
+    "C:\\Users\\petr.janecek\\.nuget\\packages\\runtime.native.system\\4.3.0\\runtime.native.system.4.3.0.nupkg.sha512",
+    "C:\\Users\\petr.janecek\\.nuget\\packages\\runtime.native.system.io.compression\\4.3.0\\runtime.native.system.io.compression.4.3.0.nupkg.sha512",
     "C:\\Users\\petr.janecek\\.nuget\\packages\\snappier\\1.1.6\\snappier.1.1.6.nupkg.sha512",
     "C:\\Users\\petr.janecek\\.nuget\\packages\\system.buffers\\4.5.1\\system.buffers.4.5.1.nupkg.sha512",
     "C:\\Users\\petr.janecek\\.nuget\\packages\\system.collections\\4.3.0\\system.collections.4.3.0.nupkg.sha512",
@@ -45,6 +47,10 @@
     "C:\\Users\\petr.janecek\\.nuget\\packages\\system.dynamic.runtime\\4.3.0\\system.dynamic.runtime.4.3.0.nupkg.sha512",
     "C:\\Users\\petr.janecek\\.nuget\\packages\\system.globalization\\4.3.0\\system.globalization.4.3.0.nupkg.sha512",
     "C:\\Users\\petr.janecek\\.nuget\\packages\\system.io\\4.3.0\\system.io.4.3.0.nupkg.sha512",
+    "C:\\Users\\petr.janecek\\.nuget\\packages\\system.io.compression\\4.3.0\\system.io.compression.4.3.0.nupkg.sha512",
+    "C:\\Users\\petr.janecek\\.nuget\\packages\\system.io.compression.zipfile\\4.3.0\\system.io.compression.zipfile.4.3.0.nupkg.sha512",
+    "C:\\Users\\petr.janecek\\.nuget\\packages\\system.io.filesystem\\4.3.0\\system.io.filesystem.4.3.0.nupkg.sha512",
+    "C:\\Users\\petr.janecek\\.nuget\\packages\\system.io.filesystem.primitives\\4.3.0\\system.io.filesystem.primitives.4.3.0.nupkg.sha512",
     "C:\\Users\\petr.janecek\\.nuget\\packages\\system.linq\\4.3.0\\system.linq.4.3.0.nupkg.sha512",
     "C:\\Users\\petr.janecek\\.nuget\\packages\\system.linq.expressions\\4.3.0\\system.linq.expressions.4.3.0.nupkg.sha512",
     "C:\\Users\\petr.janecek\\.nuget\\packages\\system.memory\\4.5.5\\system.memory.4.5.5.nupkg.sha512",
@@ -65,6 +71,7 @@
     "C:\\Users\\petr.janecek\\.nuget\\packages\\system.text.encoding\\4.3.0\\system.text.encoding.4.3.0.nupkg.sha512",
     "C:\\Users\\petr.janecek\\.nuget\\packages\\system.threading\\4.3.0\\system.threading.4.3.0.nupkg.sha512",
     "C:\\Users\\petr.janecek\\.nuget\\packages\\system.threading.tasks\\4.3.0\\system.threading.tasks.4.3.0.nupkg.sha512",
+    "C:\\Users\\petr.janecek\\.nuget\\packages\\ulid\\1.3.4\\ulid.1.3.4.nupkg.sha512",
     "C:\\Users\\petr.janecek\\.nuget\\packages\\yamldotnet\\13.7.1\\yamldotnet.13.7.1.nupkg.sha512",
     "C:\\Users\\petr.janecek\\.nuget\\packages\\zstdsharp.port\\0.8.1\\zstdsharp.port.0.8.1.nupkg.sha512"
   ],

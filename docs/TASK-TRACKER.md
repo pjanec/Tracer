@@ -92,7 +92,7 @@
 - [x] **TRC-P4-006** Aggregation Consolidators [details](./TASK-DETAIL.md#trc-p4-006--aggregation-consolidators)
 - [x] **TRC-P4-007** tracer-aggregate.exe CLI [details](./TASK-DETAIL.md#trc-p4-007--tracer-aggregateexe-cli)
 - [ ] **TRC-P4-008** OfflineViewer [details](./TASK-DETAIL.md#trc-p4-008--offlineviewer)
-- [ ] **TRC-P4-009** Web API Bundle Mode [details](./TASK-DETAIL.md#trc-p4-009--web-api-bundle-mode)
+- [x] **TRC-P4-009** Web API Bundle Mode [details](./TASK-DETAIL.md#trc-p4-009--web-api-bundle-mode)
 - [ ] **TRC-P4-010** Self-Contained Distribution [details](./TASK-DETAIL.md#trc-p4-010--self-contained-distribution)
 - [x] **TRC-P4-011** TestHarness Phase 4 Additions [details](./TASK-DETAIL.md#trc-p4-011--testharness-phase-4-additions)
 - [ ] **TRC-P4-012** Bundle & Aggregator Unit Tests [details](./TASK-DETAIL.md#trc-p4-012--bundle--aggregator-unit-tests)
