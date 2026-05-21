@@ -146,3 +146,141 @@
 - [x] **TRC-P6-012** Frontend Tests [details](./TASK-DETAIL.md#trc-p6-012--frontend-tests)
 
 <!-- PHASE 6 TRACKER END -->
+
+<!-- PHASE 7 TRACKER BEGIN -->
+
+## Phase 7 — Entity History View, Slow State Time Series, Fast State Drill-Down
+
+**Goal:** [tracer_phase7_design.md §1](./tracer_phase7_design.md#1-phase-7-scope-and-goals)
+
+**Phase success criteria:** All conditions from [tracer_phase7_design.md §1.3](./tracer_phase7_design.md#13-success-criteria) AND all Phase 1–6 tests pass.
+
+- [ ] **TRC-P7-001** Tracer.Storage.Parquet Assembly [details](./TASK-DETAIL.md#trc-p7-001--tracerstorageparquet-assembly)
+- [ ] **TRC-P7-002** Schema Extension: slow_state Entity-Time Index [details](./TASK-DETAIL.md#trc-p7-002--schema-extension-slow_state-entity-time-index)
+- [ ] **TRC-P7-003** EntityDiscoveryService [details](./TASK-DETAIL.md#trc-p7-003--entitydiscoveryservice)
+- [ ] **TRC-P7-004** EntityEventsService [details](./TASK-DETAIL.md#trc-p7-004--entityeventsservice)
+- [ ] **TRC-P7-005** EntitySlowStateService [details](./TASK-DETAIL.md#trc-p7-005--entityslowstateservice)
+- [ ] **TRC-P7-006** BuildSlowStateUnionSql Extension [details](./TASK-DETAIL.md#trc-p7-006--buildslowstateunionsql-extension)
+- [ ] **TRC-P7-007** FastStateFileLocator [details](./TASK-DETAIL.md#trc-p7-007--faststatefilelocator)
+- [ ] **TRC-P7-008** EntityFastStateService [details](./TASK-DETAIL.md#trc-p7-008--entityfaststateservice)
+- [ ] **TRC-P7-009** Entity Web API Endpoints, DTOs, and Wiring [details](./TASK-DETAIL.md#trc-p7-009--entity-web-api-endpoints-dtos-and-wiring)
+- [ ] **TRC-P7-010** `EntityHistoryView.vue` — View Layout and Shared Time Axis [details](./TASK-DETAIL.md#trc-p7-010--entityhistoryviewvue--view-layout-and-shared-time-axis)
+- [ ] **TRC-P7-011** `EntityLifecycleRibbon.vue` — Spawn/Ownership/Destruction Band [details](./TASK-DETAIL.md#trc-p7-011--entitylifecycleribbonvue--spawnownershipdestruction-band)
+- [ ] **TRC-P7-012** `EntityEventStrip.vue` — Event Markers on Timeline [details](./TASK-DETAIL.md#trc-p7-012--entityeventstripvue--event-markers-on-timeline)
+- [ ] **TRC-P7-013** `SlowStateChart.vue` and `slowStateChartRenderer.ts` [details](./TASK-DETAIL.md#trc-p7-013--slowstatecharttvue-and-slowstatechartrenderer-ts)
+- [ ] **TRC-P7-014** `FastStateDrillDown.vue`, `FastStateColumnPicker.vue`, and `fastStateChartRenderer.ts` [details](./TASK-DETAIL.md#trc-p7-014--faststateddrill-downvue-fastStateColumnPickervue-and-faststatechartrenderers)
+- [ ] **TRC-P7-015** `useEntityHistoryQuery.ts` and `entityHistoryStore.ts` [details](./TASK-DETAIL.md#trc-p7-015--useentityhistoryqueryts-and-entityhistorystorets-fetch-orchestration)
+- [ ] **TRC-P7-016** `useEntityHistoryUrl.ts` — URL State [details](./TASK-DETAIL.md#trc-p7-016--useentityhistoryurlts--url-state)
+- [ ] **TRC-P7-017** `useFastStateChart.ts` — On-Demand Fast State [details](./TASK-DETAIL.md#trc-p7-017--usefaststatechartts--on-demand-fast-state)
+- [ ] **TRC-P7-018** Cross-View Navigation Pivots [details](./TASK-DETAIL.md#trc-p7-018--cross-view-navigation-pivots)
+- [ ] **TRC-P7-019** Entity Discovery in Session Browser [details](./TASK-DETAIL.md#trc-p7-019--entity-discovery-in-session-browser)
+- [ ] **TRC-P7-020** Phase 7 Tests (Backend Unit, Integration, Frontend, E2E) [details](./TASK-DETAIL.md#trc-p7-020--phase-7-tests-backend-unit-integration-frontend-e2e)
+
+<!-- PHASE 7 TRACKER END -->
+
+<!-- PHASE 8 TRACKER BEGIN -->
+
+## Phase 8 — Annotations, Saved Views, Trigger Evaluation Log, Multi-Persona Polish
+
+**Goal:** [tracer_phase8_design.md §1](./tracer_phase8_design.md#1-phase-8-scope-and-goals)
+
+**Phase success criteria:** All conditions from [tracer_phase8_design.md §1.3](./tracer_phase8_design.md#13-success-criteria) AND all Phase 1–7 tests pass.
+
+- [ ] **TRC-P8-001** Tracer.Storage.Annotations Assembly [details](./TASK-DETAIL.md#trc-p8-001--tracerstorageannotations-assembly)
+- [ ] **TRC-P8-002** SqliteAnnotationStore [details](./TASK-DETAIL.md#trc-p8-002--sqliteannotationstore)
+- [ ] **TRC-P8-003** BundleAnnotationStore [details](./TASK-DETAIL.md#trc-p8-003--bundleannotationstore)
+- [ ] **TRC-P8-004** Tracer.Storage.SavedViews Assembly [details](./TASK-DETAIL.md#trc-p8-004--tracerstoragesavedviews-assembly)
+- [ ] **TRC-P8-005** Annotation REST API Endpoints [details](./TASK-DETAIL.md#trc-p8-005--annotation-rest-api-endpoints)
+- [ ] **TRC-P8-006** Saved Views REST API Endpoints [details](./TASK-DETAIL.md#trc-p8-006--saved-views-rest-api-endpoints)
+- [ ] **TRC-P8-007** TriggerEvalService [details](./TASK-DETAIL.md#trc-p8-007--triggerevalservice)
+- [ ] **TRC-P8-008** Trigger Evaluation API Endpoints [details](./TASK-DETAIL.md#trc-p8-008--trigger-evaluation-api-endpoints)
+- [ ] **TRC-P8-009** AnnotationsExporter [details](./TASK-DETAIL.md#trc-p8-009--annotationsexporter)
+- [ ] **TRC-P8-010** Lifecycle Topic Configuration [details](./TASK-DETAIL.md#trc-p8-010--lifecycle-topic-configuration)
+- [ ] **TRC-P8-011** `AnnotationMarker.vue` and Annotation Overlay Integration [details](./TASK-DETAIL.md#trc-p8-011--annotationmarkervue-and-annotation-overlay-integration)
+- [ ] **TRC-P8-012** `AnnotationEditor.vue` and `AnnotationList.vue` [details](./TASK-DETAIL.md#trc-p8-012--annotationeditorvue-and-annotationlistvue)
+- [ ] **TRC-P8-013** `useAnnotations.ts` and `annotationStore.ts` [details](./TASK-DETAIL.md#trc-p8-013--useannotationsts-and-annotationstorets)
+- [ ] **TRC-P8-014** `SavedViewsView.vue` and `SaveViewButton.vue` [details](./TASK-DETAIL.md#trc-p8-014--savedviewsviewvue-and-saveviewbuttonvue)
+- [ ] **TRC-P8-015** `BookmarkBar.vue` and `useBookmarks.ts` [details](./TASK-DETAIL.md#trc-p8-015--bookmarkbarvue-and-usebookmarksts)
+- [ ] **TRC-P8-016** `TriggerEvalView.vue` and `TriggerEvalRow.vue` [details](./TASK-DETAIL.md#trc-p8-016--triggerevalviewvue-and-triggerevalrowvue)
+- [ ] **TRC-P8-017** `PersonaSwitcher.vue`, `usePersona.ts`, and `personaStore.ts` [details](./TASK-DETAIL.md#trc-p8-017--personaswitchervue-usepersonats-and-personastorets)
+- [ ] **TRC-P8-018** Phase 8 Tests (Backend Unit, Integration, Frontend) [details](./TASK-DETAIL.md#trc-p8-018--phase-8-tests-backend-unit-integration-frontend)
+
+<!-- PHASE 8 TRACKER END -->
+
+<!-- PHASE 9 TRACKER BEGIN -->
+
+## Phase 9 — Replication Latency, Gap Detection, Network Topology
+
+**Goal:** [tracer_phase9_design.md §1](./tracer_phase9_design.md#1-phase-9-scope-and-goals) — per-subscriber replication latency analysis, sequence-number gap detection, and network topology visualization; bundle mode only.
+
+**Phase success criteria:** All conditions from [tracer_phase9_design.md §1.3](./tracer_phase9_design.md#13-success-criteria) AND all Phase 1–8 tests pass.
+
+- [ ] **TRC-P9-001** `LatencyBudget` and Core Latency Types — [details](./TASK-DETAIL.md#trc-p9-001--latencybudget-and-core-latency-types)
+- [ ] **TRC-P9-002** `FakeNetworkModel` — Synthetic Per-Subscriber Receive Times — [details](./TASK-DETAIL.md#trc-p9-002--fakenetworkmodel--synthetic-per-subscriber-receive-times)
+- [ ] **TRC-P9-003** `QuantileSink` and `HistogramSink` Utilities — [details](./TASK-DETAIL.md#trc-p9-003--quantilesink-and-histogramsink-utilities)
+- [ ] **TRC-P9-004** `LatencyDistributionService` — [details](./TASK-DETAIL.md#trc-p9-004--latencydistributionservice)
+- [ ] **TRC-P9-005** `LatencyTimeSeriesService` — [details](./TASK-DETAIL.md#trc-p9-005--latencytimeseriesservice)
+- [ ] **TRC-P9-006** `LatencyOutlierService` — [details](./TASK-DETAIL.md#trc-p9-006--latencyoutlierservice)
+- [ ] **TRC-P9-007** `GapDetectionService` — [details](./TASK-DETAIL.md#trc-p9-007--gapdetectionservice)
+- [ ] **TRC-P9-008** `TopologyService` — [details](./TASK-DETAIL.md#trc-p9-008--topologyservice)
+- [ ] **TRC-P9-009** `BudgetService` — [details](./TASK-DETAIL.md#trc-p9-009--budgetservice)
+- [ ] **TRC-P9-010** Phase 9 API Endpoints, DTOs, `BundleModeGate`, and DI Wiring — [details](./TASK-DETAIL.md#trc-p9-010--phase-9-api-endpoints-dtos-bundlemodelgate-and-di-wiring)
+- [ ] **TRC-P9-011** `ReplicationLatencyView.vue` — Main Latency View [details](./TASK-DETAIL.md#trc-p9-011--replicationlatencyviewvue--main-latency-view)
+- [ ] **TRC-P9-012** `LatencyDistributionChart.vue` and `histogramRenderer.ts` [details](./TASK-DETAIL.md#trc-p9-012--latencydistributionchartvue-and-histogramrendererts)
+- [ ] **TRC-P9-013** `LatencyTimeSeriesChart.vue` [details](./TASK-DETAIL.md#trc-p9-013--latencytimeserieschartvue)
+- [ ] **TRC-P9-014** `LatencyOutliersTable.vue` and Cross-View Pivot [details](./TASK-DETAIL.md#trc-p9-014--latencyoutlierstablevue-and-cross-view-pivot)
+- [ ] **TRC-P9-015** `PublisherSubscriberMatrix.vue` [details](./TASK-DETAIL.md#trc-p9-015--publishersubscribermatrixvue)
+- [ ] **TRC-P9-016** `GapDetectionView.vue` and `GapList.vue` [details](./TASK-DETAIL.md#trc-p9-016--gapdetectionviewvue-and-gaplistvue)
+- [ ] **TRC-P9-017** `NetworkTopologyView.vue` and `NetworkGraphCanvas.vue` [details](./TASK-DETAIL.md#trc-p9-017--networktopologyviewvue-and-networkgraphcanvasvue)
+- [ ] **TRC-P9-018** Composables: `useLatencyDistribution`, `useLatencyTimeSeries`, `useLatencyOutliers`, `useGapDetection`, `useTopology` [details](./TASK-DETAIL.md#trc-p9-018--composables-uselatencydistribution-uselatencytimeseries-uselatencyoutliers-usegapdetection-usetopology)
+- [ ] **TRC-P9-019** Phase 9 Tests (Backend Unit, Integration, Frontend) [details](./TASK-DETAIL.md#trc-p9-019--phase-9-tests-backend-unit-integration-frontend)
+<!-- PHASE 9 TRACKER END -->
+
+<!-- PHASE 10 TRACKER BEGIN -->
+
+## Phase 10 — SQL Console, Saved Queries, Bundle Library
+
+**Goal:** [tracer_phase10_design.md §1](./tracer_phase10_design.md#1-phase-10-scope-and-goals) — read-only SQL console with budget enforcement, saved/built-in query library, and first-class bundle library with tagging, filtering, archival, import/export.
+
+**Phase success criteria:** All conditions from [tracer_phase10_design.md §1.3](./tracer_phase10_design.md#13-success-criteria) AND all Phase 1–9 tests pass.
+
+- [ ] **TRC-P10-001** Read-Only SQL Executor: `SqlGuardrails` and `SqlExecutorService` — [details](./TASK-DETAIL.md#trc-p10-001--read-only-sql-executor-sqlguardrails-and-sqlexecutorservice)
+- [ ] **TRC-P10-002** SQL API Endpoints: `/api/sql/execute`, `/api/sql/schema`, `/api/sql/explain` — [details](./TASK-DETAIL.md#trc-p10-002--sql-api-endpoints-apislexecute-apisqlschema-apisqlexplain)
+- [ ] **TRC-P10-003** Saved Queries Data Store — [details](./TASK-DETAIL.md#trc-p10-003--saved-queries-data-store)
+- [ ] **TRC-P10-004** Saved Queries API Endpoints — [details](./TASK-DETAIL.md#trc-p10-004--saved-queries-api-endpoints)
+- [ ] **TRC-P10-005** Built-In Saved Queries Seeding — [details](./TASK-DETAIL.md#trc-p10-005--built-in-saved-queries-seeding)
+- [ ] **TRC-P10-006** Bundle Library Metadata Store: `BundleLibraryService` — [details](./TASK-DETAIL.md#trc-p10-006--bundle-library-metadata-store-bundlelibraryservice)
+- [ ] **TRC-P10-007** Bundle Library API Endpoints — [details](./TASK-DETAIL.md#trc-p10-007--bundle-library-api-endpoints)
+- [ ] **TRC-P10-008** Bundle Import/Export Service — [details](./TASK-DETAIL.md#trc-p10-008--bundle-importexport-service)
+- [ ] **TRC-P10-009** "Show SQL for This View" Backend Template Endpoint — [details](./TASK-DETAIL.md#trc-p10-009--show-sql-for-this-view-backend-template-endpoint)
+- [ ] **TRC-P10-010** Phase 10 Wiring and DI — [details](./TASK-DETAIL.md#trc-p10-010--phase-10-wiring-and-di)
+- [ ] **TRC-P10-011** `SqlConsoleView.vue` — Editor and Result Table — [details](./TASK-DETAIL.md#trc-p10-011--sqlconsoleviewvue--editor-and-result-table)
+- [ ] **TRC-P10-012** SQL Console Chart View — [details](./TASK-DETAIL.md#trc-p10-012--sql-console-chart-view)
+- [ ] **TRC-P10-013** `SavedQueriesView.vue` — [details](./TASK-DETAIL.md#trc-p10-013--savedqueriesviewvue)
+- [ ] **TRC-P10-014** "Save Query" and "Open in SQL Console" Affordances — [details](./TASK-DETAIL.md#trc-p10-014--save-query-and-open-in-sql-console-affordances)
+- [ ] **TRC-P10-015** `BundleLibraryView.vue` — Full Bundle Library — [details](./TASK-DETAIL.md#trc-p10-015--bundlelibraryviewvue--full-bundle-library)
+- [ ] **TRC-P10-016** "Show SQL for This View" Affordance — [details](./TASK-DETAIL.md#trc-p10-016--show-sql-for-this-view-affordance)
+- [ ] **TRC-P10-017** Run-and-Pivot from SQL Results — [details](./TASK-DETAIL.md#trc-p10-017--run-and-pivot-from-sql-results)
+- [ ] **TRC-P10-018** Phase 10 Tests — [details](./TASK-DETAIL.md#trc-p10-018--phase-10-tests)
+
+<!-- PHASE 10 TRACKER END -->
+
+<!-- PHASE 11 TRACKER BEGIN -->
+
+## Phase 11 — Real Adapter Integration: DDS, Sync, Shared Memory, NAS
+
+**Goal:** [tracer_phase11_design.md §1](./tracer_phase11_design.md#1-phase-11-scope-and-goals) — production adapter implementations for DDS data source, shared-memory IPC transport, sync-system upload, and NAS storage reader; configuration-driven adapter selection; hardening; integration test suite.
+
+**Phase success criteria:** All conditions from [tracer_phase11_design.md §1.3](./tracer_phase11_design.md#13-success-criteria) AND all Phase 1–10 tests pass.
+
+- [ ] **TRC-P11-001** `Tracer.Adapters.DDS` — DDS Diagnostic Data Source [details](./TASK-DETAIL.md#trc-p11-001--traceradaptersdds-assembly--dds-diagnostic-data-source)
+- [ ] **TRC-P11-002** `Tracer.Adapters.SharedMemory` — Ring Buffer IPC Transport [details](./TASK-DETAIL.md#trc-p11-002--traceradapterssharedmemory-assembly--ring-buffer-ipc-transport)
+- [ ] **TRC-P11-003** `Tracer.Adapters.Sync` — Telemetry Upload via Sync System [details](./TASK-DETAIL.md#trc-p11-003--traceradapterssync-assembly--telemetry-upload-via-sync-system)
+- [ ] **TRC-P11-004** `Tracer.Adapters.Nas` — NAS Storage Reader [details](./TASK-DETAIL.md#trc-p11-004--traceradaptersnas-assembly--nas-storage-reader)
+- [ ] **TRC-P11-005** `Tracer.AdapterSelection` — Adapter Registry and DI [details](./TASK-DETAIL.md#trc-p11-005--traceradapterselection-assembly--adapter-registry-and-di)
+- [ ] **TRC-P11-006** Configuration Additions — `appsettings.json` Adapter Sections [details](./TASK-DETAIL.md#trc-p11-006--configuration-additions--appsetingsjson-adapter-sections)
+- [ ] **TRC-P11-007** Hardening — Resource Limits, Back-Pressure, and Error Recovery [details](./TASK-DETAIL.md#trc-p11-007--hardening--resource-limits-back-pressure-and-error-recovery)
+- [ ] **TRC-P11-008** Integration Test Infrastructure — `Tracer.Tests.Integration.Real` [details](./TASK-DETAIL.md#trc-p11-008--integration-test-infrastructure--tracertestsintegrationreal)
+- [ ] **TRC-P11-009** Soak Test and Final Validation [details](./TASK-DETAIL.md#trc-p11-009--soak-test-and-final-validation)
+
+<!-- PHASE 11 TRACKER END -->

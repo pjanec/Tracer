@@ -2118,3 +2118,3447 @@ Completes the frontend test suite with four Vitest unit-test files and one Playw
 **Dependencies:** TRC-P6-007, TRC-P6-008, TRC-P6-009, TRC-P6-010, TRC-P6-011
 
 <!-- PHASE 6 TASKS END -->
+
+<!-- PHASE 7 TASKS BEGIN -->
+
+# Phase 7 — Entity History View, Slow State Time Series, Fast State Drill-Down
+
+**Design:** [tracer_phase7_design.md](./tracer_phase7_design.md)  
+**Scope:** [§1 — Phase 7 Scope and Goals](./tracer_phase7_design.md#1-phase-7-scope-and-goals)  
+**Architecture:** [tracer_architecture_v1.md §18](./tracer_architecture_v1.md#18-build-sequence)
+
+---
+
+## TRC-P7-001 — Tracer.Storage.Parquet Assembly
+
+**Phase:** 7 — Entity History View, Slow State Time Series, Fast State Drill-Down  
+**Design reference:** [tracer_phase7_design.md §4.4](./tracer_phase7_design.md#44-fast-state-parquet-reader)  
+**Architecture reference:** [tracer_architecture_v1.md §5](./tracer_architecture_v1.md#5-data-categories) *(fast state lives in Parquet, queried only on demand — phase 7 is the first user-facing code to exercise this path)*
+
+### Scope
+
+**In scope:**
+- New `Tracer.Storage.Parquet` project added to `Tracer.sln`; project references `Tracer.Core` and `DuckDB.NET.Data` (already in `Directory.Packages.props`)
+- `ParquetReader` class with `InspectSchemaAsync(string parquetPath, CancellationToken)` → `ParquetSchema`
+- `ParquetReader.ReadTimeSeriesAsync(string parquetPath, string entityId, IReadOnlyList<string> columns, WallclockTime from, WallclockTime to, int maxSamples, CancellationToken)` → `ParquetTimeSeriesResult`
+- `ParquetReader.ReadTimeSeriesAsync(IReadOnlyList<string> parquetPaths, ...)` overload for multi-file queries using `read_parquet([...])` list syntax
+- Per-call in-memory DuckDB connections: every method call opens `new DuckDBConnection("Data Source=:memory:")`, uses it, and disposes it — no shared or pooled connection
+- Stride downsampling: count rows first, compute `stride = totalSamples / maxSamples`, then use `ROW_NUMBER() OVER (ORDER BY publish_wallclock)` and `WHERE (rn - 1) % $stride = 0`
+- Numeric type coercion: all DuckDB integer and float types (`TINYINT`, `SMALLINT`, `INTEGER`, `BIGINT`, `HUGEINT`, `UTINYINT`, `USMALLINT`, `UINTEGER`, `UBIGINT`, `FLOAT`, `DOUBLE`, `DECIMAL`) coerce to `double?` in `ParquetSample.Values`; conversion failure stores `null`
+- `SafeColumnIdentifier(string name)` wraps column names in double-quotes, escaping internal `"` as `""`, to prevent SQL injection on column names
+- `EscapeSql(string s)` doubles single quotes for Parquet path interpolation
+- `IsNumeric(string duckType)` helper returns `true` for numeric DuckDB types, `false` otherwise
+- Result records: `ParquetColumn(Name, DuckType, IsNumeric)`, `ParquetSchema(Path, Columns)`, `ParquetSample(PublishWallclock, Values)`, `ParquetTimeSeriesResult { Columns, Samples, TotalSamples, Downsampled }`
+- Unit tests: `Tracer.Tests.Unit/Parquet/ParquetReaderTests.cs`, `ParquetSchemaInspectorTests.cs`
+
+**Out of scope:**
+- Pooled or persistent DuckDB connections for Parquet queries
+- LTTB or M4 downsampling algorithms (deferred to Phase 10+)
+- Writing Parquet files (Phase 2 writer is unchanged)
+- Reading string/categorical columns into chart data (only numeric columns are considered by the column picker)
+- Any dependency on `Tracer.Storage.DuckDB`, `Tracer.WebApi`, or `Tracer.Adapters.Mock`
+
+### Constraints
+
+- Every public method must open and dispose its own `DuckDBConnection("Data Source=:memory:")` — no instance-level connection field
+- Column names must always pass through `SafeColumnIdentifier` before being included in SQL; they must never be raw-concatenated
+- File paths must always pass through `EscapeSql` before being included in `read_parquet(...)` SQL
+- The multi-file overload builds `read_parquet(['path1','path2',...])` with each path individually escaped
+- No new `PackageReference` entries needed; `DuckDB.NET.Data` is already in `Directory.Packages.props`
+- No dependency on any project other than `Tracer.Core`
+
+### Success Conditions
+
+1. **Test: ProjectAdded_BuildsClean** — Setup: add `Tracer.Storage.Parquet.csproj` to `Tracer.sln` with the correct project reference to `Tracer.Core`. Action: `dotnet build Tracer.sln --configuration Release`. Assert: zero errors and zero warnings.
+2. **Test: InspectSchemaAsync_ThreeColumnParquet_ReturnsAllColumns** — Setup: create a temp Parquet file with columns `publish_wallclock` (TIMESTAMP), `instance_key` (VARCHAR), `x` (FLOAT) via DuckDB `COPY`. Action: `InspectSchemaAsync(path, ct)`. Assert: `schema.Columns.Count == 3`; the entry for `"x"` has `IsNumeric == true`; the entry for `"instance_key"` has `IsNumeric == false`.
+3. **Test: InspectSchemaAsync_NonExistentPath_PropagatesException** — Action: call `InspectSchemaAsync("nonexistent_file.parquet", ct)`. Assert: an exception is thrown (DuckDB IO error); no `ParquetSchema` is returned.
+4. **Test: ReadTimeSeriesAsync_NarrowTimeRange_ReturnsEmpty** — Setup: write 10 samples between T=100 and T=200. Action: `ReadTimeSeriesAsync(path, "ent-A", ["x"], from: T=300, to: T=400, maxSamples: 5000, ct)`. Assert: `result.TotalSamples == 0`; `result.Samples` is empty; `result.Downsampled == false`.
+5. **Test: ReadTimeSeriesAsync_BelowMaxSamples_NoDownsampling** — Setup: write 50 samples for `"ent-A"`. Action: `ReadTimeSeriesAsync` with `maxSamples: 100`. Assert: `result.Samples.Count == 50`; `result.Downsampled == false`; `result.TotalSamples == 50`.
+6. **Test: ReadTimeSeriesAsync_AboveMaxSamples_StridedDownsampling** — Setup: write 1000 samples. Action: `ReadTimeSeriesAsync` with `maxSamples: 100`. Assert: `result.Downsampled == true`; `result.Samples.Count <= 100`; `result.TotalSamples == 1000`; `result.Samples` are ordered by `PublishWallclock` ascending.
+7. **Test: ReadTimeSeriesAsync_MultipleFiles_MergesRows** — Setup: write 50 samples to `fileA` and 50 to `fileB` for the same entity. Action: call the multi-file overload with `[fileA, fileB]`. Assert: `result.TotalSamples == 100`; all returned samples are ordered by `PublishWallclock`.
+8. **Test: ReadTimeSeriesAsync_NullNumericValue_CoercedToNull** — Setup: write a sample that stores a DuckDB NULL in column `x`. Action: read it. Assert: `sample.Values["x"] == null`.
+9. **Test: SafeColumnIdentifier_EmbeddedDoubleQuote_Escaped** — Direct unit: `SafeColumnIdentifier("col\"name")` returns `"\"col\"\"name\""` (the internal double-quote is escaped as `""`), verifying that embedding this in SQL cannot break out of the identifier.
+10. **Test: EscapeSql_SingleQuoteInPath_Doubled** — Direct unit: `EscapeSql("a'b")` returns `"a''b"`.
+
+---
+
+## TRC-P7-002 — Schema Extension: slow_state Entity-Time Index
+
+**Phase:** 7 — Entity History View, Slow State Time Series, Fast State Drill-Down  
+**Design reference:** [tracer_phase7_design.md §3.1](./tracer_phase7_design.md#31-slow-state-entity_id-index)  
+**Architecture reference:** [tracer_architecture_v1.md §5](./tracer_architecture_v1.md#5-data-categories) *(slow state is DuckDB-resident; entity-id + time-range lookups need an index)*
+
+### Scope
+
+**In scope:**
+- Appending `idx_slow_state_entity_time` to `SchemaV1.CreateIndexes` in `Tracer.Storage.DuckDB` under a `-- Phase 7` comment block
+- Index SQL exactly as in §3.1: `CREATE INDEX IF NOT EXISTS idx_slow_state_entity_time ON slow_state (entity_id, publish_wallclock) WHERE entity_id IS NOT NULL;`
+- Updating the existing `AllIndexes_AreCreated` unit test (or adding a companion test) to assert the new index name is present after schema creation
+
+**Out of scope:**
+- Migration of pre-existing `.db` files (documented non-migration policy: pre-existing intervals run without the index until evicted)
+- Any change to table columns, other index definitions, or `_schema_meta` version
+- A runtime migration path or schema version bump
+
+### Constraints
+
+- The new SQL must appear after the Phase 6 `idx_events_parent_event_id` block, under a `-- Phase 7` comment, exactly matching the string shown in §3.1
+- `SchemaV1.CreateIndexes` remains a single `const string`; do not split it
+- `CREATE INDEX IF NOT EXISTS` ensures idempotency; running `CreateIndexes` twice on the same database must not throw
+- `SchemaV1.Version` must remain `1` — index additions do not require a version bump
+
+### Success Conditions
+
+1. **Test: AllIndexes_AreCreated_IncludesSlowStateEntityTimeIndex** — Setup: call `DuckDbWriter.CreateAsync(tempPath, ...)` and dispose. Action: open a raw DuckDB connection to the same file, run `SELECT index_name FROM duckdb_indexes() WHERE table_name = 'slow_state'`. Assert: exactly one row returned with `index_name = 'idx_slow_state_entity_time'`.
+2. **Test: CreateIndexes_IsIdempotent_SlowStateIndex** — Setup: execute `SchemaV1.CreateIndexes` SQL twice on the same in-memory DuckDB connection. Assert: no exception on the second execution; `duckdb_indexes()` shows the index exactly once.
+3. **Test: SchemaV1_CreateIndexes_ContainsPhase7CommentBlock** — Assert: the `SchemaV1.CreateIndexes` string contains the literal substring `-- Phase 7`.
+4. **Test: SlowStateEntityQuery_WithIndex_CompletesUnder200ms** — Setup: write 50,000 slow-state rows for 10 distinct entity IDs to a temp `.db` file (so the index is created). Action: query `SELECT * FROM slow_state WHERE entity_id = 'entity-1' AND publish_wallclock >= $t1 AND publish_wallclock < $t2` using a `Stopwatch`. Assert: elapsed < 200 ms; only rows for `'entity-1'` are returned.
+
+---
+
+## TRC-P7-003 — EntityDiscoveryService
+
+**Phase:** 7 — Entity History View, Slow State Time Series, Fast State Drill-Down  
+**Design reference:** [tracer_phase7_design.md §4.1](./tracer_phase7_design.md#41-entity-discovery)  
+**Architecture reference:** [tracer_architecture_v1.md §17](./tracer_architecture_v1.md#17-performance-targets) *(entity-events query < 200 ms target for a 30-min session)*
+
+### Scope
+
+**In scope:**
+- `EntityDiscoveryService` class in `Tracer.WebApi.Queries`
+- Constructor accepting `LiveMultiIntervalReader` and `ILogger<EntityDiscoveryService>`
+- `DiscoverAsync(string sessionId, WallclockTime sessionStart, WallclockTime sessionEnd, string? topicFilter, string? playerFilter, int limit, CancellationToken)` → `IReadOnlyList<EntitySummary>`
+- SQL pattern: call `BuildEventsUnionSql` on the acquired connection, then wrap in a CTE and aggregate with `GROUP BY entity_id`, `MIN`/`MAX` for time bounds, `COUNT(*)` for event count, `ANY_VALUE(owning_player_id)` for representative player, `ARRAY_AGG(DISTINCT topic ORDER BY topic)` for topics list
+- Optional `topicFilter` and `playerFilter` applied as outer-query WHERE parameters (named `$topicFilter`, `$playerFilter`)
+- `ReadStringList(DbDataReader, int)` private helper to extract `ARRAY_AGG` result into `IReadOnlyList<string>`
+- `EntitySummary` record: `EntityId`, `FirstSeenUtc`, `LastSeenUtc`, `EventCount`, `SamplePlayerId`, `Topics`
+- Unit tests in `Tracer.Tests.Unit/WebApi/EntityDiscoveryServiceTests.cs`
+
+**Out of scope:**
+- Pagination beyond the `limit` parameter (no cursor or offset)
+- Cross-session queries
+- Caching of discovery results
+- Entity discovery from Parquet (events table is sufficient)
+
+### Constraints
+
+- `topicFilter` and `playerFilter` must be SQL parameters, never string-interpolated into the query
+- Must call `BuildEventsUnionSql` — cannot reference individual interval tables directly
+- `ANY_VALUE(owning_player_id)` not `MIN` — represents any observed player, not the lexicographic minimum (per §4.1 rationale)
+- `ORDER BY event_count DESC` so most-active entities rank first
+- `limit` is clamped to 1–5000 at the `EntityEndpoints` call site, not inside this service
+
+### Success Conditions
+
+1. **Test: DiscoverAsync_ThreeEntities_ReturnedOrderedByEventCount** — Setup: write 20 events for `"ent-A"`, 10 for `"ent-B"`, 5 for `"ent-C"`, and 5 with `entity_id = null`. Action: `DiscoverAsync(sessionId, start, end, null, null, 100, ct)`. Assert: result has 3 entries (null-entity rows excluded); first entry is `EntityId = "ent-A"` with `EventCount = 20`.
+2. **Test: DiscoverAsync_TopicFilter_ExcludesOtherEntities** — Setup: 10 events for `"ent-A"` on topic `"pos"`, 10 for `"ent-B"` on topic `"vel"`. Action: `DiscoverAsync(..., topicFilter: "pos", ...)`. Assert: result contains only `"ent-A"`.
+3. **Test: DiscoverAsync_PlayerFilter_ExcludesOtherEntities** — Setup: 10 events for `"ent-A"` with `owning_player_id = "p1"`, 10 for `"ent-B"` with `owning_player_id = "p2"`. Action: `DiscoverAsync(..., playerFilter: "p1", ...)`. Assert: result contains only `"ent-A"`.
+4. **Test: DiscoverAsync_FirstAndLastSeen_CorrectBounds** — Setup: 3 events for `"ent-X"` at wallclock times T1 < T2 < T3. Assert: `FirstSeenUtc` corresponds to T1; `LastSeenUtc` corresponds to T3.
+5. **Test: DiscoverAsync_TopicsArray_DeduplicatedAndSorted** — Setup: `"ent-A"` emits events on topics `"b"`, `"a"`, `"a"` (two on `"a"`). Assert: `EntitySummary.Topics` equals `["a", "b"]` exactly.
+6. **Test: DiscoverAsync_EmptySession_ReturnsEmptyList** — Action: `DiscoverAsync` against a session with no events. Assert: returns empty list; no exception.
+7. **Test: DiscoverAsync_LimitRespected_ReturnsTruncatedCount** — Setup: 10 distinct entities. Action: `DiscoverAsync(..., limit: 3, ...)`. Assert: result has exactly 3 entries.
+8. **Test: DiscoverAsync_TopicFilterSqlInjection_IsParameterized** — Action: `topicFilter = "'; DROP TABLE events; --"`. Assert: call completes without exception; the `events` table still exists in the DuckDB connection.
+
+---
+
+## TRC-P7-004 — EntityEventsService
+
+**Phase:** 7 — Entity History View, Slow State Time Series, Fast State Drill-Down  
+**Design reference:** [tracer_phase7_design.md §4.2](./tracer_phase7_design.md#42-entity-events-service)  
+**Architecture reference:** [tracer_architecture_v1.md §17](./tracer_architecture_v1.md#17-performance-targets) *(< 200 ms for ~5000 events in a 30-min entity history)*
+
+### Scope
+
+**In scope:**
+- `EntityEventsService` class in `Tracer.WebApi.Queries`
+- Constructor accepting `LiveMultiIntervalReader` and `ILogger<EntityEventsService>`
+- `GetEventsAsync(string entityId, WallclockTime from, WallclockTime to, int limit, CancellationToken)` → `EntityEventsResult`
+- SQL: `BuildEventsUnionSql` with `WHERE entity_id = $entityId AND publish_wallclock >= $from AND publish_wallclock < $to`, ordered by `publish_wallclock`, fetching `limit + 1` rows
+- Truncation detection: if row count > limit, remove the last row and set `Truncated = true`
+- Row mapping via the existing `EventRecordMapper.FromReader`
+- `EntityEventsResult` record: `EntityId`, `Events` (`IReadOnlyList<EventRecord>`), `Truncated` (`bool`)
+- Unit tests in `Tracer.Tests.Unit/WebApi/EntityEventsServiceTests.cs`
+
+**Out of scope:**
+- Server-side topic filtering on this endpoint (callers use `EntityDiscoveryService` to discover topics)
+- Pagination cursor or offset
+- Sorting by any column other than `publish_wallclock`
+
+### Constraints
+
+- `entityId` must be passed as `$entityId` parameter, never string-interpolated
+- `from` and `to` must be typed `DateTimeOffset` parameters (not raw integers or strings)
+- The query must issue `LIMIT $limit` where the bound is `limit + 1` (not `limit`) to enable truncation detection without a separate count query
+- Must use `BuildEventsUnionSql` — cannot query a single interval table directly
+
+### Success Conditions
+
+1. **Test: GetEventsAsync_FiveEventsForEntity_ReturnsAll** — Setup: write 5 events for `"ent-A"` and 5 for `"ent-B"` in the same time range. Action: `GetEventsAsync("ent-A", from, to, limit: 100, ct)`. Assert: result has 5 events; all have `EntityId == "ent-A"`; `Truncated == false`.
+2. **Test: GetEventsAsync_ExceedsLimit_TruncatesAndSetsFlag** — Setup: write 11 events for `"ent-A"`. Action: `GetEventsAsync("ent-A", from, to, limit: 10, ct)`. Assert: `result.Events.Count == 10`; `result.Truncated == true`.
+3. **Test: GetEventsAsync_ExactlyAtLimit_NotTruncated** — Setup: write exactly 10 events. Action: `GetEventsAsync(..., limit: 10, ...)`. Assert: `result.Events.Count == 10`; `result.Truncated == false`.
+4. **Test: GetEventsAsync_OrderedByWallclockAscending** — Setup: write 5 events inserted in non-chronological order. Assert: `result.Events` are sorted by `PublishWallclock` ascending.
+5. **Test: GetEventsAsync_EntityNotFound_ReturnsEmptyNotTruncated** — Action: `GetEventsAsync("nonexistent-entity", from, to, 100, ct)`. Assert: `result.Events` is empty; `result.Truncated == false`; no exception.
+6. **Test: GetEventsAsync_EmptyTimeRange_ReturnsEmpty** — Action: call with `from == to`. Assert: returns empty result without throwing.
+7. **Test: GetEventsAsync_EntityIdIsParameter_NeverInterpolated** — Inspect the SQL string (expose via a testable builder overload or check via query plan): assert `entity_id = $entityId` appears in the SQL and the entity ID value does not appear as a literal string in the SQL text.
+
+---
+
+## TRC-P7-005 — EntitySlowStateService
+
+**Phase:** 7 — Entity History View, Slow State Time Series, Fast State Drill-Down  
+**Design reference:** [tracer_phase7_design.md §4.3](./tracer_phase7_design.md#43-entity-slow-state-service)  
+**Architecture reference:** [tracer_architecture_v1.md §5](./tracer_architecture_v1.md#5-data-categories) *(slow state is DuckDB-resident and low-frequency)*
+
+### Scope
+
+**In scope:**
+- `EntitySlowStateService` class in `Tracer.WebApi.Queries`
+- Constructor accepting `LiveMultiIntervalReader` and `ILogger<EntitySlowStateService>`
+- `GetAsync(string entityId, WallclockTime from, WallclockTime to, IReadOnlyList<string>? topicFilter, CancellationToken)` → `EntitySlowStateResult`
+- SQL: `BuildSlowStateUnionSql` (TRC-P7-006) with `WHERE entity_id = $entityId AND publish_wallclock >= $from AND publish_wallclock < $to`; optional IN-clause for topic filter with named parameters `$topic0`, `$topic1`, ...
+- Results grouped in-memory by topic into `IReadOnlyDictionary<string, IReadOnlyList<SlowStateSample>>`; dictionary keyed by topic name in sorted order
+- `SlowStateSample` record: `Topic`, `PublishWallclock`, `PayloadJson`, `TraceId` (mapped as `ulong`; `0` when DB column is null or zero)
+- `EntitySlowStateResult` record: `EntityId`, `ByTopic`
+- Unit tests in `Tracer.Tests.Unit/WebApi/EntitySlowStateServiceTests.cs`
+
+**Out of scope:**
+- Fast-state queries (routed through `EntityFastStateService`)
+- Downsampling of slow-state results (slow state is inherently low-frequency)
+- Aggregation or statistics over slow-state payload values
+
+### Constraints
+
+- Depends on `BuildSlowStateUnionSql` (TRC-P7-006); this service must not be implemented until that method exists
+- Topic filter values must be individually named SQL parameters `$topic0`, `$topic1`, ... — never string-interpolated
+- `entityId` must be the named parameter `$entityId`
+- `ByTopic` dictionary must have stable ordering: use `SortedDictionary` or sort by key before building the final dictionary
+
+### Success Conditions
+
+1. **Test: GetAsync_TwoTopics_ResultsGroupedCorrectly** — Setup: 5 slow-state rows for `"ent-A"` on topic `"pose"`, 3 on topic `"health"`. Action: `GetAsync("ent-A", from, to, null, ct)`. Assert: `result.ByTopic.Keys` equals `["health", "pose"]` (sorted); `result.ByTopic["pose"].Count == 5`; `result.ByTopic["health"].Count == 3`.
+2. **Test: GetAsync_TopicFilter_ExcludesOtherTopics** — Setup: slow state on `"pose"` and `"health"`. Action: `GetAsync("ent-A", from, to, topicFilter: ["pose"], ct)`. Assert: `result.ByTopic` contains `"pose"` but not `"health"`.
+3. **Test: GetAsync_SamplesOrderedByWallclockWithinTopic** — Setup: write slow-state rows for `"pose"` in non-chronological insertion order. Assert: `result.ByTopic["pose"]` is sorted by `PublishWallclock` ascending.
+4. **Test: GetAsync_EntityNotFound_ReturnsEmptyDictionary** — Action: `GetAsync("nonexistent-entity", ...)`. Assert: `result.ByTopic` is empty (not null); no exception.
+5. **Test: GetAsync_TraceIdZero_MappedAs0UL** — Setup: write a slow-state row with `trace_id = 0`. Assert: `sample.TraceId == 0UL`.
+6. **Test: GetAsync_TopicFilterSqlInjection_IsParameterized** — Action: `topicFilter = ["'; DROP TABLE slow_state; --"]`. Assert: call completes without exception; `slow_state` table still exists.
+
+---
+
+## TRC-P7-006 — BuildSlowStateUnionSql Extension
+
+**Phase:** 7 — Entity History View, Slow State Time Series, Fast State Drill-Down  
+**Design reference:** [tracer_phase7_design.md §4.3](./tracer_phase7_design.md#43-entity-slow-state-service) *(BuildSlowStateUnionSql code snippet)*
+
+### Scope
+
+**In scope:**
+- `BuildSlowStateUnionSql(string whereClause = "", string orderByClause = "", int? limit = null)` method added to the same class/type that owns `BuildEventsUnionSql` (the acquired-connection helper in `Tracer.Storage.DuckDB.MultiInterval` or `Tracer.WebApi`)
+- Method generates `UNION ALL` across all attached interval databases, selecting from `{alias}.slow_state {whereClause}` in each
+- Returns the sentinel `"SELECT NULL WHERE FALSE"` when there are no attachments (identical empty-case behavior to `BuildEventsUnionSql`)
+- Unit tests verifying the generated SQL structure
+
+**Out of scope:**
+- Any modification to `BuildEventsUnionSql` or other existing builder methods
+- Slow-state aggregation or topic-grouping SQL (that belongs in `EntitySlowStateService`)
+
+### Constraints
+
+- Method signature must match the `BuildEventsUnionSql` pattern exactly (same parameter names and default values, same empty-case sentinel)
+- Each subquery arm must reference `{alias}.slow_state`, not `{alias}.events`
+- Must be on the same type as `BuildEventsUnionSql` so `EntitySlowStateService` can call it through the same acquired-connection pattern
+
+### Success Conditions
+
+1. **Test: BuildSlowStateUnionSql_TwoAttachments_ProducesUnionAll** — Setup: construct an acquired-connection state with two interval aliases `iv0` and `iv1`. Action: `BuildSlowStateUnionSql()`. Assert: returned SQL contains both `FROM iv0.slow_state` and `FROM iv1.slow_state` joined with `UNION ALL`.
+2. **Test: BuildSlowStateUnionSql_WhereClause_AppearsInBothArms** — Action: `BuildSlowStateUnionSql(whereClause: "WHERE entity_id = $eid")`. Assert: the WHERE clause text appears in both subquery arms.
+3. **Test: BuildSlowStateUnionSql_NoAttachments_ReturnsSentinel** — Action: with zero attachments. Assert: return value equals `"SELECT NULL WHERE FALSE"` (exact string match, trimmed).
+4. **Test: BuildSlowStateUnionSql_LimitSet_AppendsLimitClause** — Action: `BuildSlowStateUnionSql(limit: 500)`. Assert: returned SQL contains `LIMIT 500`.
+5. **Test: BuildSlowStateUnionSql_DoesNotReferenceEventsTable** — Assert: the returned SQL from a non-empty case does not contain the substring `.events`.
+
+---
+
+## TRC-P7-007 — FastStateFileLocator
+
+**Phase:** 7 — Entity History View, Slow State Time Series, Fast State Drill-Down  
+**Design reference:** [tracer_phase7_design.md §4.5](./tracer_phase7_design.md#45-locating-fast-state-files)
+
+### Scope
+
+**In scope:**
+- `FastStateFileLocator` class in `Tracer.WebApi.Queries`
+- Constructor accepting `IntervalSetTracker` and optional `BundleOpenManager?`
+- `LocateFiles(string topic, string entityId)` → `IReadOnlyList<string>`: returns full absolute paths of all `samples.parquet` files for the given (topic, entity) pair; each candidate is checked with `File.Exists` before inclusion
+- `GetAvailableTopicsForEntity(string entityId)` → `IReadOnlyList<string>`: walks `fast_state/` subdirectories in all interval roots (and bundle working directory if present) to find topics that have a sub-folder matching the safe-encoded entity ID
+- Live mode: iterates `IntervalSetTracker.CurrentSnapshot().Intervals`, building candidate path `{interval.Directory.RootPath}/fast_state/{safeTopic}/{safeEntity}/samples.parquet`
+- Offline mode: if `BundleOpenManager.Current` is non-null, also checks `{bundle.WorkingDirectory}/fast_state/{safeTopic}/{safeEntity}/samples.parquet`
+- Uses `BundleNaming.SafeFileName(topic)` and `BundleNaming.SafeFileName(entityId)` for directory-safe name encoding (same scheme as Phase 4 §3.1)
+- Unit tests in `Tracer.Tests.Unit/WebApi/FastStateFileLocatorTests.cs` using temp directories
+
+**Out of scope:**
+- Glob-based or recursive directory scanning (explicit-list form as per §4.5)
+- Caching of file-location results (re-scans snapshot on each call)
+- Any DuckDB queries inside the locator
+
+### Constraints
+
+- Must call `BundleNaming.SafeFileName` for both topic and entity ID before constructing any path — raw strings may contain characters illegal in directory names (slashes, colons, etc.)
+- Must use `File.Exists(candidate)` to verify existence before adding to results; must not throw if the `fast_state` directory for an interval does not exist
+- `BundleOpenManager` is nullable; `LocateFiles` must handle `null` gracefully (live-only mode)
+- `GetAvailableTopicsForEntity` must enumerate the file system, not query DuckDB
+
+### Success Conditions
+
+1. **Test: LocateFiles_LiveMode_TwoIntervals_ReturnsTwoPaths** — Setup: create two temp interval directories, each containing `fast_state/pos/ent-A/samples.parquet` (empty placeholder files). Action: construct `FastStateFileLocator` with a mocked `IntervalSetTracker` returning those two intervals; call `LocateFiles("pos", "ent-A")`. Assert: 2 paths returned; both end in `samples.parquet`.
+2. **Test: LocateFiles_TopicAbsentInInterval_NotIncluded** — Setup: interval directory has `fast_state/vel/ent-A/samples.parquet` but not `fast_state/pos/ent-A/samples.parquet`. Action: `LocateFiles("pos", "ent-A")`. Assert: empty list returned.
+3. **Test: LocateFiles_OfflineMode_FindsBundleFile** — Setup: no intervals; bundle working directory contains `fast_state/pos/ent-A/samples.parquet`. Action: construct with a `BundleOpenManager` whose `Current.WorkingDirectory` is that temp dir; call `LocateFiles("pos", "ent-A")`. Assert: exactly 1 path returned.
+4. **Test: LocateFiles_TopicWithSlash_SafeFileNameApplied** — Setup: topic name is `"ns/topic"` (contains slash). Action: `LocateFiles("ns/topic", "ent-A")`. Assert: the constructed path uses `BundleNaming.SafeFileName("ns/topic")` as the directory component and does not contain a raw `/` after `fast_state/` in the path segment.
+5. **Test: GetAvailableTopicsForEntity_MultipleTopicDirs_ReturnsAll** — Setup: temp interval dir with `fast_state/pos/ent-A/` and `fast_state/vel/ent-A/` directories (no file required). Action: `GetAvailableTopicsForEntity("ent-A")`. Assert: result includes both `"pos"` and `"vel"` (or their safe-decoded forms).
+6. **Test: LocateFiles_FileDoesNotExist_DirectoryExists_NotIncluded** — Setup: interval directory has `fast_state/pos/ent-A/` directory but no `samples.parquet` file. Assert: that path is not included in `LocateFiles` results.
+7. **Test: LocateFiles_NullBundleManager_LiveModeOnly_NoException** — Construct `FastStateFileLocator` with `bundleOpenManager: null`; call `LocateFiles`. Assert: no `NullReferenceException`.
+
+---
+
+## TRC-P7-008 — EntityFastStateService
+
+**Phase:** 7 — Entity History View, Slow State Time Series, Fast State Drill-Down  
+**Design reference:** [tracer_phase7_design.md §4.6](./tracer_phase7_design.md#46-entityfaststateservice)
+
+### Scope
+
+**In scope:**
+- `EntityFastStateService` class in `Tracer.WebApi.Queries`
+- Constructor accepting `ParquetReader`, `FastStateFileLocator`, `ILogger<EntityFastStateService>`
+- `GetAvailableTopics(string entityId)` → `IReadOnlyList<string>`: delegates to `FastStateFileLocator.GetAvailableTopicsForEntity`
+- `GetSchemaAsync(string entityId, string topic, CancellationToken)` → `FastStateTopicSchema?`: locates files via `FastStateFileLocator.LocateFiles`; returns `null` if no files found; otherwise calls `ParquetReader.InspectSchemaAsync` on the first file and filters out `publish_wallclock` and `instance_key` columns from the result
+- `ReadAsync(string entityId, string topic, IReadOnlyList<string> columns, WallclockTime from, WallclockTime to, int maxSamples, CancellationToken)` → `EntityFastStateResult`: locates all files via `FastStateFileLocator.LocateFiles`, calls `ParquetReader.ReadTimeSeriesAsync(IReadOnlyList<string>, ...)` multi-file overload, maps the result
+- `FastStateTopicSchema` record: `EntityId`, `Topic`, `Columns` (list of `ParquetColumn` excluding infrastructure columns)
+- `EntityFastStateResult` record: `EntityId`, `Topic`, `Columns`, `Samples`, `TotalSamples`, `Downsampled`
+- Unit tests in `Tracer.Tests.Unit/WebApi/EntityFastStateServiceTests.cs`
+
+**Out of scope:**
+- Column validation beyond what DuckDB enforces at query time
+- Caching of schema or file-location results
+- String/categorical column support in chart queries
+
+### Constraints
+
+- `GetSchemaAsync` must return `null` (not throw) when `LocateFiles` returns an empty list
+- `ReadAsync` must return an `EntityFastStateResult` with empty `Samples` and `TotalSamples == 0` (not throw) when no files are found
+- Schema columns returned by `GetSchemaAsync` must exclude both `publish_wallclock` and `instance_key`
+- Depends on TRC-P7-001 (`ParquetReader`) and TRC-P7-007 (`FastStateFileLocator`)
+
+### Success Conditions
+
+1. **Test: GetAvailableTopics_DelegatesToLocator** — Setup: mock `FastStateFileLocator.GetAvailableTopicsForEntity("ent-A")` to return `["pos", "vel"]`. Action: `GetAvailableTopics("ent-A")`. Assert: returns `["pos", "vel"]` unchanged.
+2. **Test: GetSchemaAsync_NoFiles_ReturnsNull** — Setup: `FastStateFileLocator.LocateFiles("pos", "ent-A")` returns empty. Action: `GetSchemaAsync("ent-A", "pos", ct)`. Assert: returns `null`.
+3. **Test: GetSchemaAsync_ValidFile_ExcludesInfrastructureColumns** — Setup: Parquet file with columns `publish_wallclock`, `instance_key`, `x`, `y`. Action: `GetSchemaAsync("ent-A", "pos", ct)`. Assert: `schema.Columns` contains `x` and `y`; does not contain `publish_wallclock` or `instance_key`.
+4. **Test: ReadAsync_NoFiles_ReturnsEmptyResult** — Setup: locator returns no files. Action: `ReadAsync("ent-A", "pos", ["x"], from, to, 5000, ct)`. Assert: `result.Samples` is empty; `result.TotalSamples == 0`; `result.Downsampled == false`; no exception.
+5. **Test: ReadAsync_SingleFile_ReturnsCorrectData** — Setup: one Parquet file with 20 samples for `"ent-A"` on topic `"pos"`, column `x`. Action: `ReadAsync("ent-A", "pos", ["x"], from, to, 5000, ct)`. Assert: `result.Samples.Count == 20`; `result.EntityId == "ent-A"`; `result.Topic == "pos"`.
+6. **Test: ReadAsync_MultipleFiles_TotalSamplesSummed** — Setup: file-A with 10 samples and file-B with 10 samples for the same entity and topic. Action: `ReadAsync`. Assert: `result.TotalSamples == 20`.
+7. **Test: ReadAsync_DownsamplingPropagated** — Setup: 200 samples across one file. Action: `ReadAsync(..., maxSamples: 50, ...)`. Assert: `result.Downsampled == true`; `result.Samples.Count <= 50`.
+
+---
+
+## TRC-P7-009 — Entity Web API Endpoints, DTOs, and Wiring
+
+**Phase:** 7 — Entity History View, Slow State Time Series, Fast State Drill-Down  
+**Design reference:** [tracer_phase7_design.md §5.1](./tracer_phase7_design.md#51-endpoint-surface), [§5.2](./tracer_phase7_design.md#52-entityendpointscs), [§5.3](./tracer_phase7_design.md#53-dtos), [§5.4](./tracer_phase7_design.md#54-wiring)
+
+### Scope
+
+**In scope:**
+- `EntityEndpoints.cs` in `Tracer.WebApi.Endpoints` with `Map(WebApplication app)` registering the 7 GET routes from §5.1, each decorated with `.WithOpenApi()`
+- All 7 handler methods: `HandleListAsync`, `HandleSummaryAsync`, `HandleEventsAsync`, `HandleSlowStateAsync`, `HandleFastStateTopicsAsync`, `HandleFastStateSchemaAsync`, `HandleFastStateAsync`
+- All DTOs from §5.3 in `Tracer.WebApi.Contracts.Dto`: `EntityListDto`, `EntitySummaryDto`, `EntityEventsDto`, `EntitySlowStateDto`, `SlowStateSampleDto`, `FastStateTopicSchemaDto`, `FastStateColumnDto`, `EntityFastStateDto`, `FastStateSampleDto`
+- DTO mapper helpers (`EntityDtoMapper`, `EntityEventsDtoMapper`, `EntitySlowStateDtoMapper`, `FastStateSchemaDtoMapper`, `EntityFastStateDtoMapper`)
+- Input validation in `HandleFastStateAsync`: returns HTTP 400 problem details if `column` array is null or empty; returns HTTP 400 if `maxSamples` is outside [10, 10000]
+- `limit` clamped with `Math.Clamp(limit, 1, 5000)` in `HandleListAsync`
+- DI registration as `AddSingleton` for all 6 services (`ParquetReader`, `FastStateFileLocator`, `EntityDiscoveryService`, `EntityEventsService`, `EntitySlowStateService`, `EntityFastStateService`) in both `ObserverHostBuilder` and `OfflineViewerHostBuilder`
+- `EntityEndpoints.Map(app)` called in the middleware configuration of both host builders
+- Unit tests in `Tracer.Tests.Unit/WebApi/EntityEndpointsTests.cs`
+- Integration test in `Tracer.Tests.Integration/EntityHistoryRoundTripTests.cs`
+
+**Out of scope:**
+- Frontend code or TypeScript DTO types
+- Authentication or authorization
+- Rate limiting or request throttling
+- SSE streaming for entity endpoints (entity history is retrospective per §1.2)
+
+### Constraints
+
+- `HandleFastStateAsync`: `column` null or empty → 400 problem with `Title = "Missing column"`; `maxSamples` outside [10, 10000] → 400 problem with `Title = "maxSamples out of range"`
+- `HandleListAsync` clamps `limit` before calling `EntityDiscoveryService`, not inside the service
+- `HandleSummaryAsync` returns `NotFound` (404) when the session does not exist AND when the entity ID is not present in the discovery results
+- `HandleFastStateSchemaAsync` returns `NotFound` (404) when `EntityFastStateService.GetSchemaAsync` returns `null`
+- All 6 services registered as `AddSingleton` (not `AddScoped` or `AddTransient`) in both host builders
+- `EventDto` reuses the existing type from Phase 5 — no new event DTO is created
+
+### Success Conditions
+
+1. **Test: GET /api/entities — 200 with populated list** — Setup: session with 3 entities. Action: `GET /api/entities?sessionId=s1`. Assert: HTTP 200; body deserializes to `EntityListDto`; `count == 3`; each entry contains `entityId`, `eventCount`, `topics`.
+2. **Test: GET /api/entities — 404 when session missing** — Action: `GET /api/entities?sessionId=does-not-exist`. Assert: HTTP 404 (problem details).
+3. **Test: GET /api/entities/{entityId}/summary — 200 for known entity** — Action: `GET /api/entities/ent-A/summary?sessionId=s1`. Assert: HTTP 200; `entitySummaryDto.entityId == "ent-A"`.
+4. **Test: GET /api/entities/{entityId}/summary — 404 for unknown entity** — Action: `GET /api/entities/no-such-entity/summary?sessionId=s1`. Assert: HTTP 404.
+5. **Test: GET /api/entities/{entityId}/events — 200 with event list** — Setup: 5 events for `"ent-A"`. Action: `GET /api/entities/ent-A/events?from=...&to=...`. Assert: HTTP 200; `entityEventsDto.events.length == 5`; `truncated == false`.
+6. **Test: GET /api/entities/{entityId}/events — truncated flag when limit exceeded** — Setup: 15 events. Action: `GET .../events?from=...&to=...&limit=10`. Assert: `events.length == 10`; `truncated == true`.
+7. **Test: GET /api/entities/{entityId}/fast-state/{topic} — 400 when no column param** — Action: `GET /api/entities/ent-A/fast-state/pos` (no `column` query parameter). Assert: HTTP 400; problem `title` contains `"column"`.
+8. **Test: GET /api/entities/{entityId}/fast-state/{topic} — 400 when maxSamples below minimum** — Action: `GET .../fast-state/pos?column=x&maxSamples=9`. Assert: HTTP 400; problem `title` contains `"maxSamples"`.
+9. **Test: GET /api/entities/{entityId}/fast-state/{topic} — 400 when maxSamples above maximum** — Action: `maxSamples=10001`. Assert: HTTP 400.
+10. **Test: DI wiring — all 6 entity services resolvable from Observer host** — Setup: build `ObserverHostBuilder` with test configuration. Assert: `IServiceProvider.GetRequiredService<ParquetReader>()`, `FastStateFileLocator`, `EntityDiscoveryService`, `EntityEventsService`, `EntitySlowStateService`, `EntityFastStateService` all resolve without exception.
+11. **Test: Integration — entity history round trip** — Setup: inject 20 events for `"ent-X"` and 5 slow-state rows via `TestHarness`. Action: call `GET /api/entities?sessionId=...` → `GET /api/entities/ent-X/events?...` → `GET /api/entities/ent-X/slow-state?...`. Assert: entity appears in list; events endpoint returns 20 events; slow-state endpoint returns the 5 rows grouped by topic.
+12. **Test: All Phase 1–6 tests pass** — Run the full test suite after all Phase 7 backend changes. Assert: zero regressions across all existing tests.
+
+---
+
+## TRC-P7-010 — `EntityHistoryView.vue` — View Layout and Shared Time Axis
+
+**Phase:** 7 — Entity History View, Slow State Time Series, Fast State Drill-Down  
+**Design reference:** [tracer_phase7_design.md §6](./tracer_phase7_design.md#6-frontend-view-layout)
+
+### Scope
+
+**In scope:**
+- `EntityHistoryView.vue` — the main view container; route `/v/entity/:entityId`
+- `EntitySummaryStrip` sub-component integration (entity ID, lifespan, player, topics)
+- Stacked panel layout: lifecycle ribbon, slow-state rows, event strip, fast-state drill-down
+- Shared `timeRange` prop threading to all child panels from `entityHistoryStore`
+- Loading spinner and error-with-retry states
+- `entityHistoryStore` (Pinia) — all view state: `entityId`, `sessionId`, `timeRange`, `summary`, `events`, `slowStateByTopic`, `fastStateTopics`, `selectedEventId`, `loading`, `error`, `retry()`
+- Vue Router registration of the `entity-history` named route
+
+**Out of scope:**
+- The rendering logic inside each sub-panel (covered by TRC-P7-011–TRC-P7-014)
+- URL synchronisation composable (TRC-P7-016)
+- The fetch-orchestration composable (TRC-P7-015)
+- `EntityPickerView.vue` / entity discovery in Session Browser (TRC-P7-019)
+
+### Constraints
+
+- All child panels receive `timeRange` from the store; they do not manage their own time state
+- The view must render the panels in DOM order: summary strip → lifecycle ribbon → slow-state charts → event strip → fast-state drill-down
+- Route name must be `'entity-history'` so cross-view pivots can use `router.push({ name: 'entity-history', ... })`
+- `entityHistoryStore` must be the single source of truth for all data visible in the view
+- Fast-state drill-down is collapsed by default; the store need not hold its open/closed state (local `ref` in `FastStateDrillDown`)
+
+### Success Conditions
+
+1. **Test: View renders loading state** — Setup: mount `EntityHistoryView` with `store.loading = true` and `store.summary = null`. Assert: `<LoadingSpinner>` is visible; no panel content is rendered.
+2. **Test: View renders error state** — Setup: mount with `store.error = "Network error"` and `store.summary = null`. Assert: `<ErrorMessage>` is visible with the correct message; retry button is present.
+3. **Test: View renders full panel stack when data present** — Setup: mount with `store.summary` populated and `store.slowStateByTopic` having two topics. Assert: `EntitySummaryStrip`, `EntityLifecycleRibbon`, two `SlowStateChart` instances, `EntityEventStrip`, and `FastStateDrillDown` are all present in the DOM.
+4. **Test: entityHistoryStore — setEntity clears prior data** — Setup: store with `summary` and `events` populated; call `store.setEntity('new-id', 'new-session')`. Assert: `summary`, `events`, `slowStateByTopic`, and `selectedEventId` are all reset to null/empty.
+5. **Test: entityHistoryStore — setSummary defaults timeRange to entity lifespan** — Setup: store with `timeRange.from === timeRange.to`. Call `store.setSummary({ firstSeenUtc: '2026-01-01T00:00:00Z', lastSeenUtc: '2026-01-01T00:30:00Z', ... })`. Assert: `store.timeRange.from` and `store.timeRange.to` match the entity's first/last seen.
+6. **Test: entityHistoryStore — setSummary does NOT override an explicit timeRange** — Setup: store already has `timeRange.from !== timeRange.to` (user-set). Call `setSummary(...)`. Assert: `timeRange` is unchanged.
+7. **Test: Vue Router — entity-history route resolved correctly** — Assert: `router.resolve({ name: 'entity-history', params: { entityId: 'e1' } }).href` equals `/v/entity/e1`.
+8. **Test: Smoke — view mounts without console errors for an entity with no slow-state** — Setup: `store.slowStateByTopic = {}`. Mount view. Assert: no Vue warnings; no unhandled exceptions; `EntityEventStrip` is still rendered.
+
+---
+
+## TRC-P7-011 — `EntityLifecycleRibbon.vue` — Spawn/Ownership/Destruction Band
+
+**Phase:** 7 — Entity History View, Slow State Time Series, Fast State Drill-Down  
+**Design reference:** [tracer_phase7_design.md §7](./tracer_phase7_design.md#7-lifecycle-ribbon)
+
+### Scope
+
+**In scope:**
+- `EntityLifecycleRibbon.vue` — horizontal band with three visual layers: ownership-period colour bands, lifecycle event markers
+- `lifecycleClassifier.ts` — `classifyLifecycleEvent(topic): LifecycleKind` with suffix matching for spawn / ownership / destruction
+- CSS-positioned rendering (no canvas); markers are `<div>` elements with `left: X%` positioning
+- Ownership-period bands derived from spawn and ownership events; each band extends from one transition to the next
+- Tooltip on each marker and band showing the classified kind and formatted timestamp
+- Three distinct visual styles for marker kinds: spawn (green), ownership (accent blue), destruction (red)
+
+**Out of scope:**
+- Canvas rendering
+- Any server-side classification of lifecycle events
+- Configurable lifecycle topic patterns (deferred to Phase 8)
+
+### Constraints
+
+- Component receives `events: EntityEventsDto` and `timeRange: { from: Date; to: Date }` props; it does not fetch
+- Lifecycle classification is done in `lifecycleClassifier.ts`, not inline in the component
+- Topic pattern matching uses suffix comparison (`topic.split('.').pop()`) against the hardcoded sets defined in §7.1
+- If no lifecycle events are found, the ribbon renders the track background only (no error, no empty-state message)
+- `xPct` must be clamped to 0–100 before positioning to guard against events outside the time range
+
+### Success Conditions
+
+1. **Test: lifecycleClassifier — spawn suffixes classified correctly** — Assert: `classifyLifecycleEvent('entity.spawned') === 'spawn'`; `classifyLifecycleEvent('sim.created') === 'spawn'`; `classifyLifecycleEvent('player.spawn') === 'spawn'`.
+2. **Test: lifecycleClassifier — ownership suffixes classified correctly** — Assert: `classifyLifecycleEvent('obj.ownership_changed') === 'ownership'`; `classifyLifecycleEvent('unit.owner_transferred') === 'ownership'`.
+3. **Test: lifecycleClassifier — destruction suffixes classified correctly** — Assert: `classifyLifecycleEvent('unit.destroyed') === 'destruction'`; `classifyLifecycleEvent('obj.killed') === 'destruction'`.
+4. **Test: lifecycleClassifier — unrelated topic returns null** — Assert: `classifyLifecycleEvent('vehicle_health') === null`; `classifyLifecycleEvent('transforms') === null`.
+5. **Test: Ribbon renders correct number of markers** — Setup: mount component with events containing 1 spawn, 2 ownership, 1 destruction events. Assert: DOM contains 1 `.lifecycle-ribbon__marker--spawn`, 2 `.lifecycle-ribbon__marker--ownership`, 1 `.lifecycle-ribbon__marker--destruction`.
+6. **Test: Marker horizontal position matches time** — Setup: `timeRange` is 0–1000 ms; spawn event at 500 ms. Assert: the spawn marker's `style.left` is `"50%"`.
+7. **Test: No markers when no lifecycle events** — Setup: events list contains only non-lifecycle events. Assert: no `.lifecycle-ribbon__marker` elements in DOM; ribbon track element is still rendered.
+8. **Test: Entity with a single ownership-transfer renders two ownership bands** — Setup: spawn at t=0, ownership_changed at t=500, no destruction. Assert: two `.lifecycle-ribbon__ownership-band` elements; the first ends at the 50% x position.
+
+---
+
+## TRC-P7-012 — `EntityEventStrip.vue` — Event Markers on Timeline
+
+**Phase:** 7 — Entity History View, Slow State Time Series, Fast State Drill-Down  
+**Design reference:** [tracer_phase7_design.md §9](./tracer_phase7_design.md#9-event-strip)
+
+### Scope
+
+**In scope:**
+- `EntityEventStrip.vue` — canvas-based horizontal strip; one marker per event in `EntityEventsDto`
+- `eventStripRenderer.ts` — canvas rendering function; adapts the Phase 5 marker drawing pattern to a single-lane layout; no swimlanes
+- Hit-test on click: finds the nearest event within a pixel threshold; emits `select` with the event ID
+- Selected event rendered with a highlight ring
+- Node-colour mapping via `buildNodeColorMap` (reuse from Phase 5)
+- Truncation notice in the header when `events.truncated === true`
+- Click on empty space emits `select(null)` (deselects)
+
+**Out of scope:**
+- Swimlane-per-node layout (Phase 5 feature; EntityEventStrip is a single lane)
+- EventInspector popover (rendered by the parent view; strip only emits `select`)
+
+### Constraints
+
+- Canvas must be redrawn on every change to `events`, `timeRange`, or `selectedEventId`
+- `useResizeObserver` must trigger redraw when container width changes
+- Marker x position uses the same `(t - from) / (to - from) * width` formula as Phase 5 to guarantee visual alignment with slow-state charts above and below
+- The renderer must handle 0 events (clear canvas, return immediately) and 5000 events (no slowdown, markers overlap gracefully)
+
+### Success Conditions
+
+1. **Test: eventStripRenderer — marker at correct x position** — Setup: `timeRange` 0–1000 ms; single event at 250 ms; canvas 1000 px wide. Assert: rendered marker centre is at x ≈ 250 px.
+2. **Test: eventStripRenderer — selected event has ring** — Setup: two events; `selectedEventId` set to event 1. Assert: renderer draws a ring around event 1's marker (inspect `ctx.arc` / `ctx.stroke` calls via mock context).
+3. **Test: eventStripRenderer — 0 events does not throw** — Setup: empty events list. Action: call `renderEventStrip(ctx, { events: [], ... })`. Assert: no exception thrown; `ctx.clearRect` was called.
+4. **Test: EventStrip — click near marker emits select with event ID** — Setup: mount component with one event at centre of canvas. Action: click at centre. Assert: `select` emitted with the event's `eventId`.
+5. **Test: EventStrip — click far from any marker emits select(null)** — Action: click at far edge with no markers nearby. Assert: `select` emitted with `null`.
+6. **Test: EventStrip — truncation notice shown when events.truncated is true** — Setup: `events.truncated = true`. Assert: header text contains "truncated".
+7. **Test: EventStrip — no truncation notice when events.truncated is false** — Assert: "truncated" text not present in header.
+
+---
+
+## TRC-P7-013 — `SlowStateChart.vue` and `slowStateChartRenderer.ts`
+
+**Phase:** 7 — Entity History View, Slow State Time Series, Fast State Drill-Down  
+**Design reference:** [tracer_phase7_design.md §8](./tracer_phase7_design.md#8-slow-state-chart)
+
+### Scope
+
+**In scope:**
+- `slowStateChartRenderer.ts` — canvas rendering functions `renderSlowStateChart`, `renderNumericLine`, `renderCategoricalBands`; hit-test return value `SlowStateHitEntry[]`
+- `SlowStateChart.vue` — canvas component; one instance per slow-state topic; 60 px tall canvas
+- `detectFields(samples)` helper inside `SlowStateChart.vue` — inspects first 20 samples; classifies fields as `'numeric'` or `'categorical'`; preferred-field ordering (value, level, health, count / state, status, phase, kind)
+- Field-picker `<select>` dropdown allowing user to switch the plotted field
+- Click-to-select: emits `selectEvent` with the clicked `SlowStateSampleDto`
+- `useResizeObserver` integration for responsive redraw
+
+**Out of scope:**
+- Multiple simultaneous fields per chart row (multi-line per row) — Phase 8+
+- Configurable chart height
+- LTTB or M4 downsampling in the renderer — Phase 10+
+
+### Constraints
+
+- Numeric renderer: stepped line (last-value-held) — horizontal then vertical segment at each sample
+- Categorical renderer: filled rectangles from one sample time to the next; text label inside band when pixel width permits; max 15 distinct colours before collapsing to `#888` grey with label "other"
+- For numeric with all-identical values: range defaults to 1e-9 to avoid divide-by-zero; line drawn at mid-height
+- The `detectFields` result is used only to determine the initial selected field and to populate the dropdown; it does not affect what the backend sends
+- The `selectedField` ref resets to the first detected field when `samples` prop changes (new entity loaded)
+
+### Success Conditions
+
+1. **Test: renderNumericLine — stepped-line passes through each sample point** — Setup: 3 samples at t=0,1,2 ms with values 10, 20, 15; canvas 300×60 px; matching timeRange. Assert: canvas path commands include a move/line to the computed y-coordinates for each sample.
+2. **Test: renderNumericLine — extends to right edge** — Setup: one sample at t=0 with value 5; timeRange ends at t=100. Assert: the path extends to `x = 300` (right edge of canvas).
+3. **Test: renderNumericLine — all-same values renders at mid-height without divide-by-zero** — Setup: 3 samples all with value 7.0. Assert: no exception; all points drawn at the same y (mid canvas).
+4. **Test: renderCategoricalBands — band widths proportional to duration** — Setup: 2 samples: 'idle' at t=0, 'attack' at t=500; timeRange 0–1000 ms; canvas 1000 px wide. Assert: first band width ≈ 500 px; second band extends to x=1000.
+5. **Test: renderCategoricalBands — 0 samples renders without error** — Action: call with `samples = []`. Assert: no exception; `ctx.clearRect` called.
+6. **Test: SlowStateChart — detectFields classifies numeric/categorical correctly** — Setup: samples with payload `{ "health": 100, "state": "idle" }`. Assert: `detectFields` returns two entries: `{ name: 'health', type: 'numeric' }` and `{ name: 'state', type: 'categorical' }`.
+7. **Test: SlowStateChart — preferred field is selected by default** — Setup: payload has fields `{ "x": 1, "value": 5, "state": "a" }`. Assert: `selectedField` is `'value'` (preferred numeric name) rather than `'x'`.
+8. **Test: SlowStateChart — click emits selectEvent with the correct sample** — Setup: canvas 1000 px wide; single sample at t=500 ms; timeRange 0–1000 ms. Action: click at x=500. Assert: `selectEvent` emitted with that sample.
+9. **Test: Smoke — entity with no slow-state renders zero SlowStateChart instances** — Setup: `store.slowStateByTopic = {}`. Mount `EntityHistoryView`. Assert: no `SlowStateChart` in DOM.
+
+---
+
+## TRC-P7-014 — `FastStateDrillDown.vue`, `FastStateColumnPicker.vue`, and `fastStateChartRenderer.ts`
+
+**Phase:** 7 — Entity History View, Slow State Time Series, Fast State Drill-Down  
+**Design reference:** [tracer_phase7_design.md §10](./tracer_phase7_design.md#10-fast-state-drill-down)
+
+### Scope
+
+**In scope:**
+- `FastStateDrillDown.vue` — collapsible panel; topic `<select>`, embedded `FastStateColumnPicker`, loading/error/empty states, downsampled notice, local expanded `ref`
+- `FastStateColumnPicker.vue` — checkbox chip UI; shows only numeric columns (filters non-numeric); `v-model:selected` binding; "(non-numeric columns hidden)" hint when applicable
+- `fastStateChartRenderer.ts` — `renderFastStateChart`; one line per selected column; shared Y axis; legend with colour-coded column names; gaps on null values
+- `FastStateChart.vue` — canvas wrapper calling `renderFastStateChart`
+- Default behaviour: on topic selection, auto-select the first numeric column
+- Downsampled notice: shown when `data.downsampled === true`
+
+**Out of scope:**
+- Multiple Y axes (Phase 10+)
+- Tooltip cross-hair on hover (Phase 10+)
+- URL state for fast-state selection (TRC-P7-016 / TRC-P7-017)
+- Fetching logic abstracted into `useFastStateChart` composable (TRC-P7-017); for Phase 7 the fetch may live directly in `FastStateDrillDown.vue`
+
+### Constraints
+
+- Panel is collapsed by default; `expanded` is local component state (not in `entityHistoryStore`)
+- When `availableTopics` is empty, the panel renders its toggle button with a "(no fast-state data)" hint but does not show the body on expand
+- The chart appears within 1 second for a 30-min entity history at typical sample rates (success criterion §1.3 point 5) — verified via performance test, not asserted in unit tests
+- `FastStateColumnPicker` emits `update:selected` with the full new column array (not individual toggle events)
+- The colour palette for column lines is deterministic: column at index `i` gets `colors[i % colors.length]` from a predefined array
+
+### Success Conditions
+
+1. **Test: FastStateDrillDown — collapsed by default** — Setup: mount component with `availableTopics = ['pos']`. Assert: `.fast-state-drill-down__body` is not visible (v-show=false).
+2. **Test: FastStateDrillDown — toggle button expands the body** — Action: click `.fast-state-drill-down__toggle`. Assert: `.fast-state-drill-down__body` becomes visible.
+3. **Test: FastStateDrillDown — no data hint when availableTopics is empty** — Setup: `availableTopics = []`. Assert: toggle button text includes "no fast-state data".
+4. **Test: FastStateDrillDown — expand with no topics does not show body** — Setup: `availableTopics = []`. Action: click toggle. Assert: body remains hidden.
+5. **Test: FastStateDrillDown — auto-selects first numeric column on topic selection** — Setup: `getEntityFastStateSchema` returns schema with columns `[{ name: 'ts', isNumeric: false }, { name: 'x', isNumeric: true }]`. Action: select a topic. Assert: `selectedColumns` becomes `['x']`.
+6. **Test: FastStateDrillDown — downsampled notice shown when data.downsampled is true** — Setup: API returns `{ downsampled: true, totalSamples: 200000, samples: [...5000...] }`. Assert: notice text contains "200,000".
+7. **Test: FastStateColumnPicker — renders only numeric columns** — Setup: schema with `[{ name: 'label', isNumeric: false }, { name: 'x', isNumeric: true }, { name: 'y', isNumeric: true }]`. Assert: two chip elements rendered (x, y); label chip absent.
+8. **Test: FastStateColumnPicker — toggle emits update:selected** — Setup: `selected = ['x']`. Action: click chip for 'y'. Assert: `update:selected` emitted with `['x', 'y']`.
+9. **Test: FastStateColumnPicker — unchecking column emits update:selected without it** — Setup: `selected = ['x', 'y']`. Action: click chip for 'x'. Assert: emitted with `['y']`.
+10. **Test: fastStateChartRenderer — two columns drawn with distinct colors** — Setup: data with 2 columns; 5 samples each. Assert: `ctx.strokeStyle` set to two different colors across the render call.
+11. **Test: fastStateChartRenderer — null values break the line** — Setup: samples with column values `[1.0, null, 3.0]`. Assert: the path contains at least two separate `moveTo` calls (line is lifted at the null).
+12. **Test: fastStateChartRenderer — 0 samples renders without error** — Action: call with `data.samples = []`. Assert: no exception.
+
+---
+
+## TRC-P7-015 — `useEntityHistoryQuery.ts` and `entityHistoryStore.ts` (Fetch Orchestration)
+
+**Phase:** 7 — Entity History View, Slow State Time Series, Fast State Drill-Down  
+**Design reference:** [tracer_phase7_design.md §6.4](./tracer_phase7_design.md#64-useentityhistoryquery)
+
+### Scope
+
+**In scope:**
+- `useEntityHistoryQuery.ts` — composable that watches `(store.entityId, store.sessionId)` and orchestrates the fetch sequence:
+  1. Fetch entity summary (sequential first)
+  2. Derive `from/to` from the summary's `firstSeenUtc/lastSeenUtc`
+  3. Fetch events, slow-state, and fast-state topics in parallel (`Promise.all`)
+- Abort on rapid entity switches via `AbortController`; ignore `AbortError` silently
+- Store `loading` set to `true` at start, `false` in `finally`
+- Store `error` set on non-abort failure
+- All API calls go through the typed `useApi()` composable
+- `entityHistoryStore.ts` (Pinia `defineStore`): complete state, getters (if any), and actions as specified in §6.3
+
+**Out of scope:**
+- URL synchronisation (TRC-P7-016)
+- Fast-state data fetch (TRC-P7-017; triggered from `FastStateDrillDown` separately)
+- Slow-state time-range narrowing (the full entity lifespan is fetched; zooming is a Phase 10+ feature)
+
+### Constraints
+
+- The sequential → parallel fetch order is mandatory: `summary` must resolve before the other three queries fire, because their `from/to` parameters come from the summary
+- Aborting an in-flight fetch and starting a new one must not cause a race where stale data from the old fetch overwrites fresh data from the new fetch
+- `useEntityHistoryQuery` must be idempotent: calling it multiple times from the same component (e.g., due to `<StrictMode>` double-mount) must not result in duplicate fetches
+- The composable must be called from `EntityHistoryView.vue` setup, not from the store
+
+### Success Conditions
+
+1. **Test: Sequential then parallel — summary fetched before events** — Setup: mock API; record call order. Action: set `store.entityId = 'e1'`. Assert: `getEntitySummary` is called before `getEntityEvents`.
+2. **Test: Parallel fetch — events, slowState, fastStateTopics called concurrently** — Setup: mock API with controlled promises. Assert: all three calls are in-flight simultaneously (none waits for another to resolve before starting).
+3. **Test: AbortController — switching entity cancels prior fetch** — Setup: mock API with a never-resolving `getEntitySummary`. Action: set entity to 'e1', then immediately set to 'e2'. Assert: the fetch for 'e1' is aborted; no stale data written to store.
+4. **Test: Error handling — network error sets store.error** — Setup: mock API throws `new Error('Timeout')`. Action: set `store.entityId = 'e1'`. Assert: `store.error === 'Timeout'`; `store.loading === false`.
+5. **Test: AbortError is swallowed — store.error not set on abort** — Setup: abort the fetch before it completes. Assert: `store.error` remains `null`.
+6. **Test: loading flag lifecycle** — Assert: `store.loading === true` while fetches are in-flight; `store.loading === false` after all settle (success or error).
+7. **Test: Time range defaults to entity lifespan** — Setup: summary returns `firstSeenUtc='2026-01-01T00:00Z'`, `lastSeenUtc='2026-01-01T00:30Z'`. Assert: `store.timeRange.from` and `store.timeRange.to` match those values after fetch completes.
+
+---
+
+## TRC-P7-016 — `useEntityHistoryUrl.ts` — URL State
+
+**Phase:** 7 — Entity History View, Slow State Time Series, Fast State Drill-Down  
+**Design reference:** [tracer_phase7_design.md §11](./tracer_phase7_design.md#11-url-state-and-cross-view-navigation)
+
+### Scope
+
+**In scope:**
+- `useEntityHistoryUrl.ts` — bidirectional URL ↔ store sync composable
+- URL → store: on mount and on route-change, read `entityId` (path param), `session`, `from`, `to`, `select` from URL; call `store.setEntity`, `store.setTimeRange`, `store.selectedEventId = ...`
+- Store → URL: debounced (250 ms) `router.replace` whenever `timeRange.from`, `timeRange.to`, or `selectedEventId` changes
+- URL schema: `/v/entity/{entityId}?session=...&from=...&to=...&select=...` (see §11.1)
+- `fastStateTopic` and `fastStateColumns` URL params are wired in TRC-P7-017; this task handles the base params only
+
+**Out of scope:**
+- `fastStateTopic` / `fastStateColumns` URL params (TRC-P7-017)
+- History push (use `router.replace` to avoid polluting browser history on every pan/zoom)
+
+### Constraints
+
+- URL writes are debounced at 250 ms to avoid flooding browser history during rapid interaction
+- The composable uses `watch` with `{ immediate: true }` for URL → store direction so the state is restored on page load
+- `from` and `to` must be written as ISO 8601 strings; parsed back as `new Date(string)` without timezone ambiguity
+- If `from` or `to` URL params are absent, the time range is not overwritten (leaves it at the entity-lifespan default set by `setSummary`)
+- The composable must be called once from `EntityHistoryView.vue` setup, co-located with `useEntityHistoryQuery`
+
+### Success Conditions
+
+1. **Test: URL → store on mount — entityId and sessionId populated from route** — Setup: mount composable with route `{ params: { entityId: 'e1' }, query: { session: 's1' } }`. Assert: `store.entityId === 'e1'`; `store.sessionId === 's1'`.
+2. **Test: URL → store — from/to parsed correctly** — Setup: route query includes `from=2026-01-01T00:00:00.000Z&to=2026-01-01T00:30:00.000Z`. Assert: `store.timeRange.from.toISOString() === '2026-01-01T00:00:00.000Z'`; `to` matches.
+3. **Test: URL → store — select param sets selectedEventId** — Setup: route query `select=evt-42`. Assert: `store.selectedEventId === 'evt-42'`.
+4. **Test: URL → store — missing from/to leaves timeRange unchanged** — Setup: store already has a non-default timeRange; mount composable with no from/to in URL. Assert: `store.timeRange` is unchanged.
+5. **Test: Store → URL — timeRange change triggers debounced router.replace** — Setup: spy on `router.replace`. Action: change `store.timeRange.from`. After 250 ms debounce. Assert: `router.replace` called with `query.from` updated.
+6. **Test: Store → URL — selectedEventId appears in URL** — Action: set `store.selectedEventId = 'ev-99'`. After debounce. Assert: `router.replace` called with `query.select === 'ev-99'`.
+7. **Test: Shareable URL round-trip** — Setup: navigate to `/v/entity/e1?session=s1&from=2026-01-01T00:00:00Z&to=2026-01-01T01:00:00Z&select=ev-7`. Assert: after mount, store reflects all four values exactly.
+
+---
+
+## TRC-P7-017 — `useFastStateChart.ts` — On-Demand Fast State
+
+**Phase:** 7 — Entity History View, Slow State Time Series, Fast State Drill-Down  
+**Design reference:** [tracer_phase7_design.md §10](./tracer_phase7_design.md#10-fast-state-drill-down)
+
+### Scope
+
+**In scope:**
+- `useFastStateChart.ts` — composable encapsulating all fast-state fetch logic: schema load on topic change, data load on (topic + columns + timeRange) change
+- Exposed reactive refs: `schema`, `data`, `loading`, `error`
+- Independent `loading` state per-fetch sequence (schema load and data load are distinct loading states or a combined one)
+- `AbortController` pattern: cancels in-flight schema/data fetch when topic or columns change
+- URL params: extend `useEntityHistoryUrl` (or handle in this composable) to read/write `fastStateTopic` and `fastStateColumns` from/to the URL
+- Integration with `FastStateDrillDown.vue`: the component uses this composable instead of inline fetch logic
+
+**Out of scope:**
+- Canvas rendering (TRC-P7-014)
+- Column picker UI (TRC-P7-014)
+- `maxSamples` configuration UI (hardcoded at 5000 for Phase 7)
+
+### Constraints
+
+- Topic change must trigger schema refetch AND clear current data and selected columns
+- Selected columns change (while topic stays the same) must trigger data refetch only (not schema refetch)
+- Time range change must trigger data refetch only
+- If the entity has no fast-state topics (`availableTopics` is empty), the composable should remain idle (no fetch)
+- Schema fetch failure must not prevent data fetch attempts from prior successful schema; it sets `error` and leaves `schema` at its prior value
+
+### Success Conditions
+
+1. **Test: Topic change triggers schema fetch** — Setup: mock API. Action: set `selectedTopic = 'pos'`. Assert: `getEntityFastStateSchema('ent-1', 'pos')` called once.
+2. **Test: Topic change clears previous columns and data** — Setup: prior `data` and `selectedColumns` populated. Action: change topic. Assert: `data` and `selectedColumns` reset to empty before new schema arrives.
+3. **Test: Column change does NOT refetch schema** — Action: `selectedTopic` stays constant; change `selectedColumns`. Assert: `getEntityFastStateSchema` not called again.
+4. **Test: Data fetch triggered after schema resolves and columns are selected** — Action: topic set → schema resolves → first numeric column auto-selected. Assert: `getEntityFastState` called with the auto-selected column.
+5. **Test: TimeRange change triggers data refetch** — Setup: topic and columns already selected. Action: change `timeRange`. Assert: `getEntityFastState` called again with the new from/to.
+6. **Test: loading true during fetch, false after** — Assert: `loading.value === true` while `getEntityFastState` is pending; `false` after resolution.
+7. **Test: URL param round-trip — fastStateTopic and fastStateColumns in URL** — Setup: navigate to `?fastStateTopic=transforms&fastStateColumns=x,y`. Assert: composable sets `selectedTopic = 'transforms'` and `selectedColumns = ['x', 'y']` on mount; after user changes columns, URL updated with new values.
+
+---
+
+## TRC-P7-018 — Cross-View Navigation Pivots
+
+**Phase:** 7 — Entity History View, Slow State Time Series, Fast State Drill-Down  
+**Design reference:** [tracer_phase7_design.md §11.3](./tracer_phase7_design.md#113-cross-view-pivots)
+
+### Scope
+
+**In scope:**
+- Enable the "Show entity history" pivot in `EventInspector.vue` (stubbed false in Phase 6): set `showEntityHistoryPivot` prop to `true` when `event.entityId != null`; call `pivotToEntity()` using `router.push({ name: 'entity-history', ... })`
+- "Show in timeline" pivot from event strip and slow-state chart clicks in `EntityHistoryView` — routes to `/v/timeline/{sessionId}?from=(t-2s)&to=(t+2s)&select={eventId}`
+- "Show causal tree" pivot from any event marker in `EntityHistoryView` — routes to `/v/causal/{traceId}` if the event has a non-zero `trace_id`
+- "Show causal tree" pivot from slow-state chart click — enabled only when the slow-state sample's `trace_id` is non-zero
+- CausalTreeView — add "Open entity history" action to its event inspector (same pattern as Timeline)
+- All pivots use `router.push` (new entry) not `router.replace`
+
+**Out of scope:**
+- "Compare with entity X" multi-entity pivot (Phase 10+)
+- Deep-link to a specific slow-state sample (no `slowStateEvent` URL param in Phase 7)
+
+### Constraints
+
+- The entity-history pivot must not appear in `EventInspector` when `event.entityId` is null or undefined
+- The causal-tree pivot from EntityHistoryView must be disabled (greyed out or absent) when `trace_id === 0`
+- Navigator targets must use named routes (`'timeline'`, `'entity-history'`, `'causal-tree'`) so URL structure changes don't break pivots
+- The same `EventInspector` component serves all three views — the pivot's visibility is controlled by props, not by detecting which view it is mounted in
+
+### Success Conditions
+
+1. **Test: EventInspector — entity-history pivot visible when entityId present** — Setup: mount `EventInspector` with `event.entityId = 'e1'` and `showEntityHistoryPivot = true`. Assert: pivot button is rendered and enabled.
+2. **Test: EventInspector — entity-history pivot absent when entityId null** — Setup: `event.entityId = null`. Assert: pivot button is not rendered (or is hidden/disabled).
+3. **Test: EventInspector — clicking entity pivot navigates to EntityHistoryView** — Action: click the entity-history pivot button. Assert: `router.push` called with `{ name: 'entity-history', params: { entityId: 'e1' }, query: { session: ... } }`.
+4. **Test: EntityHistoryView event strip — "Show in timeline" emits correct route** — Setup: event at t=10000 ms UTC. Action: click "Show in timeline" from the event marker context menu or inspector. Assert: navigation to `{ name: 'timeline', query: { from: t-2000ms ISO, to: t+2000ms ISO, select: eventId } }`.
+5. **Test: EntityHistoryView event strip — "Show causal tree" navigates when trace_id non-zero** — Setup: event with `trace_id = 42`. Assert: navigation to `{ name: 'causal-tree', params: { traceId: '42' } }` (or equivalent route shape from Phase 6).
+6. **Test: EntityHistoryView event strip — "Show causal tree" absent/disabled when trace_id is 0** — Setup: event with `trace_id = 0`. Assert: the causal-tree pivot button is absent or disabled.
+7. **Test: Slow-state click — causal tree pivot disabled when trace_id = 0** — Setup: slow-state sample has `traceId = '0'` or `null`. Assert: causal-tree action not available.
+
+---
+
+## TRC-P7-019 — Entity Discovery in Session Browser
+
+**Phase:** 7 — Entity History View, Slow State Time Series, Fast State Drill-Down  
+**Design reference:** [tracer_phase7_design.md §11.5](./tracer_phase7_design.md#115-entitypickerview)
+
+### Scope
+
+**In scope:**
+- `EntityPickerView.vue` — standalone view at `/v/entities/:sessionId`; fetches `GET /api/entities?sessionId=...`; shows a filterable list; clicking an entity navigates to `EntityHistoryView`
+- "Entities" tab/button added to the Session Browser (Phase 3 `SessionBrowserView.vue`): each session card gets an "Entities" link pointing to `/v/entities/{sessionId}`
+- Vue Router route `{ path: '/v/entities/:sessionId', name: 'entity-picker', component: EntityPickerView }`
+- Client-side filter: case-insensitive substring match against `entityId`, `samplePlayerId`, and any topic name
+- Entity list items show: entity ID, event count, topic count, sample player ID, first five topic names with "+N more" overflow
+
+**Out of scope:**
+- Server-side pagination of entity list (Phase 7 fetches up to the limit=200 default)
+- Server-side full-text filter (all filtering is client-side for Phase 7)
+- Topic filter dropdown on this view (Phase 8+)
+
+### Constraints
+
+- The Session Browser change must not break existing session-card layout; the "Entities" link is additive
+- `EntityPickerView` must show a loading state while the API call is in-flight
+- The component must handle an empty result gracefully (zero entities message, no JS error)
+- On selecting an entity, navigation uses `router.push({ name: 'entity-history', params: { entityId }, query: { session: sessionId } })` — the same target as all other cross-view pivots
+
+### Success Conditions
+
+1. **Test: EntityPickerView — loads and renders entity list** — Setup: mock API returns 3 entities. Mount view. Assert: 3 `li.entity-picker__item` elements rendered.
+2. **Test: EntityPickerView — loading state shown during fetch** — Setup: API promise not yet resolved. Assert: loading text/spinner visible; list not yet rendered.
+3. **Test: EntityPickerView — empty list shows graceful message** — Setup: API returns `{ entities: [], count: 0 }`. Assert: list is empty; no JS error; "Loading" not shown; empty-state message present.
+4. **Test: EntityPickerView — filter hides non-matching entities** — Setup: 3 entities; filter input set to a string matching only one. Assert: only 1 item visible.
+5. **Test: EntityPickerView — clicking entity navigates to EntityHistoryView** — Action: click first entity item. Assert: `router.push` called with `{ name: 'entity-history', params: { entityId: ... }, query: { session: sessionId } }`.
+6. **Test: EntityPickerView — topics overflow shows "+N more"** — Setup: entity with 8 topics. Assert: rendered item shows first 5 topic names and the text "+3 more".
+7. **Test: Session Browser — Entities link present on session card** — Mount `SessionBrowserView` with one session. Assert: an anchor/button linking to `/v/entities/{sessionId}` is present on the session card.
+
+---
+
+## TRC-P7-020 — Phase 7 Tests (Backend Unit, Integration, Frontend, E2E)
+
+**Phase:** 7 — Entity History View, Slow State Time Series, Fast State Drill-Down  
+**Design reference:** [tracer_phase7_design.md §12](./tracer_phase7_design.md#12-test-plan-for-phase-7)
+
+### Scope
+
+**In scope:**
+
+*Backend unit tests* (`Tracer.Tests.Unit/`):
+- `Parquet/ParquetReaderTests.cs` — schema inspection, time-range filtering, stride downsampling, multi-file merge, empty result on missing file
+- `Parquet/ParquetSchemaInspectorTests.cs` — `DESCRIBE` syntax against a synthetic Parquet file; numeric/non-numeric flag
+- `WebApi/EntityDiscoveryServiceTests.cs` — entity list with summary fields, topic filter, player filter, empty session, limit clamping
+- `WebApi/EntityEventsServiceTests.cs` — events for entity in range, empty result, truncation flag
+- `WebApi/EntitySlowStateServiceTests.cs` — grouping by topic, empty result for entity with no slow-state, topic filter
+- `WebApi/EntityFastStateServiceTests.cs` — topic discovery, null schema when no Parquet, read with expected samples, multi-interval merge
+- `WebApi/EntityEndpointsTests.cs` — HTTP status codes; invalid time range 400; `maxSamples` out-of-range 400; empty column list 400; unknown entity cases
+
+*Backend integration tests* (`Tracer.Tests.Integration/`):
+- `EntityHistoryRoundTripTests.cs` — inject events + slow-state + fast-state Parquet via `TestHarness`; query all entity endpoints; bundle-mode round-trip
+- `FastStateParquetRoundTripTests.cs` — write Parquet with known data; read via `ParquetReader`; assert exact equality; multi-interval merge
+
+*Frontend unit tests* (`tracer-viewer/tests/unit/`):
+- `slowStateChartRenderer.spec.ts` — numeric stepped line, categorical bands, empty samples, single-sample, all-same values
+- `eventStripRenderer.spec.ts` — marker positions, selected ring, zero events
+- `fastStateChartRenderer.spec.ts` — multiple column lines, distinct colors, null gaps, 0 samples
+- `useEntityHistoryQuery.spec.ts` — sequential then parallel fetches, abort on entity switch, error handling, loading flag
+
+*E2E* (`tracer-viewer/tests/e2e/`):
+- `entity-history-view.spec.ts` — full workflow Playwright tests (see §12.4)
+
+**Out of scope:**
+- Performance profiling infrastructure (the performance thresholds from §12.5 are verified manually or in a dedicated perf suite, not as part of CI unit/integration tests)
+- Tests for components covered by earlier tasks that are already tested in TRC-P7-011–TRC-P7-019 individual success conditions
+
+### Constraints
+
+- Backend unit tests must not depend on a real DuckDB file; use `TestHarness` fixtures or synthetic in-memory data
+- `FastStateParquetRoundTripTests` must write a real Parquet file to a temp directory, read it back, then delete the temp file in teardown
+- Playwright E2E tests run against the built SPA served by the OfflineViewer with a seeded bundle; the bundle must include at least one entity with slow-state and fast-state data
+- All Phase 1–6 tests must continue to pass after Phase 7 changes (no regressions)
+
+### Success Conditions
+
+1. **Test: ParquetReaderTests — schema inspection returns expected columns** — Setup: write a Parquet file with columns `publish_wallclock TIMESTAMP`, `instance_key VARCHAR`, `x DOUBLE`, `label VARCHAR`. Action: `InspectSchemaAsync(path)`. Assert: 4 columns returned; `x` is numeric; `label` is not numeric.
+2. **Test: ParquetReaderTests — time-range filter excludes out-of-range samples** — Setup: Parquet with 10 samples spanning 0–9 s; query `from=2s, to=7s`. Assert: 5 samples returned.
+3. **Test: ParquetReaderTests — stride downsampling kicks in above maxSamples** — Setup: Parquet with 10000 samples; `maxSamples = 100`. Assert: result has `<= 100` samples; `Downsampled = true`.
+4. **Test: ParquetReaderTests — missing file returns empty result without exception** — Action: call `ReadTimeSeriesAsync` on a non-existent path. Assert: `Samples.Count == 0`; no exception.
+5. **Test: EntityDiscoveryServiceTests — topics list populated in discovery result** — Setup: 10 events for entity-A across 3 distinct topics. Assert: `DiscoverAsync` result for entity-A has all 3 topics.
+6. **Test: EntityEventsServiceTests — truncated flag set at limit** — Setup: 11 events; limit = 10. Assert: `Truncated == true`; `Events.Count == 10`.
+7. **Test: EntitySlowStateServiceTests — groups samples by topic** — Setup: 4 slow-state rows: 2 for `"health_topic"`, 2 for `"phase_topic"`. Assert: `ByTopic` has two keys; each with 2 samples.
+8. **Test: EntityFastStateServiceTests — multi-interval: samples from two interval dirs merged** — Setup: two interval directories each containing a Parquet for `(entity-A, pos_topic)`. Assert: `ReadAsync` returns samples from both files, ordered by time.
+9. **Test: EntityEndpointsTests — empty column list returns 400** — Action: `GET /api/entities/e1/fast-state/pos?from=...&to=...` (no `column` param). Assert: HTTP 400.
+10. **Test: EntityHistoryRoundTripTests — bundle-mode round-trip** — Setup: create a bundle with events, slow-state, and Parquet fast-state for entity-X. Open in `OfflineViewer`. Assert: all entity API endpoints return the expected data.
+11. **Test: FastStateParquetRoundTripTests — exact sample equality** — Setup: write Parquet with 50 known samples. Read back with `ParquetReader`. Assert: every sample's `publish_wallclock` and numeric values match exactly.
+12. **Test: useEntityHistoryQuery.spec.ts — abort on entity switch** — Setup: first entity fetch stalls. Change entity. Assert: stalled fetch is aborted; store holds data only for the second entity.
+13. **Test: slowStateChartRenderer.spec.ts — numeric renderer draws stepped path** — Setup: 3 samples at known positions. Assert: path moves then steps horizontally before each vertical transition.
+14. **Test: E2E — entity-history-view.spec.ts — navigate from timeline to EntityHistoryView** — Action: open timeline, click event with entity_id, click pivot. Assert: URL matches `/v/entity/...`; `.slow-state-chart` visible.
+15. **Test: E2E — entity-history-view.spec.ts — fast-state drill-down expand and plot** — Action: navigate to known entity, click toggle, select topic and column. Assert: a `<canvas>` is visible inside `.fast-state-drill-down__body`; no error banner.
+16. **Test: E2E — entity-history-view.spec.ts — shareable URL restores view** — Action: navigate directly to URL with `session`, `from`, `to`. Assert: view loads with the correct entity; slow-state and event strip panels visible.
+17. **Test: Regression — all Phase 1–6 tests pass** — Run the full test suite after all Phase 7 changes applied. Assert: zero test failures; zero new warnings in the C# build.
+
+<!-- PHASE 7 TASKS END -->
+
+<!-- PHASE 8 TASKS BEGIN -->
+
+# Phase 8 — Annotations, Saved Views, Trigger Evaluation Log, Multi-Persona Polish
+
+---
+
+## TRC-P8-001 — Tracer.Storage.Annotations Assembly
+
+**Phase:** 8 — Annotations, Saved Views, Trigger Evaluation Log, Multi-Persona Polish
+**Design reference:** [tracer_phase8_design.md §3](./tracer_phase8_design.md#3-annotations-data-model-and-storage)
+
+### Scope
+**In scope:** New `Tracer.Storage.Annotations` assembly (`Tracer.Storage.Annotations.csproj`). `IAnnotationStore` interface. `AnnotationRecord` sealed record and `AnnotationKind` enum. `AnnotationFilter` record with defaults. `AnnotationsSchema` static class exposing the table and index DDL.
+**Out of scope:** Store implementations (`SqliteAnnotationStore`, `BundleAnnotationStore`) — covered in TRC-P8-002 and TRC-P8-003. Web API wiring — covered in TRC-P8-005.
+
+### Constraints
+- `Tracer.Storage.Annotations.csproj` references `Tracer.Core` and `Microsoft.Data.Sqlite` only; no DuckDB reference.
+- `AnnotationRecord` uses init-only properties; the record is immutable.
+- All `IAnnotationStore` methods accept `CancellationToken` as their last parameter.
+- `AnnotationFilter.Limit` must default to `500`.
+
+### Success Conditions
+
+1. **Test: AssemblyBuildsClean** — Setup: add `Tracer.Storage.Annotations` to `Tracer.sln`. Action: `dotnet build --configuration Release`. Assert: exit code 0; zero warnings in the new assembly.
+
+2. **Test: AnnotationRecord_FieldsComplete** — Setup: construct a fully-populated `AnnotationRecord` with all thirteen fields from §3.2 (`AnnotationId`, `SessionId`, `Kind`, `EventId`, `EntityId`, `TraceId`, `TargetWallclock`, `Body`, `Title`, `Tags`, `Author`, `CreatedAtUtc`, `ModifiedAtUtc`). Assert: every property accessor compiles and returns the constructed value.
+
+3. **Test: AnnotationKind_FourValues** — Assert: `AnnotationKind` defines exactly four members: `Event`, `Entity`, `Trace`, `TimePoint`; no extras.
+
+4. **Test: IAnnotationStore_SixMethods** — Setup: create a minimal test class implementing `IAnnotationStore`. Assert: the compiler enforces exactly the six methods from §3.3 — `ListAsync`, `GetAsync`, `CreateAsync`, `UpdateAsync`, `DeleteAsync`, `ExportAllForSessionAsync` — each returning `Task` or `Task<T>` with a `CancellationToken` parameter.
+
+5. **Test: AnnotationFilter_LimitDefaultIs500** — Setup: `new AnnotationFilter()`. Assert: `filter.Limit == 500`; all other properties are null.
+
+6. **Test: AnnotationsSchema_ExecutesWithoutError** — Setup: open an in-memory SQLite connection. Action: execute `AnnotationsSchema.CreateSql`. Assert: no exception is thrown; the `annotations` table exists; all five indexes (`idx_annotations_session`, `idx_annotations_event_id`, `idx_annotations_entity_id`, `idx_annotations_trace_id`, `idx_annotations_created_at`) exist in `sqlite_master`.
+
+7. **Test: AnnotationsSchema_IsIdempotent** — Setup: execute `AnnotationsSchema.CreateSql` once on an in-memory connection, then execute it a second time. Assert: the second execution does not throw (all statements use `IF NOT EXISTS`).
+
+8. **Test: NoForbiddenPackageReferences** — Setup: open `Tracer.Storage.Annotations.csproj`. Assert: contains exactly one `<PackageReference Include="Microsoft.Data.Sqlite" …>` entry; the file contains no reference to DuckDB or any other data-access package.
+
+---
+
+## TRC-P8-002 — SqliteAnnotationStore
+
+**Phase:** 8 — Annotations, Saved Views, Trigger Evaluation Log, Multi-Persona Polish
+**Design reference:** [tracer_phase8_design.md §3.4](./tracer_phase8_design.md#34-sqliteannotationstore--live-observer)
+
+### Scope
+**In scope:** `SqliteAnnotationStore` class in `Tracer.Storage.Annotations`, implementing `IAnnotationStore`. Constructor accepting `(string dbPath, ILogger<SqliteAnnotationStore> logger)`. `InitializeAsync` method. Full CRUD and `ExportAllForSessionAsync` with `SemaphoreSlim` write lock. Private `BuildSelectSql`, `BindRecordParameters`, and `MapRecord` helpers. Unit tests in `Tracer.Tests.Unit/Annotations/SqliteAnnotationStoreTests.cs`.
+**Out of scope:** DI registration (TRC-P8-005). REST layer (TRC-P8-005). Bundle variant (TRC-P8-003).
+
+### Constraints
+- All user-supplied values are bound via named `$parameter` style; no string interpolation of field values in SQL text.
+- `CreateAsync`, `UpdateAsync`, and `DeleteAsync` acquire `_writeLock` (`SemaphoreSlim(1,1)`) before opening a connection; read operations open a `Mode=ReadOnly` connection without holding the lock.
+- If `AnnotationId` is null or empty on `CreateAsync`, a new ULID string is assigned.
+- If `CreatedAtUtc` is `default(DateTimeOffset)` on `CreateAsync`, it is set to `DateTimeOffset.UtcNow`.
+
+### Success Conditions
+
+1. **Test: InitializeAsync_CreatesSchema** — Setup: `SqliteAnnotationStore` pointing to a temp path that does not yet exist. Action: `await store.InitializeAsync(CancellationToken.None)`. Assert: the database file exists on disk; the `annotations` table and all five named indexes are present in `sqlite_master`.
+
+2. **Test: InitializeAsync_IsIdempotent** — Setup: call `InitializeAsync` on an already-initialized store. Assert: the second call does not throw and the schema remains valid.
+
+3. **Test: CreateAsync_GeneratesUlid_WhenIdEmpty** — Setup: build a valid `AnnotationRecord` with `AnnotationId = ""`. Action: `var result = await store.CreateAsync(record, ct)`. Assert: `result.AnnotationId` is a non-empty 26-character ULID string.
+
+4. **Test: CreateAsync_SetsCreatedAtUtc_WhenDefault** — Setup: build a record with `CreatedAtUtc = default`. Action: `CreateAsync`. Assert: `result.CreatedAtUtc` is within 5 seconds of `DateTimeOffset.UtcNow`.
+
+5. **Test: UpdateAsync_SetsModifiedAtUtc** — Setup: create a record, then build an updated copy (same ID). Action: `await store.UpdateAsync(updated, ct)`. Assert: `result.ModifiedAtUtc` is non-null and is ≥ `record.CreatedAtUtc`.
+
+6. **Test: UpdateAsync_UnknownId_ReturnsNull** — Setup: empty store. Action: `await store.UpdateAsync(record with { AnnotationId = "nonexistent" }, ct)`. Assert: return value is `null`.
+
+7. **Test: DeleteAsync_UnknownId_ReturnsFalse** — Action: `await store.DeleteAsync("nonexistent", ct)`. Assert: returns `false`.
+
+8. **Test: ListAsync_FilterBySessionId_ReturnsOnlyMatchingSession** — Setup: annotations for two different session IDs in the same store. Action: `ListAsync(new AnnotationFilter { SessionId = "session-A" }, ct)`. Assert: every returned record has `SessionId == "session-A"`; session-B records are absent.
+
+9. **Test: ListAsync_OrdersByCreatedAtDesc** — Setup: create three annotations with distinct `CreatedAtUtc` values (oldest to newest). Action: `ListAsync(new AnnotationFilter { SessionId = sid }, ct)`. Assert: returned list is ordered by `CreatedAtUtc` descending (newest first).
+
+10. **Test: ListAsync_RespectsLimit** — Setup: create 10 annotations for the same session. Action: `ListAsync(new AnnotationFilter { SessionId = sid, Limit = 3 }, ct)`. Assert: exactly 3 records returned.
+
+11. **Test: Tags_RoundTripThroughJsonSerialization** — Setup: create an annotation with `Tags = ["alpha", "beta", "gamma"]`. Action: retrieve via `GetAsync`. Assert: `result.Tags` equals `["alpha", "beta", "gamma"]` element-by-element.
+
+12. **Test: NoSqlInjection_BodyContainingSqlText** — Setup: create an annotation whose `Body` equals `"'; DROP TABLE annotations; --"`. Assert: the raw SQL text in `BuildSelectSql` does not contain that literal; the annotation is stored and retrieved correctly; the `annotations` table still exists afterwards.
+
+---
+
+## TRC-P8-003 — BundleAnnotationStore
+
+**Phase:** 8 — Annotations, Saved Views, Trigger Evaluation Log, Multi-Persona Polish
+**Design reference:** [tracer_phase8_design.md §3.6](./tracer_phase8_design.md#36-bundleannotationstore--offline-viewer)
+
+### Scope
+**In scope:** `BundleAnnotationStore` class in `Tracer.Storage.Annotations`, implementing `IAnnotationStore` for read-only offline bundle mode. Reads from `{bundlePath}/annotations/annotations.json`. Lazy-load with in-memory `_cache`. All filtering applied in memory. Write methods (`CreateAsync`, `UpdateAsync`, `DeleteAsync`) throw `InvalidOperationException`. Unit tests in `Tracer.Tests.Unit/Annotations/BundleAnnotationStoreTests.cs`.
+**Out of scope:** `LazyBundleAnnotationStore` adapter (TRC-P8-005). DI registration (TRC-P8-005).
+
+### Constraints
+- Write operations must throw `InvalidOperationException` with a message containing the word "read-only".
+- `_cache` must be populated on the first call and reused on all subsequent calls without re-reading the file.
+- Returns an empty list (not an exception) when `annotations.json` does not exist at the expected path.
+
+### Success Conditions
+
+1. **Test: ListAsync_FileAbsent_ReturnsEmpty** — Setup: `BundleAnnotationStore` pointing to a bundle directory where `annotations/annotations.json` does not exist. Action: `ListAsync(new AnnotationFilter(), ct)`. Assert: returns an empty list; no exception.
+
+2. **Test: ListAsync_ValidFile_ReturnsParsedRecords** — Setup: write a valid `annotations.json` containing two serialized `AnnotationRecord` entries at the expected path. Action: `ListAsync(new AnnotationFilter(), ct)`. Assert: returns exactly two records with field values matching the file content.
+
+3. **Test: GetAsync_MatchingId_ReturnsRecord** — Setup: file containing one record. Action: `GetAsync(record.AnnotationId, ct)`. Assert: returns the matching record.
+
+4. **Test: GetAsync_UnknownId_ReturnsNull** — Action: `GetAsync("does-not-exist", ct)`. Assert: returns `null`.
+
+5. **Test: CreateAsync_ThrowsInvalidOperationException** — Action: `store.CreateAsync(record, ct)`. Assert: throws `InvalidOperationException` whose `Message` contains "read-only".
+
+6. **Test: UpdateAsync_ThrowsInvalidOperationException** — Action: `store.UpdateAsync(record, ct)`. Assert: throws `InvalidOperationException` whose `Message` contains "read-only".
+
+7. **Test: DeleteAsync_ThrowsInvalidOperationException** — Action: `store.DeleteAsync("id", ct)`. Assert: throws `InvalidOperationException` whose `Message` contains "read-only".
+
+8. **Test: ExportAllForSessionAsync_FiltersBySessionId** — Setup: file with annotations for two distinct session IDs. Action: `ExportAllForSessionAsync("session-A", ct)`. Assert: only annotations with `SessionId == "session-A"` are returned.
+
+9. **Test: Cache_NotRefreshedOnSecondCall** — Setup: call `ListAsync` once (populates cache). Action: overwrite the file on disk with different records; call `ListAsync` again. Assert: the second call returns the same data as the first (stale cache, no re-read).
+
+10. **Test: ListAsync_FilterByKind_AppliedInMemory** — Setup: file with two `AnnotationKind.Event` records and one `AnnotationKind.Trace` record. Action: `ListAsync(new AnnotationFilter { Kind = AnnotationKind.Event }, ct)`. Assert: exactly two records returned, both with `Kind == Event`.
+
+---
+
+## TRC-P8-004 — Tracer.Storage.SavedViews Assembly
+
+**Phase:** 8 — Annotations, Saved Views, Trigger Evaluation Log, Multi-Persona Polish
+**Design reference:** [tracer_phase8_design.md §6.1](./tracer_phase8_design.md#61-data-model), [§6.2](./tracer_phase8_design.md#62-sqlitesavedviewstore)
+
+### Scope
+**In scope:** New `Tracer.Storage.SavedViews` assembly. `SavedViewRecord` sealed record with all fields from §6.1. `SavedViewKind` enum (`SavedView`, `Bookmark`). `ISavedViewStore` interface (CRUD plus `RecordOpenedAsync`). `SqliteSavedViewStore` implementation sharing the same SQLite database file as annotations. Schema DDL with the `saved_views` table and three indexes from §6.2. `SavedViewFilter` record. Unit tests in `Tracer.Tests.Unit/SavedViews/SqliteSavedViewStoreTests.cs`.
+**Out of scope:** REST endpoints (TRC-P8-006). Bundle read-only behavior for saved views. Frontend save/bookmark UI.
+
+### Constraints
+- `SqliteSavedViewStore` accepts the same `dbPath` as `SqliteAnnotationStore`; both tables live in the same file.
+- All SQL uses named `$parameter` style; no string interpolation of user input.
+- `SavedViewId` is a ULID; the store generates one on `CreateAsync` when the provided ID is empty.
+- `RecordOpenedAsync` increments `open_count` and sets `last_opened_at` atomically in a single UPDATE statement.
+
+### Success Conditions
+
+1. **Test: AssemblyBuildsClean** — Action: `dotnet build Tracer.Storage.SavedViews --configuration Release`. Assert: exit code 0; zero warnings.
+
+2. **Test: SavedViewRecord_FieldsComplete** — Setup: construct `SavedViewRecord` with all twelve fields (`SavedViewId`, `SessionId`, `Kind`, `ViewType`, `Url`, `Label`, `Description`, `Persona`, `Author`, `CreatedAtUtc`, `LastOpenedAtUtc`, `OpenCount`). Assert: all properties compile and return their init values.
+
+3. **Test: SavedViewKind_TwoValues** — Assert: `SavedViewKind` has exactly two members: `SavedView` and `Bookmark`.
+
+4. **Test: SchemaInitialization_IsIdempotent** — Setup: call schema initialization twice on the same SQLite file used for annotations. Assert: no exception on either call; `saved_views` table and three indexes (`idx_saved_views_session_persona`, `idx_saved_views_session_kind`, `idx_saved_views_last_opened`) all exist in `sqlite_master`.
+
+5. **Test: CreateAsync_AssignsUlid_WhenIdEmpty** — Setup: `CreateAsync` called with `SavedViewId = ""`. Assert: returned record has a non-empty 26-character ULID string as `SavedViewId`.
+
+6. **Test: RecordOpenedAsync_IncrementsOpenCount** — Setup: create a view (`OpenCount = 0`). Action: `await store.RecordOpenedAsync(id, ct)`. Assert: `GetAsync(id, ct)` returns a record with `OpenCount == 1` and non-null `LastOpenedAtUtc`.
+
+7. **Test: RecordOpenedAsync_CalledTwice_OpenCountIsTwo** — Action: call `RecordOpenedAsync` twice in sequence. Assert: `GetAsync` returns `OpenCount == 2`.
+
+8. **Test: FilterByPersona_ReturnsOnlyMatchingPersona** — Setup: views for `"engineer"` and `"scenario-author"`. Action: `ListAsync(new SavedViewFilter { SessionId = sid, Persona = "engineer" }, ct)`. Assert: only views with `Persona == "engineer"` returned.
+
+9. **Test: FilterByKind_ReturnsOnlyBookmarks** — Setup: one `SavedView` and two `Bookmark` entries for the same session. Action: `ListAsync(new SavedViewFilter { SessionId = sid, Kind = SavedViewKind.Bookmark }, ct)`. Assert: exactly two records returned, both `Bookmark`.
+
+10. **Test: UpdateAsync_UpdatesLabelAndDescription** — Setup: create a view with `Label = "old"`. Action: `UpdateAsync(record with { Label = "new", Description = "desc" }, ct)`. Assert: `GetAsync` returns `Label == "new"` and `Description == "desc"`.
+
+---
+
+## TRC-P8-005 — Annotation REST API Endpoints
+
+**Phase:** 8 — Annotations, Saved Views, Trigger Evaluation Log, Multi-Persona Polish
+**Design reference:** [tracer_phase8_design.md §4](./tracer_phase8_design.md#4-annotation-web-api), [§4.4](./tracer_phase8_design.md#44-wiring)
+
+### Scope
+**In scope:** `AnnotationEndpoints.cs` with the five endpoints from §4.1. `AnnotationDto`, `CreateAnnotationDto`, `UpdateAnnotationDto` DTOs from §4.3. `AnnotationDtoMapper` (record ↔ DTO). `ValidateCreate` validation logic. Bundle-mode 405 responses with `ProblemDetails`. `IAnnotationStore` singleton registration in `ObserverHostBuilder` (SQLite store at `{DataRoot}/annotations.db`) and `OfflineViewerHostBuilder` (via `LazyBundleAnnotationStore`). `LazyBundleAnnotationStore` adapter. `AnnotationEndpoints.Map(app)` call in both middleware pipelines. Unit tests in `Tracer.Tests.Unit/WebApi/AnnotationEndpointsTests.cs`.
+**Out of scope:** Frontend annotation UI (TRC-P8-011+). Saved views endpoints (TRC-P8-006).
+
+### Constraints
+- `ValidateCreate` rejects: empty `Body`; empty `SessionId`; a request where the count of non-null target identifiers (`EventId`, `EntityId`, `TraceId`, `TargetWallclockUtc`) is not exactly one.
+- Bundle-mode write attempts must return HTTP 405 `ProblemDetails` (not 500) by catching `InvalidOperationException` from `BundleAnnotationStore`.
+- `POST /api/annotations` returns HTTP 201 with a `Location` header pointing to `/api/annotations/{id}`.
+
+### Success Conditions
+
+1. **Test: POST_ValidRequest_Returns201Created** — Setup: `IAnnotationStore` backed by `SqliteAnnotationStore`. Action: `POST /api/annotations` with a valid `CreateAnnotationDto` (non-empty `body`, `sessionId`, `kind = "Event"`, `eventId` set). Assert: HTTP 201; `Location` header equals `/api/annotations/{annotationId}`; response body is a valid `AnnotationDto` with a non-empty `annotationId`.
+
+2. **Test: POST_EmptyBody_Returns400** — Action: POST with `body = ""`. Assert: HTTP 400 `ProblemDetails`; title indicates `Body` is required.
+
+3. **Test: POST_MultipleTargetIdentifiers_Returns400** — Action: POST with both `eventId` and `entityId` set. Assert: HTTP 400 `ProblemDetails` referencing the one-target constraint.
+
+4. **Test: POST_NoTargetIdentifier_Returns400** — Action: POST with `eventId`, `entityId`, `traceId`, and `targetWallclockUtc` all null. Assert: HTTP 400.
+
+5. **Test: POST_BundleMode_Returns405** — Setup: `IAnnotationStore` is a `BundleAnnotationStore` (throws `InvalidOperationException` on write). Action: `POST /api/annotations`. Assert: HTTP 405 `ProblemDetails` with `Status = 405`; title contains "read-only".
+
+6. **Test: PUT_NonExistentId_Returns404** — Action: `PUT /api/annotations/{unknown-id}` with a valid body. Assert: HTTP 404.
+
+7. **Test: PUT_BundleMode_Returns405** — Setup: `BundleAnnotationStore`. Action: `PUT /api/annotations/{id}`. Assert: HTTP 405.
+
+8. **Test: DELETE_NonExistentId_Returns404** — Action: `DELETE /api/annotations/{unknown-id}`. Assert: HTTP 404.
+
+9. **Test: DELETE_BundleMode_Returns405** — Setup: `BundleAnnotationStore`. Action: `DELETE /api/annotations/{id}`. Assert: HTTP 405.
+
+10. **Test: GET_List_FiltersBySessionId** — Setup: annotations for two different session IDs. Action: `GET /api/annotations?sessionId=A`. Assert: all returned `AnnotationDto` items have `sessionId == "A"`.
+
+11. **Test: GET_Single_Returns200WithDto** — Setup: annotation created via `CreateAsync`. Action: `GET /api/annotations/{id}`. Assert: HTTP 200; returned DTO has matching `annotationId`.
+
+12. **Test: GET_Single_UnknownId_Returns404** — Action: `GET /api/annotations/{unknown-id}`. Assert: HTTP 404.
+
+13. **Test: DI_Observer_RegistersSqliteAnnotationStore** — Setup: build Observer DI container with a valid `ObserverConfig`. Assert: `IAnnotationStore` resolves to a `SqliteAnnotationStore` instance without throwing.
+
+---
+
+## TRC-P8-006 — Saved Views REST API Endpoints
+
+**Phase:** 8 — Annotations, Saved Views, Trigger Evaluation Log, Multi-Persona Polish
+**Design reference:** [tracer_phase8_design.md §6.4](./tracer_phase8_design.md#64-api-endpoints)
+
+### Scope
+**In scope:** `SavedViewEndpoints.cs` with the six endpoints from §6.4 (`GET /api/saved-views`, `POST /api/saved-views`, `GET /api/saved-views/{id}`, `PUT /api/saved-views/{id}`, `DELETE /api/saved-views/{id}`, `POST /api/saved-views/{id}/opened`). `SavedViewDto`, `CreateSavedViewDto`, `UpdateSavedViewDto` DTOs. `SavedViewDtoMapper`. `ISavedViewStore` DI registration in both host builders. `SavedViewEndpoints.Map(app)` call in both middleware pipelines. Unit tests in `Tracer.Tests.Unit/WebApi/SavedViewEndpointsTests.cs`.
+**Out of scope:** Frontend `SaveViewButton`, `BookmarkBar`, `SavedViewsView` (TRC-P8-011+). Bundle export of saved views (covered as part of TRC-P8-009 scope extension if needed).
+
+### Constraints
+- `POST /api/saved-views/{id}/opened` returns HTTP 204 for both known and unknown IDs (fire-and-forget; no client-facing error on a stale ID).
+- `GET /api/saved-views` supports `orderBy` parameter: `"created"` (default — `created_at DESC`) and `"recent"` (`last_opened_at DESC`, nulls last).
+- `limit` parameter is clamped to `[1, 500]` on list endpoints.
+
+### Success Conditions
+
+1. **Test: POST_CreatesSavedView_Returns201** — Action: `POST /api/saved-views` with a valid `CreateSavedViewDto` (sessionId, kind, viewType, url, label, persona). Assert: HTTP 201; `Location` header set; response body has non-empty `savedViewId`.
+
+2. **Test: GET_List_FiltersByPersona** — Setup: two saved views with personas `"engineer"` and `"scenario-author"`. Action: `GET /api/saved-views?sessionId=X&persona=engineer`. Assert: only views with `persona = "engineer"` returned.
+
+3. **Test: GET_List_FiltersByKind** — Setup: `SavedView` and `Bookmark` entries. Action: `GET /api/saved-views?sessionId=X&kind=Bookmark`. Assert: only bookmarks returned.
+
+4. **Test: GET_List_OrderByRecent_UsesLastOpenedAt** — Setup: view A with a recent `lastOpenedAtUtc`, view B with null `lastOpenedAtUtc`. Action: `GET /api/saved-views?sessionId=X&orderBy=recent`. Assert: view A precedes view B in the returned list.
+
+5. **Test: POST_Opened_IncrementsOpenCount** — Setup: saved view with `openCount = 0`. Action: `POST /api/saved-views/{id}/opened`. Assert: subsequent `GET /api/saved-views/{id}` returns `openCount = 1` and non-null `lastOpenedAtUtc`.
+
+6. **Test: POST_Opened_UnknownId_Returns204** — Action: `POST /api/saved-views/{unknown-id}/opened`. Assert: HTTP 204; no exception or error body.
+
+7. **Test: PUT_UpdatesLabel** — Setup: created view with `label = "old"`. Action: `PUT /api/saved-views/{id}` with `label = "new"`. Assert: HTTP 200; response `label == "new"`.
+
+8. **Test: DELETE_RemovesSavedView** — Setup: created view. Action: `DELETE /api/saved-views/{id}`. Assert: HTTP 204; subsequent `GET /api/saved-views/{id}` returns HTTP 404.
+
+9. **Test: GET_Single_Returns200Or404** — Assert: existing ID returns HTTP 200 with matching DTO; unknown ID returns HTTP 404.
+
+10. **Test: DI_Observer_RegistersISavedViewStore** — Assert: `ISavedViewStore` resolves from the Observer DI container without exception.
+
+---
+
+## TRC-P8-007 — TriggerEvalService
+
+**Phase:** 8 — Annotations, Saved Views, Trigger Evaluation Log, Multi-Persona Polish
+**Design reference:** [tracer_phase8_design.md §8.2](./tracer_phase8_design.md#82-backend-triggerevaleservice)
+
+### Scope
+**In scope:** `TriggerEvalService` class in `Tracer.WebApi.Queries`. `TriggerEvaluation` record. `TriggerResult` enum (`Fired`, `NotFired`). `TriggerEvalResult` record. Private `ParseEvaluation` method. All DuckDB queries use named `$parameter` style via `LiveMultiIntervalReader`. Unit tests in `Tracer.Tests.Unit/WebApi/TriggerEvalServiceTests.cs`.
+**Out of scope:** REST endpoint layer (TRC-P8-008). `TriggerEvalView.vue` (frontend tasks).
+
+### Constraints
+- The base WHERE clause `topic = 'scenario.trigger_evaluated'` is hard-coded in the SQL; `triggerId` and `result` filters are applied via additional JSON payload extraction clauses — all using named parameters.
+- `ParseEvaluation` must not throw on malformed payload; it returns a degraded `TriggerEvaluation` with `TriggerId = "(malformed payload)"` and `Inputs` set to the raw payload string.
+- `limit` is enforced inside the SQL query (`LIMIT $limit`), not by post-query truncation.
+
+### Success Conditions
+
+1. **Test: ListAsync_OnlyReturnsTriggerEvaluatedEvents** — Setup: populate a test interval with a mix of `scenario.trigger_evaluated` events and events of other topics. Action: `ListAsync(sessionId, from, to, null, null, 1000, ct)`. Assert: every item in `Evaluations` comes from an event with `topic = "scenario.trigger_evaluated"`; other-topic events are absent.
+
+2. **Test: ListAsync_FilterByTriggerId** — Setup: two trigger-evaluated events with payload `triggerId = "trigger-A"` and `"trigger-B"`. Action: `ListAsync(…, triggerIdFilter: "trigger-A", …)`. Assert: only evaluations with `TriggerId == "trigger-A"` returned.
+
+3. **Test: ListAsync_FilterByResult_Fired** — Setup: mix of fired and not-fired evaluations. Action: `ListAsync(…, resultFilter: TriggerResult.Fired, …)`. Assert: every returned evaluation has `Result == TriggerResult.Fired`.
+
+4. **Test: ListAsync_TimeRangeRespected** — Setup: evaluations before `from` and within `[from, to)`. Action: specify explicit `from` and `to`. Assert: no evaluation with `EvaluatedAtUtc < from` or `EvaluatedAtUtc >= to` is returned.
+
+5. **Test: ParseEvaluation_ExtractsAllPayloadFields** — Setup: event with payload `{"triggerId":"t1","triggerLabel":"My Trigger","inputs":{"speed":12},"result":"fired","nextEventId":"00000000000000FF"}`. Assert: parsed `TriggerEvaluation` has `TriggerId = "t1"`, `TriggerLabel = "My Trigger"`, `Result = TriggerResult.Fired`, `Inputs` contains `"speed"`, `NextEventId` resolves to decimal 255.
+
+6. **Test: ParseEvaluation_NotFiredResult** — Setup: event payload with `"result":"not-fired"`. Assert: `Result == TriggerResult.NotFired`.
+
+7. **Test: ParseEvaluation_MalformedPayload_ReturnsDegradedResult** — Setup: event with `PayloadJson = "not-json"`. Assert: `ParseEvaluation` does not throw; returns `TriggerEvaluation` with `TriggerId = "(malformed payload)"` and `Inputs == "not-json"`.
+
+8. **Test: ListAsync_EmptyResult_NoException** — Setup: no `scenario.trigger_evaluated` events in any interval. Assert: `Evaluations` is an empty list; no exception.
+
+9. **Test: ListAsync_LimitRespected** — Setup: 50 trigger evaluations. Action: `ListAsync(…, limit: 5, …)`. Assert: `Evaluations.Count == 5`.
+
+---
+
+## TRC-P8-008 — Trigger Evaluation API Endpoints
+
+**Phase:** 8 — Annotations, Saved Views, Trigger Evaluation Log, Multi-Persona Polish
+**Design reference:** [tracer_phase8_design.md §8.3](./tracer_phase8_design.md#83-endpoint)
+
+### Scope
+**In scope:** `TriggerEvalEndpoints.cs` with `GET /api/scenario/triggers` from §8.3. `TriggerEvaluationListDto` and `TriggerEvaluationDto` (with all fields from `TriggerEvaluation`). `TriggerEvalDtoMapper`. `TriggerEvalService` and `TriggerEvalEndpoints.Map(app)` wired in `ObserverHostBuilder` and `OfflineViewerHostBuilder`. Unit tests in `Tracer.Tests.Unit/WebApi/TriggerEvalEndpointsTests.cs`.
+**Out of scope:** `TriggerEvalService` internals (TRC-P8-007). Frontend view (frontend tasks).
+
+### Constraints
+- When `sessionId` does not resolve via `SessionQueryService.GetAsync`, return HTTP 404.
+- The `result` query parameter is parsed case-insensitively; an unrecognised value is silently treated as "all results" (no 400 error).
+- `limit` is clamped to `[1, 5000]`.
+- `TriggerEvaluationDto.NextEventId` is serialized as a 16-character uppercase hex string or JSON `null`.
+
+### Success Conditions
+
+1. **Test: GET_ValidSessionId_Returns200** — Setup: known session with trigger-evaluated events registered in `SessionQueryService`. Action: `GET /api/scenario/triggers?sessionId={id}`. Assert: HTTP 200; response body deserializes to `TriggerEvaluationListDto` with non-empty `evaluations`.
+
+2. **Test: GET_UnknownSessionId_Returns404** — Setup: `SessionQueryService` returns null for the session ID. Action: `GET /api/scenario/triggers?sessionId=unknown`. Assert: HTTP 404.
+
+3. **Test: GET_InvalidResultParam_ReturnsAll** — Action: `GET /api/scenario/triggers?sessionId={id}&result=garbage`. Assert: HTTP 200 (not 400); evaluations of all results are included in the response.
+
+4. **Test: GET_LimitClamped_ToMaximum** — Action: `GET /api/scenario/triggers?sessionId={id}&limit=99999`. Assert: `TriggerEvalService.ListAsync` receives `limit = 5000` (clamped); HTTP 200.
+
+5. **Test: TriggerEvaluationDto_NextEventId_FormattedAsHex16** — Setup: evaluation whose `NextEventId.Value == 255`. Assert: `TriggerEvaluationDto.NextEventId == "00000000000000FF"`.
+
+6. **Test: TriggerEvaluationDto_NullNextEventId_SerializedAsNull** — Setup: evaluation with `NextEventId = null`. Assert: `TriggerEvaluationDto.NextEventId` is JSON `null` (not an all-zero string).
+
+7. **Test: DI_TriggerEvalService_Resolves** — Assert: `TriggerEvalService` resolves from the Observer's DI container without exception.
+
+---
+
+## TRC-P8-009 — AnnotationsExporter
+
+**Phase:** 8 — Annotations, Saved Views, Trigger Evaluation Log, Multi-Persona Polish
+**Design reference:** [tracer_phase8_design.md §3.7](./tracer_phase8_design.md#37-annotationsexporter--live--bundle)
+
+### Scope
+**In scope:** `AnnotationsExporter` static class in `Tracer.Aggregator.Consolidation`. `ExportAsync(IAnnotationStore, string sessionId, string bundleStagingPath, CancellationToken)` static method. New `AggregationStage.AnnotationsExported` enum value in `Tracer.Aggregator`. Wiring in `AggregationOrchestrator.RunAsync` between step 7 (metadata write) and step 8 (manifest computation) via optional `_annotationStore` dependency. Unit tests in `Tracer.Tests.Unit/Aggregator/AnnotationsExporterTests.cs`. Integration test in `Tracer.Tests.Integration/AnnotationsRoundTripTests.cs`.
+**Out of scope:** `IAnnotationStore` implementation (TRC-P8-002). Reading the exported file in offline mode (TRC-P8-003 and TRC-P8-005).
+
+### Constraints
+- `ExportAsync` must **not** create or touch `annotations/annotations.json` when the store returns zero annotations.
+- The output path must be exactly `{bundleStagingPath}/annotations/annotations.json` — this must equal the path `BundleAnnotationStore` reads from, so they stay in sync.
+- `AggregationOrchestrator` treats `_annotationStore` as optional; export is skipped (no exception) when the field is null.
+- The export must run **before** `ManifestBuilder.BuildAsync` so that `annotations.json` is included in the manifest checksums.
+
+### Success Conditions
+
+1. **Test: ExportAsync_NoAnnotations_DoesNotCreateFile** — Setup: `IAnnotationStore` returning empty list for the session. Action: `await AnnotationsExporter.ExportAsync(store, sessionId, stagingPath, ct)`. Assert: `{stagingPath}/annotations/annotations.json` does not exist on disk.
+
+2. **Test: ExportAsync_WithAnnotations_WritesJsonFile** — Setup: store returning three annotations for the session. Action: `ExportAsync`. Assert: `{stagingPath}/annotations/annotations.json` exists; deserializing its content produces a list of 3 `AnnotationRecord` objects with field values matching the originals.
+
+3. **Test: ExportAsync_FiltersToTargetSession** — Setup: store containing annotations for session A and session B. Action: `ExportAsync(store, "session-A", stagingPath, ct)`. Assert: the written JSON contains only annotations with `SessionId == "session-A"`.
+
+4. **Test: ExportAsync_OutputPathMatchesBundleAnnotationStore** — Assert: the path `Path.Combine(stagingPath, "annotations", "annotations.json")` equals the path that `new BundleAnnotationStore(stagingPath)` would read from (verified by comparing normalized path strings).
+
+5. **Test: AggregationStage_AnnotationsExported_EnumValueExists** — Assert: `Enum.IsDefined(typeof(AggregationStage), AggregationStage.AnnotationsExported)` is `true`.
+
+6. **Test: AggregationOrchestrator_WithAnnotationStore_CallsExporter** — Setup: `AggregationOrchestrator` constructed with a mock `IAnnotationStore`. Action: `await orchestrator.RunAsync(request, progress, ct)`. Assert: `IAnnotationStore.ExportAllForSessionAsync` was called; the progress reporter received `AggregationStage.AnnotationsExported` at some point before `AggregationStage.Completed`.
+
+7. **Test: AggregationOrchestrator_WithoutAnnotationStore_SkipsExport** — Setup: `AggregationOrchestrator` constructed without `IAnnotationStore` (null). Action: `RunAsync`. Assert: `AggregationStage.AnnotationsExported` is never reported; no `NullReferenceException` or related exception thrown.
+
+8. **Test: Integration_AnnotationsRoundTrip** — Setup: start Observer; create 3 annotations via `POST /api/annotations`. Action: trigger bundle build; wait for `AggregationStage.Completed`; open the bundle in offline viewer. Assert: `GET /api/annotations?sessionId={id}` on the offline viewer returns all 3 annotations with matching fields; a subsequent `POST /api/annotations` on the offline viewer returns HTTP 405.
+
+---
+
+## TRC-P8-010 — Lifecycle Topic Configuration
+
+**Phase:** 8 — Annotations, Saved Views, Trigger Evaluation Log, Multi-Persona Polish
+**Design reference:** [tracer_phase8_design.md §9](./tracer_phase8_design.md#9-lifecycle-topic-configuration)
+
+### Scope
+**In scope:** `LifecycleClassificationConfig` class with `SpawnSuffixes`, `OwnershipSuffixes`, `DestructionSuffixes`, and optional `LifecycleRegexPatterns Regex` from §9.1. New `LifecycleClassification` section in `ObserverConfig`. `ILifecycleTopicClassifier` interface with `Classify(string topic)` returning `"spawn"`, `"ownership"`, `"destruction"`, or `null`. `ConfigurableLifecycleTopicClassifier` implementation (regex takes precedence over suffix matching). `ConfigEndpoints.cs` with `GET /api/config/lifecycle-classification`. `LifecycleConfigDto`. DI registration in both `ObserverHostBuilder` and `OfflineViewerHostBuilder`. Removal of Phase 7 hardcoded classification logic in favour of `ILifecycleTopicClassifier`. Unit tests in `Tracer.Tests.Unit/Agent/LifecycleTopicClassifierTests.cs`.
+**Out of scope:** Frontend `lifecycleConfigStore.ts` (frontend tasks). Bundle metadata capture of lifecycle config (incidental to `MetadataWriter`, noted in §9.3).
+
+### Constraints
+- Default suffix values (when no config section is present) must match §9.1 exactly: spawn = `["spawn", "created", "spawned"]`; ownership = `["ownership_changed", "owner_transferred", "owner_changed"]`; destruction = `["destroyed", "killed", "removed", "despawned"]`.
+- When a regex pattern is non-null, it is tested first; if it matches the topic, the corresponding classification is returned and suffix matching is not performed for that category.
+- Phase 7 callers of hardcoded lifecycle detection must be updated to use `ILifecycleTopicClassifier`; no raw string literals like `"*.spawn"` or `"*.created"` may remain in the Phase 7 classification code paths.
+- `LifecycleClassificationConfig` must bind from the `"LifecycleClassification"` section of `appsettings.json` via the Options pattern.
+
+### Success Conditions
+
+1. **Test: DefaultConfig_SpawnSuffixes** — Setup: `ConfigurableLifecycleTopicClassifier` with `new LifecycleClassificationConfig()`. Assert: `Classify("vehicle.spawn") == "spawn"`, `Classify("vehicle.created") == "spawn"`, `Classify("vehicle.spawned") == "spawn"`.
+
+2. **Test: DefaultConfig_OwnershipSuffixes** — Assert: `Classify("team.ownership_changed") == "ownership"`, `Classify("unit.owner_transferred") == "ownership"`, `Classify("player.owner_changed") == "ownership"`.
+
+3. **Test: DefaultConfig_DestructionSuffixes** — Assert: `Classify("unit.destroyed") == "destruction"`, `Classify("vehicle.killed") == "destruction"`, `Classify("npc.removed") == "destruction"`, `Classify("entity.despawned") == "destruction"`.
+
+4. **Test: DefaultConfig_UnknownTopic_ReturnsNull** — Assert: `Classify("sensors.telemetry") == null`, `Classify("weapons.fire") == null`, `Classify("vehicle.update") == null`.
+
+5. **Test: CustomSuffixes_ReplaceBuiltIn** — Setup: `LifecycleClassificationConfig` with `SpawnSuffixes = ["instantiated"]`. Assert: `Classify("thing.instantiated") == "spawn"`; `Classify("thing.spawn") == null` (built-in suffix no longer active).
+
+6. **Test: RegexOverride_TakesPrecedenceOverSuffixes** — Setup: config with `Regex.Spawn = "^entity\\.new_"`. Assert: `Classify("entity.new_fighter") == "spawn"` (matched by regex); suffix-matching is not applied for the spawn category when regex is set, so `Classify("vehicle.spawn")` returns null (assuming no ownership/destruction regex).
+
+7. **Test: GET_LifecycleClassification_Returns200WithConfig** — Setup: Observer configured with `SpawnSuffixes = ["born"]`. Action: `GET /api/config/lifecycle-classification`. Assert: HTTP 200; response `LifecycleConfigDto` has `spawnSuffixes = ["born"]`.
+
+8. **Test: HardcodedClassifier_IsReplaced** — Assert: searching the Phase 7 lifecycle classification implementation files (e.g., `EntityQueryService.cs`, `EntityLifecycleService.cs`, or equivalent) finds no direct string comparisons against hardcoded suffix literals like `"spawn"`, `"created"`, etc.; all classification is delegated to an `ILifecycleTopicClassifier` call.
+
+9. **Test: DI_BothHosts_ResolveILifecycleTopicClassifier** — Assert: `ILifecycleTopicClassifier` resolves from both the Observer and Offline Viewer DI containers as a `ConfigurableLifecycleTopicClassifier` instance; neither throws a resolution exception.
+
+10. **Test: DefaultValues_MatchDesignSpec** — Setup: `new LifecycleClassificationConfig()`. Assert: `SpawnSuffixes` equals `["spawn", "created", "spawned"]`; `OwnershipSuffixes` equals `["ownership_changed", "owner_transferred", "owner_changed"]`; `DestructionSuffixes` equals `["destroyed", "killed", "removed", "despawned"]`; `Regex` is `null`.
+
+---
+
+## TRC-P8-011 — `AnnotationMarker.vue` and Annotation Overlay Integration
+
+**Phase:** 8 — Annotations, Saved Views, Trigger Evaluation Log, Multi-Persona Polish
+**Design reference:** [tracer_phase8_design.md §5.3](./tracer_phase8_design.md#53-annotation-indicators-in-views)
+
+### Scope
+**In scope:** `AnnotationMarker.vue` shared visual primitive (small badge/icon with hover tooltip); overlay rendering of the marker in Timeline (Phase 5 canvas), Causal Tree (Phase 6 canvas), Entity History event strip (Phase 7), and Scenario View (Phase 3) when an annotation exists for that event, entity, or trace; click on marker opens `AnnotationEditor` in view-mode pre-populated with the annotation; density-threshold suppression (marker hidden below 8 px event footprint at high zoom); integration with `useAnnotations` to determine whether a marker should render for a given `eventId`/`entityId`/`traceId`.
+**Out of scope:** Annotation CRUD (TRC-P8-013); `AnnotationList` sidebar (TRC-P8-012); new canvas rendering infrastructure; styling beyond the marker badge and tooltip.
+
+### Constraints
+- Must not trigger a new network request per visible event; markers are derived from the already-loaded `annotationStore` state.
+- Marker icon must be accessible (aria-label and keyboard-focusable).
+- No new npm packages.
+
+### Success Conditions
+1. **Test: Marker_RendersWhenAnnotationExists** — Setup: `annotationStore` seeded with one annotation for `eventId='AAAA'`. Render `<AnnotationMarker eventId="AAAA" />`. Assert: marker element with class `.annotation-marker` is present in the DOM.
+2. **Test: Marker_HiddenWhenNoAnnotation** — Setup: `annotationStore` seeded with no entries matching `eventId='BBBB'`. Assert: `<AnnotationMarker eventId="BBBB" />` renders nothing (v-if false).
+3. **Test: Marker_Tooltip_ShowsAnnotationTitle** — Setup: annotation with `title='Suspicious spike'` for an event. Mount marker; hover the element. Assert: tooltip contains "Suspicious spike".
+4. **Test: Marker_Tooltip_FallsBackToBodyFirstLine** — Setup: annotation with `title=null`, `body='This is line one\nThis is line two'`. Assert: tooltip text is "This is line one".
+5. **Test: Marker_Click_EmitsEditEvent** — Mount `<AnnotationMarker eventId="CCCC" />` with a matching annotation. Click the marker. Assert: component emits an `edit` event carrying the `AnnotationDto`.
+6. **Test: Timeline_OverlayVisible** — Integration: render `TimelineView` with a session that has an annotated event in the viewport. Assert: at least one `.annotation-marker` element is visible in the view.
+7. **Test: CausalTree_OverlayVisible** — Integration: render `CausalTreeView` with a session whose root event has an annotation. Assert: `.annotation-marker` present on the root node.
+8. **Test: EntityHistory_EventStrip_OverlayVisible** — Integration: `EntityHistoryView` with an annotated event for the current entity. Assert: `.annotation-marker` present in `.entity-event-strip`.
+
+---
+
+## TRC-P8-012 — `AnnotationEditor.vue` and `AnnotationList.vue`
+
+**Phase:** 8 — Annotations, Saved Views, Trigger Evaluation Log, Multi-Persona Polish
+**Design reference:** [tracer_phase8_design.md §5.2](./tracer_phase8_design.md#52-annotationeditorvue); [§5.4](./tracer_phase8_design.md#54-inspector-integration)
+
+### Scope
+**In scope:** `AnnotationEditor.vue` — modal overlay with title input, multi-line body textarea, tag management (add on Enter or comma, remove by ×), Save/Cancel buttons, Delete button (edit mode only); author name read from `localStorage['tracer:authorName']`; `AnnotationList.vue` — vertical list of `AnnotationDto` items for the current context (event/entity/trace); each row shows title or body excerpt, author, relative timestamp, and Edit button; click/enter on a row emits `select` (parent scrolls or highlights the target); integration of both into `EventInspector.vue` from Phase 5.
+**Out of scope:** CRUD API calls (those belong in `useAnnotations` — TRC-P8-013); annotation markers in canvas views (TRC-P8-011); new routing.
+
+### Constraints
+- Editor body textarea: `autofocus` on open.
+- Save button disabled when body is blank.
+- Delete button must only appear in edit mode (when `initial` prop is non-null).
+- `AnnotationList` must be scrollable when more than 5 entries overflow.
+
+### Success Conditions
+1. **Test: Editor_SaveDisabled_WhenBodyBlank** — Mount `<AnnotationEditor visible />`. Assert: `.annotation-editor__save` has `disabled` attribute.
+2. **Test: Editor_SaveEnabled_WhenBodyFilled** — Mount editor, type into body textarea. Assert: save button no longer disabled.
+3. **Test: Editor_PopulatesFromInitialProp** — Mount with `initial` containing `body='hello'`, `title='world'`, `tags=['foo']`. Assert: textarea has value "hello", title input has value "world", tag chip "foo" is rendered.
+4. **Test: Editor_DeleteButton_HiddenInCreateMode** — Mount with `initial=null`. Assert: `.annotation-editor__delete` is not present.
+5. **Test: Editor_DeleteButton_VisibleInEditMode** — Mount with `initial` = an existing annotation. Assert: `.annotation-editor__delete` is present.
+6. **Test: Editor_EmitsSaveWithCorrectData** — Mount editor. Fill body = "test body". Fill title = "test title". Click save. Assert: emitted `save` event contains `{ body: 'test body', title: 'test title', tags: [] }`.
+7. **Test: Editor_TagManagement_AddAndRemove** — Add tag "foo" (press Enter). Assert tag chip renders. Click × on chip. Assert tag chip removed. Emitted payload has `tags: []`.
+8. **Test: Editor_CancelEmitsCancel** — Click Cancel. Assert: `cancel` event emitted; no `save` event.
+9. **Test: List_RendersAnnotations** — Mount `<AnnotationList :annotations="[...two items...]" />`. Assert: two list rows rendered.
+10. **Test: List_ClickRowEmitsSelect** — Click first row. Assert: `select` event emitted with that `AnnotationDto`.
+11. **Test: List_EditButtonEmitsEdit** — Click Edit button on a row. Assert: `edit` event emitted with that `AnnotationDto`.
+12. **Test: Inspector_ShowsAddNoteButton** — Render `EventInspector` with an event that has no annotations. Assert: `.event-inspector__add-note` button is visible.
+13. **Test: Inspector_OpenEditor_OnAddNote** — Click "Add note". Assert: `<AnnotationEditor>` becomes visible.
+
+---
+
+## TRC-P8-013 — `useAnnotations.ts` and `annotationStore.ts`
+
+**Phase:** 8 — Annotations, Saved Views, Trigger Evaluation Log, Multi-Persona Polish
+**Design reference:** [tracer_phase8_design.md §5.1](./tracer_phase8_design.md#51-the-composable-useannotations)
+
+### Scope
+**In scope:** `useAnnotations.ts` composable — reactive `annotations` ref loaded from `GET /api/annotations`; `create(body, kind, target, title?, tags?)` calling `POST /api/annotations`; `update(id, body, title?, tags?)` calling `PUT /api/annotations/{id}`; `remove(id)` calling `DELETE /api/annotations/{id}`; optimistic local state update after each mutation; `watch` on `sessionId` + target filter params triggers reload; `annotationStore.ts` Pinia store holding all annotations for the current view (keyed by `annotationId`); accessors `byEventId(id)`, `byEntityId(id)`, `byTraceId(id)` for O(1) lookup used by `AnnotationMarker`.
+**Out of scope:** The API HTTP client itself (part of the shared `useApi` composable); UI components (TRC-P8-011, TRC-P8-012).
+
+### Constraints
+- The store must not duplicate entries when `load` is called multiple times.
+- `create` must append to the local list immediately without waiting for a store reload.
+- Error from a write operation must propagate (let calling component decide how to surface it).
+- Author name is read from `localStorage['tracer:authorName']` — falls back to `'anonymous'`.
+
+### Success Conditions
+1. **Test: useAnnotations_LoadsOnMount** — Mock `api.listAnnotations` to return two items. Mount a component using `useAnnotations`. Assert: `annotations.value` has two entries after load.
+2. **Test: useAnnotations_ReloadsOnSessionIdChange** — Set up composable with reactive `sessionId`. Change sessionId. Assert: `api.listAnnotations` called again with new sessionId.
+3. **Test: useAnnotations_Create_AddsToLocalList** — Call `create('body', 'Event', { eventId: 'X' })`. Mock API to return a new `AnnotationDto`. Assert: `annotations.value` length increased by 1; new entry is at index 0.
+4. **Test: useAnnotations_Update_PatchesLocalEntry** — Load two annotations. Call `update(annotations.value[0].annotationId, 'new body')`. Assert: `annotations.value[0].body === 'new body'`.
+5. **Test: useAnnotations_Remove_DeletesLocalEntry** — Load one annotation. Call `remove(id)`. Assert: `annotations.value` is empty.
+6. **Test: annotationStore_ByEventId_ReturnsCorrectAnnotations** — Seed store with three annotations (two for eventId='A', one for eventId='B'). Assert: `byEventId('A')` returns two entries; `byEventId('B')` returns one.
+7. **Test: annotationStore_NoDuplicatesOnDoubleLoad** — Call `load` twice with the same data. Assert: store length equals original item count (no duplication).
+8. **Test: annotationStore_IsEmpty_WhenNoSessionLoaded** — Fresh store with no `load` call. Assert: `byEventId(any)` returns empty array.
+
+---
+
+## TRC-P8-014 — `SavedViewsView.vue` and `SaveViewButton.vue`
+
+**Phase:** 8 — Annotations, Saved Views, Trigger Evaluation Log, Multi-Persona Polish
+**Design reference:** [tracer_phase8_design.md §6.5](./tracer_phase8_design.md#65-saveviewbutton); [§6.7](./tracer_phase8_design.md#67-savedviewsview)
+
+### Scope
+**In scope:** `SaveViewButton.vue` — two-part toolbar control: bookmark icon (one-click, calls `POST /api/saved-views` with `kind:'Bookmark'` and auto-generated label from URL params) and "Save view" text button (opens inline dialog for label + optional description, then POSTs with `kind:'SavedView'`); both read current persona from `usePersona`; `SavedViewsView.vue` — route `/v/saved-views/:sessionId`; loads all `kind:'SavedView'` entries via `GET /api/saved-views`; grouped by `viewType`; filterable by persona (dropdown); click navigates to saved URL after calling `POST /api/saved-views/{id}/opened`; delete with confirmation prompt; empty-state message.
+**Out of scope:** `BookmarkBar` (TRC-P8-015); `useSavedViews` composable details beyond what is needed for these two components; saved-views backend (TRC-P8-006).
+
+### Constraints
+- The save dialog's Save button is disabled while the label field is blank.
+- Route `/v/saved-views/:sessionId` must be registered in the Vue Router config.
+- Auto-label generation uses `route.query` (topic, trace, entity) and current time; must not be empty.
+
+### Success Conditions
+1. **Test: SaveViewButton_BookmarkClick_CallsAPI** — Mount `<SaveViewButton sessionId="s1" viewType="timeline" />`. Click the bookmark button. Assert: `api.createSavedView` called once with `kind: 'Bookmark'`.
+2. **Test: SaveViewButton_AutoLabel_NotEmpty** — Mock `useRoute` with no query params. Click bookmark. Assert: `label` in the API call is a non-empty string.
+3. **Test: SaveViewButton_AutoLabel_IncludesTopic** — Mock route with `query.topic = ['weapons.fire']`. Click bookmark. Assert: label includes "weapons.fire".
+4. **Test: SaveViewButton_SaveDialog_OpenOnClick** — Click "Save view" button. Assert: dialog element with class `.save-view-dialog` is visible.
+5. **Test: SaveViewButton_SaveDisabled_WhenLabelBlank** — Open dialog. Assert: save button inside dialog has `disabled` attribute.
+6. **Test: SaveViewButton_SaveExplicit_CallsAPI** — Open dialog; fill label = "Test view". Click Save. Assert: `api.createSavedView` called with `kind: 'SavedView'`, `label: 'Test view'`.
+7. **Test: SaveViewButton_SaveDialog_ClosesAfterSave** — After successful save, dialog element is removed from DOM.
+8. **Test: SavedViewsView_RendersViewsGroupedByType** — Mount `SavedViewsView` with mocked API returning 3 views across 2 viewTypes. Assert: two `<section>` group headings are rendered.
+9. **Test: SavedViewsView_PersonaFilterChange_Reloads** — Change persona filter dropdown. Assert: `api.listSavedViews` called again with updated persona param.
+10. **Test: SavedViewsView_EmptyState_Shown** — Mock API returns empty array. Assert: empty-state message visible.
+11. **Test: SavedViewsView_DeleteView_CallsAPIAndReloads** — Click Delete on a view (accept confirm). Assert: `api.deleteSavedView` called; list reloads.
+12. **Test: SavedViewsView_OpenView_NavigatesAndRecordsOpen** — Click a saved view row. Assert: `router.push` called with the saved URL; `api.recordSavedViewOpened` called with the view's id.
+
+---
+
+## TRC-P8-015 — `BookmarkBar.vue` and `useBookmarks.ts`
+
+**Phase:** 8 — Annotations, Saved Views, Trigger Evaluation Log, Multi-Persona Polish
+**Design reference:** [tracer_phase8_design.md §6.6](./tracer_phase8_design.md#66-bookmarkbar); [§6.1](./tracer_phase8_design.md#61-data-model)
+
+### Scope
+**In scope:** `BookmarkBar.vue` — horizontal strip below the toolbar; hidden when no bookmarks exist for the current `viewType` + `persona`; renders up to 10 chips, each with truncated label, click navigates to saved URL and records an open; `useBookmarks.ts` composable — `bookmarkCurrentUrl(sessionId, viewType)` posts a bookmark with auto-label; `listBookmarks(sessionId, viewType)` fetches up to 10 `kind:'Bookmark'` entries ordered by recency; `removeBookmark(id)` deletes; reactivity: reloads automatically when `persona` store changes.
+**Out of scope:** `SaveViewButton` (TRC-P8-014); backend saved-views store (TRC-P8-006).
+
+### Constraints
+- `BookmarkBar` must not render a wrapping element when the bookmark list is empty (keep DOM clean for view layout).
+- Chip text max-width 16rem with `text-overflow: ellipsis`.
+- Reacts to persona store changes without a full page reload.
+
+### Success Conditions
+1. **Test: BookmarkBar_Hidden_WhenNoBookmarks** — Mount `<BookmarkBar sessionId="s1" viewType="timeline" />` with mocked API returning empty list. Assert: component root element not present in DOM (v-if).
+2. **Test: BookmarkBar_RendersChips** — Mock API returns 3 bookmarks. Assert: 3 `.bookmark-bar__chip` elements rendered.
+3. **Test: BookmarkBar_ChipClick_NavigatesAndRecords** — Click a chip. Assert: `router.push` called with the bookmark's URL; `api.recordSavedViewOpened` called.
+4. **Test: BookmarkBar_ReloadsOnPersonaChange** — Change persona store value. Assert: `api.listSavedViews` called again with updated persona.
+5. **Test: useBookmarks_BookmarkCurrentUrl_CallsAPI** — Call `bookmarkCurrentUrl('s1', 'timeline')`. Assert: `api.createSavedView` called with `kind: 'Bookmark'`, non-empty label, `viewType: 'timeline'`.
+6. **Test: useBookmarks_ListBookmarks_ReturnsOnlyBookmarks** — Mock API to return a mix of `SavedView` and `Bookmark` kinds. Call `listBookmarks`. Assert: returned list contains only `Bookmark` items (composable enforces the kind filter).
+7. **Test: useBookmarks_RemoveBookmark_CallsDelete** — Call `removeBookmark('id-1')`. Assert: `api.deleteSavedView` called with `'id-1'`.
+8. **Test: useBookmarks_LimitTen** — Mock API to return 12 bookmarks. Call `listBookmarks`. Assert: result has at most 10 items (composable passes `limit: 10` to the API).
+
+---
+
+## TRC-P8-016 — `TriggerEvalView.vue` and `TriggerEvalRow.vue`
+
+**Phase:** 8 — Annotations, Saved Views, Trigger Evaluation Log, Multi-Persona Polish
+**Design reference:** [tracer_phase8_design.md §8.4](./tracer_phase8_design.md#84-triggerevalview); [§8.1](./tracer_phase8_design.md#81-what-this-view-is-for)
+
+### Scope
+**In scope:** `TriggerEvalView.vue` — route `/v/triggers/:sessionId`; loads from `GET /api/scenario/triggers`; filter controls: trigger-ID select (populated from distinct trigger IDs in the loaded data) and result select (All / Fired / Not fired); re-fetches on filter change; loading state; empty state; `TriggerEvalRow.vue` — single table row rendering a `TriggerEvaluationDto` (time, triggerId, label, publisherNode, result pill); click on row toggles inline inputs JSON expansion panel; "Timeline" action button navigates to Timeline at ±5 s around the evaluation time; "Tree" action button navigates to `CausalTreeView` seeded with the trigger evaluation event's `eventId`; route registration in Vue Router.
+**Out of scope:** Backend `TriggerEvalService` and `TriggerEvalEndpoints` (TRC-P8-007, TRC-P8-008); annotation markers on trigger rows (deferred — annotations attach to events, not trigger rows; the event is navigated to via the causal tree).
+
+### Constraints
+- The route `/v/triggers/:sessionId` must be registered before this task is done.
+- Result pill CSS class must be `trigger-eval-view__pill--Fired` or `trigger-eval-view__pill--NotFired` to allow targeted test selectors and styling.
+- Inline inputs expansion must show raw JSON, not parsed fields.
+
+### Success Conditions
+1. **Test: TriggerEvalView_LoadsOnMount** — Mock `api.listTriggerEvaluations` to return 5 evaluations. Mount view. Assert: 5 `<tr>` rows rendered in `tbody`.
+2. **Test: TriggerEvalView_LoadingState** — Delay API response. Assert: loading indicator present before response resolves.
+3. **Test: TriggerEvalView_EmptyState** — Mock returns empty list. Assert: empty-state message or zero rows; no JS error.
+4. **Test: TriggerEvalView_ResultFilterChange_Refetches** — Select "Fired" from result filter dropdown. Assert: `api.listTriggerEvaluations` called again with `result: 'fired'`.
+5. **Test: TriggerEvalView_TriggerIdFilter_Refetches** — Select a trigger ID from the trigger select. Assert: API called with `triggerId` matching selected value.
+6. **Test: TriggerEvalView_DistinctTriggerIds_PopulateSelect** — 5 evaluations with 3 distinct trigger IDs. Assert: trigger select has 4 options ("All" + 3 distinct).
+7. **Test: TriggerEvalRow_FiredPill_HasCorrectClass** — Mount row with `result: 'Fired'`. Assert: pill element has class `trigger-eval-view__pill--Fired`.
+8. **Test: TriggerEvalRow_NotFiredPill_HasCorrectClass** — Mount row with `result: 'NotFired'`. Assert: pill element has class `trigger-eval-view__pill--NotFired`.
+9. **Test: TriggerEvalRow_TimelineButton_Navigates** — Click "Timeline" button on a row with `evaluatedAtUtc='2026-01-01T10:00:00Z'`. Assert: router navigates to timeline route with `from` = 9:59:55Z and `to` = 10:00:05Z and `select` = the row's `eventId`.
+10. **Test: TriggerEvalRow_TreeButton_Navigates** — Click "Tree" button. Assert: router navigates to causal tree route with the row's `eventId`.
+11. **Test: TriggerEvalRow_InlineExpansion_TogglesOnClick** — Click the row body. Assert: inputs JSON panel becomes visible. Click again. Assert: panel hidden.
+12. **Test: TriggerEvalRow_InputsPanel_ShowsRawJson** — Inputs JSON is `{"speed":10}`. Click row. Assert: expansion panel contains the string `"speed"`.
+
+---
+
+## TRC-P8-017 — `PersonaSwitcher.vue`, `usePersona.ts`, and `personaStore.ts`
+
+**Phase:** 8 — Annotations, Saved Views, Trigger Evaluation Log, Multi-Persona Polish
+**Design reference:** [tracer_phase8_design.md §7](./tracer_phase8_design.md#7-persona-switcher)
+
+### Scope
+**In scope:** `personaStore.ts` Pinia store — `current` persona (`'engineer' | 'scenario-author' | 'operator'`); `set(persona)` action persists to `localStorage['tracer:persona']`; initialised from localStorage on store creation, defaulting to `'engineer'`; `usePersona.ts` composable — thin wrapper exposing `persona` (computed ref) and `setPersona(p)` convenience function, plus `allPersonas` constant array; `PersonaSwitcher.vue` — segmented button group in `AppHeader` showing three buttons (Engineer 🔧 / Scenario Author 🎬 / Operator 🖥️); active button highlighted; click calls `store.set()`; integration with `SessionCard.vue` — click routes to `timeline` for Engineer, `scenario` for Scenario Author and Operator; `SavedViewsView` and `BookmarkBar` default filter reads from persona store.
+**Out of scope:** Authorization or access control (design §7.4 explicitly excludes this); per-persona dashboards (future phase).
+
+### Constraints
+- Persona store must initialise synchronously (localStorage read in `state()` factory).
+- Switching persona must not trigger a navigation; it only changes stored preference.
+- `AppHeader.vue` must mount `<PersonaSwitcher />` in its template.
+
+### Success Conditions
+1. **Test: personaStore_DefaultIsEngineer_WhenLocalStorageEmpty** — Clear `localStorage`. Initialise store. Assert: `store.current === 'engineer'`.
+2. **Test: personaStore_RestoresFromLocalStorage** — Set `localStorage['tracer:persona'] = 'operator'`. Initialise store. Assert: `store.current === 'operator'`.
+3. **Test: personaStore_Set_PersistsToLocalStorage** — Call `store.set('scenario-author')`. Assert: `localStorage.getItem('tracer:persona') === 'scenario-author'`.
+4. **Test: personaStore_Set_UpdatesCurrentReactively** — Watch `store.current`. Call `store.set('operator')`. Assert: watcher fires with new value `'operator'`.
+5. **Test: usePersona_Persona_MatchesStore** — `usePersona().persona.value === personaStore.current`.
+6. **Test: PersonaSwitcher_ActiveButton_MatchesCurrent** — Set store to `'engineer'`. Mount `<PersonaSwitcher />`. Assert: button with text "Engineer" has class `persona-switcher__btn--active`; others do not.
+7. **Test: PersonaSwitcher_Click_SetsPersona** — Click "Scenario Author" button. Assert: `store.current === 'scenario-author'`.
+8. **Test: PersonaSwitcher_AllThreeButtons_Render** — Assert: three `.persona-switcher__btn` elements exist with correct labels.
+9. **Test: SessionCard_Engineer_RoutesToTimeline** — Set persona = `'engineer'`. Click session card. Assert: `router.push` called with route name `'timeline'`.
+10. **Test: SessionCard_ScenarioAuthor_RoutesToScenario** — Set persona = `'scenario-author'`. Click session card. Assert: `router.push` called with route name `'scenario'`.
+11. **Test: SessionCard_Operator_RoutesToScenario** — Set persona = `'operator'`. Click session card. Assert: `router.push` called with route name `'scenario'`.
+12. **Test: AppHeader_ContainsPersonaSwitcher** — Mount `AppHeader`. Assert: `PersonaSwitcher` component rendered within it.
+
+---
+
+## TRC-P8-018 — Phase 8 Tests (Backend Unit, Integration, Frontend)
+
+**Phase:** 8 — Annotations, Saved Views, Trigger Evaluation Log, Multi-Persona Polish
+**Design reference:** [tracer_phase8_design.md §10](./tracer_phase8_design.md#10-test-plan-for-phase-8)
+
+### Scope
+**In scope:**
+- **Backend unit** (`Tracer.Tests.Unit`): `SqliteAnnotationStoreTests` — full CRUD, tag serialization, filter combinations, ordering, limit; `BundleAnnotationStoreTests` — read from JSON, empty file, write operations throw; `SqliteSavedViewStoreTests` — CRUD, open-count increment, `last_opened_at` update, persona/kind filter; `AnnotationEndpointsTests` — all endpoints, 201/400/404/405 status codes, bundle-mode 405; `SavedViewEndpointsTests` — CRUD, `/opened` endpoint, ordering; `TriggerEvalServiceTests` — correct topic filter, trigger-ID filter, result filter, time range, malformed payload tolerance; `TriggerEvalEndpointsTests` — 200 with valid session, 404 unknown session, result value normalisation, limit clamping; `AnnotationsExporterTests` — no file created when empty, correct JSON output, session ID scoping, file path.
+- **Backend integration** (`Tracer.Tests.Integration`): `AnnotationsRoundTripTests` — Observer live session with 3 annotations → bundle build → offline viewer returns same 3; write attempts in bundle mode → 405; `SavedViewsRoundTripTests` — same pattern for saved views; `TriggerEvalIntegrationTests` — push synthetic `scenario.trigger_evaluated` events, filter by trigger ID, result, time range.
+- **Frontend Vitest** (`tracer-viewer/tests/unit`): `annotationStore.spec.ts` — see TRC-P8-013 success conditions; `useAnnotations.spec.ts` — composable lifecycle (load, create, update, remove, duplicate-prevention); `usePersona.spec.ts` — default, persist, restore; `useBookmarks.spec.ts` — listBookmarks kind filter, limit enforcement, removeBookmark.
+- **E2E Playwright** (`tracer-viewer/tests/e2e`): `annotations-flow.spec.ts` — create annotation on event via inspector, reload, verify marker visible; `saved-views-flow.spec.ts` — save a view with label, navigate away, open saved-views list, click to restore URL with same query params; `persona-switcher.spec.ts` — switch Engineer → Timeline on session card click; switch Scenario Author → Scenario on session card click.
+**Out of scope:** Performance benchmarks (referenced in design §10.5 — tracked separately as an operational concern, not a unit/integration test); Phase 1-7 regression tests (already covered by their respective task test files).
+
+### Constraints
+- `AnnotationsRoundTripTests` must use `Tracer.TestHarness` and real SQLite + DuckDB; no mocks for storage.
+- E2E tests require the full stack (`tracer-aggregate` + Observer + Vue SPA running on `localhost:5300`).
+- All new backend tests must go under the correct subdirectory path listed in §2 of the design.
+- Frontend tests must not depend on a running backend (`vi.mock('@/api/useApi')`).
+
+### Success Conditions
+1. **Test: SqliteAnnotationStore_Idempotent_InitializeAsync** — Call `InitializeAsync` twice. Assert: schema created successfully; second call does not throw.
+2. **Test: SqliteAnnotationStore_CreateThenGet_RoundTrips** — Create an annotation with all fields populated (including tags, author, title). Call `GetAsync` with returned `AnnotationId`. Assert: returned record equals created record field-by-field.
+3. **Test: SqliteAnnotationStore_Update_SetsModifiedAt** — Create then update; assert `ModifiedAtUtc > CreatedAtUtc`.
+4. **Test: SqliteAnnotationStore_Delete_ReturnsTrueOnce** — Delete once → `true`; delete again → `false`.
+5. **Test: SqliteAnnotationStore_List_RespectsLimit** — Insert 10 annotations; query with `Limit = 3`. Assert: exactly 3 returned.
+6. **Test: BundleAnnotationStore_MissingFile_ReturnsEmpty** — Point store at a directory with no `annotations/annotations.json`. Call `ListAsync`. Assert: empty list, no exception.
+7. **Test: BundleAnnotationStore_WriteOps_Throw** — Call `CreateAsync`, `UpdateAsync`, `DeleteAsync` each. Assert: `InvalidOperationException` in each case.
+8. **Test: AnnotationEndpoints_POST_ValidBody_Returns201** — POST to `/api/annotations` with a valid `CreateAnnotationDto` (one target, non-empty body). Assert: HTTP 201, `Location` header present.
+9. **Test: AnnotationEndpoints_POST_MultipleTargets_Returns400** — POST with both `eventId` and `entityId` set. Assert: HTTP 400.
+10. **Test: AnnotationEndpoints_BundleMode_POST_Returns405** — Configure test host in bundle (read-only) mode. POST. Assert: HTTP 405 with `ProblemDetails` title containing "read-only".
+11. **Test: TriggerEvalService_FiltersToTriggerTopic** — Seed events with mixed topics including `scenario.trigger_evaluated`. Query service. Assert: only `scenario.trigger_evaluated` events returned.
+12. **Test: TriggerEvalService_MalformedPayload_ReturnsDegradedRow** — Seed one event with `topic='scenario.trigger_evaluated'` and invalid JSON payload. Query service. Assert: result contains one entry with `triggerId == "(malformed payload)"`; no exception.
+13. **Test: AnnotationsRoundTrip_LiveToBundleToOffline** — Create 3 annotations via Observer API. Run aggregator. Start offline viewer on bundle. GET `/api/annotations?sessionId=...`. Assert: 3 annotations returned matching the originals.
+14. **Test: AnnotationsRoundTrip_BundleMode_PostReturns405** — After round-trip bundle is open in offline viewer: POST to `/api/annotations`. Assert: HTTP 405.
+15. **Test: E2E_CreateAnnotation_PersistsAfterReload** — Playwright: create annotation on event via inspector; reload; assert `.annotation-marker` visible in timeline.
+16. **Test: E2E_SavedView_RestoresFilterState** — Playwright: save a view with `topic=weapons.fire`; navigate to saved-views list; click the saved view; assert URL contains `topic=weapons.fire`.
+17. **Test: E2E_PersonaSwitcher_EngineerLandsOnTimeline** — Playwright: set persona to Engineer; click first session card; assert URL matches `/v/timeline/`.
+
+<!-- PHASE 8 TASKS END -->
+
+<!-- PHASE 9 TASKS BEGIN -->
+
+# Phase 9 — Replication Latency, Gap Detection, Network Topology
+
+---
+
+## TRC-P9-001 — `LatencyBudget` and Core Latency Types
+
+**Phase:** 9 — Replication Latency, Gap Detection, Network Topology  
+**Design reference:** [tracer_phase9_design.md §3 — The Per-Subscriber Data Shape](./tracer_phase9_design.md#3-the-per-subscriber-data-shape), [§6.1 Latency Budgets](./tracer_phase9_design.md#61-latency-budgets), [§6.2 Budget Storage in the Bundle](./tracer_phase9_design.md#62-budget-storage-in-the-bundle), [§1.1 What Phase 9 Delivers (Latency Budgets)](./tracer_phase9_design.md#11-what-phase-9-delivers)
+
+### Scope
+
+**In scope:**
+- New `LatencyBudget.cs` record in `Tracer.Core/Domain/` with properties: `Topic` (string, required), `P99BudgetMs` (double?, nullable), `AbsoluteMaxMs` (double?, nullable)
+- The record follows the pattern of existing domain types: `sealed record`, `required` init-only properties, no third-party dependencies
+- Unit tests in `Tracer.Tests.Unit` verifying construction, equality, and null-budget sentinel handling
+
+**Out of scope:**
+- Budget persistence, reading, or writing (handled in TRC-P9-009 `BudgetService`)
+- Any endpoint or DTO changes
+- Frontend types (TypeScript equivalents are defined per Phase 9 frontend tasks)
+
+### Constraints
+- `Tracer.Core` must remain free of all third-party package references (Directory.Build.props policy, Phase 1 §2.2)
+- Properties must be nullable (`double?`), not defaulted to zero, so callers can distinguish "no budget declared" from "budget is 0ms"
+
+### Success Conditions
+1. **Test: LatencyBudget_RequiredTopic_ConstructsCorrectly** — Construct `new LatencyBudget { Topic = "weapons.fire", P99BudgetMs = 50.0, AbsoluteMaxMs = 200.0 }`. Assert: all properties match supplied values.
+2. **Test: LatencyBudget_NullableBudgets_AreNull** — Construct with only `Topic` set; `P99BudgetMs` and `AbsoluteMaxMs` omitted. Assert: both are `null`, not zero.
+3. **Test: LatencyBudget_Equality_SameValues** — Two records with identical properties are value-equal (`==` returns true).
+4. **Test: LatencyBudget_Equality_DifferentTopic** — Two records differing only in `Topic` are not equal.
+5. **Test: LatencyBudget_NoBudget_NullIsDistinctFromZero** — Assert `new LatencyBudget { Topic = "x" }.P99BudgetMs is null` and `null != 0.0`.
+6. `dotnet build Tracer.Core --configuration Release` succeeds with zero warnings.
+7. `Tracer.Core.csproj` contains no `<PackageReference>` entries after this task.
+
+---
+
+## TRC-P9-002 — `FakeNetworkModel` — Synthetic Per-Subscriber Receive Times
+
+**Phase:** 9 — Replication Latency, Gap Detection, Network Topology  
+**Design reference:** [tracer_phase9_design.md §13 — FakeNode Network Simulation](./tracer_phase9_design.md#13-fakenode-network-simulation), [§13.1 FakeNetworkModel](./tracer_phase9_design.md#131-fakenetworkmodel), [§13.2 Integration into Test Fixtures](./tracer_phase9_design.md#132-integration-into-test-fixtures), [§2 Project Layout Additions](./tracer_phase9_design.md#2-project-layout-additions)
+
+### Scope
+
+**In scope:**
+- New `FakeNetworkModel.cs` in `Tracer.Adapters.Mock/`
+- Constructor accepts `IReadOnlyList<string> allNodes` and `int seed`; initializes per-link `LinkProfile` records (sealed private record) with `BaseLatencyMs`, `JitterStdMs`, `DropProbability`, `SpikeProbability`, `SpikeAdditionalMs`
+- 15% of links are assigned a "bad" profile (elevated base latency and jitter) as described in §13.1
+- `SimulateDelivery(string publisherNode, DateTimeOffset publishWallclock, IReadOnlyList<string> subscriberNodes)` returns `IEnumerable<(string subscriberNode, DateTimeOffset receiveWallclock)>`:
+  - Self-subscribe rows: near-zero additional latency (< 200 µs)
+  - Simulated drops: yield omitted (no entry for that subscriber)
+  - Normal delivery: Box–Muller normal jitter + occasional spike
+- `SampleNormal` helper uses Box–Muller transform as shown in §13.1
+- Integration test fixtures in `Tracer.Tests.Integration` use `FakeNetworkModel` to produce four bundle profiles: healthy, degraded (one high-latency link), lossy (elevated drops), spike (occasional 100ms+ spikes)
+- Unit tests verifying: deterministic output given same seed, self-subscribe latency < 1ms, drop probability respected (over 10,000 calls, drop rate within 2× of configured rate), spike events detectable in 100,000 samples
+
+**Out of scope:**
+- FakeNode transport-layer changes (FakeNetworkModel is invoked by test fixtures; no changes to FakeNode's live ingestion path)
+- Frontend test data generation
+- Real DDS adapter integration (Phase 11)
+
+### Constraints
+- Must be deterministic given the same `seed` — required for reproducible integration tests
+- No third-party dependencies; uses only `System.Random` and `System.Math`
+
+### Success Conditions
+1. **Test: FakeNetworkModel_SameSeed_DeterministicOutput** — Construct two `FakeNetworkModel` instances with identical `allNodes` and `seed=42`; call `SimulateDelivery` with identical inputs on both. Assert: `subscriberNode`/`receiveWallclock` sequences are identical.
+2. **Test: FakeNetworkModel_SelfSubscribe_LowLatency** — Call `SimulateDelivery` where `publisherNode` is in `subscriberNodes`. Assert: the self-subscribe entry's `receiveWallclock - publishWallclock` is < 1 ms.
+3. **Test: FakeNetworkModel_Drop_NotReturned** — Over 100,000 deliveries on a link with `DropProbability = 0.01`, count returned entries. Assert: omitted entries are between 0.5% and 2% of calls (within 2× of declared rate).
+4. **Test: FakeNetworkModel_BadLink_ElevatedP99** — Construct model, identify a "bad" link by checking that its baseline > 5 ms. Over 1,000 deliveries, compute p99. Assert: p99 > 10 ms.
+5. **Test: FakeNetworkModel_Spike_ElevatedTail** — Over 100,000 deliveries on a spike-configured profile (`SpikeProbability = 0.001`), assert at least one delivery's latency > `SpikeAdditionalMs * 0.5`.
+6. Integration test fixture `HealthyNetworkFixture` using `FakeNetworkModel(seed=1)` produces a bundle in which `GET /api/latency/distribution` returns p99 < 5 ms for all pairs.
+7. Integration test fixture `DegradedNetworkFixture` produces a bundle in which at least one (publisher, subscriber) pair reports p99 > 15 ms.
+
+---
+
+## TRC-P9-003 — `QuantileSink` and `HistogramSink` Utilities
+
+**Phase:** 9 — Replication Latency, Gap Detection, Network Topology  
+**Design reference:** [tracer_phase9_design.md §4.2 DuckDB's Built-in Statistics](./tracer_phase9_design.md#42-duckdbs-built-in-statistics), [§2 Project Layout Additions](./tracer_phase9_design.md#2-project-layout-additions), [§14.1 Backend Unit Tests — QuantileSinkTests / HistogramSinkTests](./tracer_phase9_design.md#141-backend-unit-tests)
+
+### Scope
+
+**In scope:**
+- `QuantileSink.cs` in `Tracer.WebApi/Util/`:
+  - Streaming reservoir-sampling approximate quantile computation
+  - Public API: `void Add(double value)`, `double GetQuantile(double q)` (q ∈ [0,1]), `long Count`
+  - Default reservoir size: 10,000 samples; configurable via constructor parameter
+  - Reservoir sampling uses Algorithm R (uniform random replacement once full)
+  - Used as a fallback path and in tests; primary path is DuckDB `APPROX_QUANTILE`
+- `HistogramSink.cs` in `Tracer.WebApi/Util/`:
+  - Log-bucket histogram aggregator (same bucketing as §4.2: `FLOOR(LOG2(GREATEST(latency_ms, 0.001)) * 4)`)
+  - Public API: `void Add(double valueMs)`, `IReadOnlyList<HistogramBucket> GetBuckets()`
+  - Returns only non-empty buckets
+  - Computes `(LowMs, HighMs)` bounds per bucket as `(2^(index/4), 2^((index+1)/4))`
+- Unit tests in `Tracer.Tests.Unit/Util/`
+
+**Out of scope:**
+- t-digest or DDSketch implementations (reservoir sampling is sufficient for Phase 9 scale)
+- Persistence or serialization of sink state
+- Integration with DuckDB query path (sinks are standalone; DuckDB is the primary path)
+
+### Constraints
+- No third-party dependencies
+- `QuantileSink.GetQuantile` must sort the reservoir before returning; sorting occurs on-demand, not on every `Add`
+- Both classes must be thread-unsafe by design (used only in single-threaded query paths); document this in XML doc comments
+
+### Success Conditions
+1. **Test: QuantileSink_Empty_ThrowsOrReturnsNaN** — Call `GetQuantile(0.99)` on an empty sink. Assert: either `InvalidOperationException` thrown or `double.NaN` returned (consistent behaviour, documented in API).
+2. **Test: QuantileSink_KnownDistribution_P50Accurate** — Add values 1..1000 (uniform). Call `GetQuantile(0.5)`. Assert: result is in [490, 510] (within 2% of true median 500.5).
+3. **Test: QuantileSink_KnownDistribution_P99Accurate** — Same uniform input. `GetQuantile(0.99)`. Assert: result is in [980, 1000].
+4. **Test: QuantileSink_ReservoirFull_OlderValuesReplaced** — Add 20,000 values (> default 10,000 reservoir); assert `Count == 20000` but internal reservoir size does not exceed 10,000.
+5. **Test: HistogramSink_Empty_ReturnsNoBuckets** — `GetBuckets()` on empty sink returns empty list.
+6. **Test: HistogramSink_SingleValue_OneBucket** — `Add(2.0)`. Assert: exactly one bucket, count = 1; `LowMs <= 2.0 <= HighMs`.
+7. **Test: HistogramSink_BucketBounds_Logarithmic** — Add values `[1.0, 2.0, 4.0, 8.0]`. Assert: each falls in its own distinct bucket; `HighMs / LowMs ≈ 2^(1/4)` (≈ 1.189) for each bucket.
+8. **Test: HistogramSink_NegativeAndNearZero_ClampedToMinBucket** — Add values `[-0.5, 0.0, 0.0001]`. Assert: no exception; all land in the lowest bucket (≤ 0.001 ms clamped to `GREATEST(x, 0.001)`).
+9. **Test: HistogramSink_TotalCount_MatchesAdds** — Add 500 values. Assert: sum of all bucket `Count` values == 500.
+
+---
+
+## TRC-P9-004 — `LatencyDistributionService`
+
+**Phase:** 9 — Replication Latency, Gap Detection, Network Topology  
+**Design reference:** [tracer_phase9_design.md §4 — Backend: Latency Distribution Service](./tracer_phase9_design.md#4-backend-latency-distribution-service), [§4.3 LatencyDistributionService](./tracer_phase9_design.md#43-latencydistributionservice), [§4.4 The Per-Tuple Aggregate Query](./tracer_phase9_design.md#44-the-per-tuple-aggregate-query), [§3.2 The Self-Subscribe Row](./tracer_phase9_design.md#32-the-self-subscribe-row)
+
+### Scope
+
+**In scope:**
+- `LatencyDistributionService.cs` in `Tracer.WebApi/Queries/`
+- `GetAsync(LatencyQuery query, CancellationToken ct)` → `LatencyDistribution`:
+  - DuckDB SQL with `APPROX_QUANTILE` for p50/p90/p99/p99.9, `MAX`, `MIN`, `AVG`, `STDDEV_POP`
+  - Histogram using `FLOOR(LOG2(GREATEST(latency_ms, 0.001)) * 4)` bucketing; returns `IReadOnlyList<HistogramBucket>`
+  - `ExcludeSelfSubscribe` (default `true`): adds `publisher_node != subscriber_node` WHERE clause
+  - Dynamic WHERE clause composition for `Topic`, `PublisherNode`, `SubscriberNode`, `From`, `To`
+- `ListByPairAsync(WallclockTime from, WallclockTime to, int minSamples, int limit, CancellationToken ct)` → `IReadOnlyList<LatencyPairSummary>`:
+  - Returns per-(topic, publisher, subscriber) p50/p99/max/count, sorted by p99 DESC
+  - Filters tuples with fewer than `minSamples` events (default 50)
+- Domain record types: `LatencyQuery`, `LatencyDistribution`, `HistogramBucket`, `LatencyPairSummary` (in `Tracer.WebApi/Queries/`)
+- Unit tests for all filter combinations and edge cases
+
+**Out of scope:**
+- DTO mapping (handled in TRC-P9-010)
+- HTTP endpoints (TRC-P9-010)
+- Self-subscribe toggle in UI (frontend task)
+
+### Constraints
+- **Bundle-mode only**: service uses `LiveMultiIntervalReader`; calling it against a live Observer is not gated here — the mode gate is applied at the endpoint layer (TRC-P9-010). The service itself does not check mode.
+- Negative latency values must NOT be filtered — they are kept and included in all statistics and buckets (§3.3 documents this as intentional)
+- `SampleCount == 0` returns an empty `Buckets` list and zero-value statistics; must not throw
+
+### Success Conditions
+1. **Test: LatencyDistributionService_EmptyBundle_ZeroCount** — Bundle with no events. Call `GetAsync`. Assert: `SampleCount == 0`, `Buckets` is empty, no exception.
+2. **Test: LatencyDistributionService_SingleSample_AllPercentilesEqual** — Bundle with one event, 5ms latency. Assert: `P50Ms == P90Ms == P99Ms == P999Ms ≈ 5.0`, `SampleCount == 1`, one bucket.
+3. **Test: LatencyDistributionService_ExcludeSelf_Filters** — Bundle with 4 events: 2 where `publisher_node == subscriber_node`, 2 where they differ. Call with `ExcludeSelfSubscribe = true`. Assert: `SampleCount == 2`. Repeat with `false`. Assert: `SampleCount == 4`.
+4. **Test: LatencyDistributionService_TopicFilter_Isolates** — Bundle with events on two topics. Call with `Topic = "weapons.fire"`. Assert: returned samples match only that topic.
+5. **Test: LatencyDistributionService_TimeRange_Respected** — Bundle with events spread across 60 minutes. Query a 10-minute sub-range. Assert: `SampleCount` matches only that window.
+6. **Test: LatencyDistributionService_NegativeLatency_Included** — Bundle with one event where `receive_wallclock < publish_wallclock` (clock skew simulation). Assert: `SampleCount == 1`, `MinMs < 0`, no exception.
+7. **Test: LatencyDistributionService_BucketBounds_AreLogarithmic** — Uniform-latency bundle. Assert: for each returned bucket, `HighMs / LowMs ≈ 2^(1/4)`.
+8. **Test: LatencyDistributionService_ListByPair_SortedByP99Desc** — Bundle with 3 tuples with distinct p99s. Assert: returned list is sorted descending by `P99Ms`.
+9. **Test: LatencyDistributionService_ListByPair_MinSamplesFilter** — One tuple has 10 events, another has 100. Call with `minSamples = 50`. Assert: only the 100-event tuple is returned.
+
+---
+
+## TRC-P9-005 — `LatencyTimeSeriesService`
+
+**Phase:** 9 — Replication Latency, Gap Detection, Network Topology  
+**Design reference:** [tracer_phase9_design.md §5 — Backend: Latency Time-Series Service](./tracer_phase9_design.md#5-backend-latency-time-series-service), [§5.2 The Query](./tracer_phase9_design.md#52-the-query), [§5.3 Service](./tracer_phase9_design.md#53-service)
+
+### Scope
+
+**In scope:**
+- `LatencyTimeSeriesService.cs` in `Tracer.WebApi/Queries/`
+- `GetAsync(LatencyTimeSeriesQuery query, CancellationToken ct)` → `LatencyTimeSeries`:
+  - DuckDB `time_bucket` aggregation producing `(bucket_start, p50, p99, count)` per bucket
+  - `ChooseBucket(double spanMs)` private method selecting bucket size from session span: ≥ 4h → `5 minutes`; ≥ 1h → `1 minute`; ≥ 30m → `30 seconds`; ≥ 5m → `10 seconds`; ≥ 1m → `1 second`; default → `100 milliseconds`
+  - Empty buckets are not emitted (DuckDB GROUP BY naturally omits empty groups)
+  - Dynamic filter composition identical to `LatencyDistributionService`: `Topic`, `PublisherNode`, `SubscriberNode`, `From`, `To`, `ExcludeSelfSubscribe`
+- Domain records: `LatencyTimeSeriesQuery`, `LatencyTimeSeries`, `LatencyTimePoint` (in `Tracer.WebApi/Queries/`)
+- Unit tests covering bucket-size selection and time-series shape
+
+**Out of scope:**
+- DTO mapping and HTTP endpoint (TRC-P9-010)
+- Frontend chart rendering
+
+### Constraints
+- **Bundle-mode only**: mode gate applied at endpoint layer (TRC-P9-010); service does not check mode
+- Bucket size must be deterministic given session span — no random or environment-dependent selection
+
+### Success Conditions
+1. **Test: LatencyTimeSeriesService_EmptyBundle_EmptyPoints** — Bundle with no events. Assert: `Points` is empty, no exception.
+2. **Test: LatencyTimeSeriesService_OneHourSession_OneMinuteBuckets** — Session span 60 minutes. Assert: `BucketSize == "1 minute"`.
+3. **Test: LatencyTimeSeriesService_FourHourSession_FiveMinuteBuckets** — Session span 4 hours. Assert: `BucketSize == "5 minutes"`.
+4. **Test: LatencyTimeSeriesService_SubMinuteSession_HundredMsBuckets** — Session span 30 seconds. Assert: `BucketSize == "1 second"`. Session span 45 seconds. Assert: `BucketSize == "10 seconds"`.
+5. **Test: LatencyTimeSeriesService_BucketCounts_SumToTotal** — Insert 120 events evenly across a 2-hour span. Assert: sum of all `Point.SampleCount` values == 120.
+6. **Test: LatencyTimeSeriesService_EmptyBuckets_NotEmitted** — Insert events in first and last 5-minute window only; leave the middle 50 minutes empty. Assert: only 2 buckets returned.
+7. **Test: LatencyTimeSeriesService_P99_PlausibleAgainstInput** — Insert 100 events with known latency distribution into a single bucket. Assert: bucket's `P99Ms` is within 5% of the true 99th percentile of the input.
+8. **Test: LatencyTimeSeriesService_LiveMode_Returns409** — No bundle open (`BundleOpenManager` not registered). Call endpoint. Assert: HTTP 409 with `detail` containing "bundle mode".
+
+---
+
+## TRC-P9-006 — `LatencyOutlierService`
+
+**Phase:** 9 — Replication Latency, Gap Detection, Network Topology  
+**Design reference:** [tracer_phase9_design.md §6.4 LatencyOutlierService](./tracer_phase9_design.md#64-latencyoutlierservice), [§6.1 Latency Budgets](./tracer_phase9_design.md#61-latency-budgets), [§1.1 What Phase 9 Delivers (Outlier Identification)](./tracer_phase9_design.md#11-what-phase-9-delivers)
+
+### Scope
+
+**In scope:**
+- `LatencyOutlierService.cs` in `Tracer.WebApi/Queries/`
+- `FindAsync(LatencyOutlierQuery query, CancellationToken ct)` → `LatencyOutlierResult`:
+  - If `query.ThresholdMs` is set: simple `WHERE latency_ms > threshold` path
+  - If `query.ThresholdMs` is null: per-topic threshold from `BudgetService.GetBudgetsAsync` (uses `AbsoluteMaxMs`), falling back to per-topic `APPROX_QUANTILE(latency_ms, 0.999)` when no budget exists
+  - Always excludes `publisher_node == subscriber_node` rows
+  - `BudgetSource` field on each outlier: `"budget"` when `AbsoluteMaxMs` was used, `"top-0.1%"` when fallback applied
+  - Returns up to `query.Limit` outliers (default 100), sorted by `latency_ms DESC`
+  - Result includes the list of budgets used (for the frontend to display threshold lines)
+- Depends on `BudgetService` (TRC-P9-009); injected via constructor
+- Domain records: `LatencyOutlierQuery`, `LatencyOutlier`, `LatencyOutlierResult` (in `Tracer.WebApi/Queries/`)
+- Unit tests for all threshold-source paths
+
+**Out of scope:**
+- DTO mapping and HTTP endpoint (TRC-P9-010)
+- Frontend outlier table rendering
+
+### Constraints
+- **Bundle-mode only**: mode gate at endpoint layer (TRC-P9-010)
+- Must exclude `publisher_node == subscriber_node` rows unconditionally — self-subscribe latencies are not meaningful outliers
+- When no events exceed the threshold, returns empty `Outliers` list — not an error
+
+### Success Conditions
+1. **Test: LatencyOutlierService_ExplicitThreshold_ReturnsAboveOnly** — Bundle with events at 5, 10, 50, 100 ms. Call with `ThresholdMs = 20`. Assert: only 50ms and 100ms events returned.
+2. **Test: LatencyOutlierService_ExplicitThreshold_SortedDesc** — Call with threshold. Assert: `Outliers[0].LatencyMs >= Outliers[1].LatencyMs` (descending).
+3. **Test: LatencyOutlierService_NoBudget_Top0_1Pct** — Bundle with 1000 events, no budget declared. Assert: events with latency > `APPROX_QUANTILE(0.999)` are returned; `BudgetSource == "top-0.1%"`.
+4. **Test: LatencyOutlierService_WithBudget_UsesAbsoluteMax** — Bundle with budget `AbsoluteMaxMs = 50`. Assert: events > 50ms returned; `BudgetSource == "budget"`.
+5. **Test: LatencyOutlierService_PerTopicBudgets_Applied** — Bundle with two topics; topic A budget = 30ms, topic B budget = 80ms. Assert: returned outliers for topic A exceed 30ms; for topic B exceed 80ms (not 30ms).
+6. **Test: LatencyOutlierService_SelfSubscribe_Excluded** — Bundle with self-subscribe events at 200ms latency (clock-noise artifact). Assert: these events do not appear in outlier results.
+7. **Test: LatencyOutlierService_NoOutliers_EmptyResult** — Bundle with all events well within budget. Assert: empty `Outliers` list, no exception.
+8. **Test: LatencyOutlierService_Limit_Respected** — Bundle with 500 events all exceeding threshold. Call with `Limit = 10`. Assert: exactly 10 returned.
+9. **Test: LatencyOutlierService_LiveMode_Returns409** — No bundle open. Call endpoint. Assert: HTTP 409.
+
+---
+
+## TRC-P9-007 — `GapDetectionService`
+
+**Phase:** 9 — Replication Latency, Gap Detection, Network Topology  
+**Design reference:** [tracer_phase9_design.md §7 — Backend: Gap Detection Service](./tracer_phase9_design.md#7-backend-gap-detection-service), [§7.2 The Algorithm](./tracer_phase9_design.md#72-the-algorithm), [§7.3 Service](./tracer_phase9_design.md#73-service), [§7.4 First-Sample Edge Case](./tracer_phase9_design.md#74-first-sample-edge-case)
+
+### Scope
+
+**In scope:**
+- `GapDetectionService.cs` in `Tracer.WebApi/Queries/`
+- `FindGapsAsync(GapDetectionQuery query, CancellationToken ct)` → `GapDetectionResult`:
+  - DuckDB window function `LAG(sequence_number) OVER (PARTITION BY topic, publisher_node, subscriber_node ORDER BY sequence_number)` to detect discontinuities
+  - Reports each gap as: `Topic`, `PublisherNode`, `SubscriberNode`, `ResumedAtSequence`, `PreviousSequence`, `MissingCount`, `ResumedAtWallclockUtc`
+  - Filters to `gap_size > 1` (gaps of exactly 1 means next sequential number; NULL LAG is first row — filtered)
+  - Dynamic WHERE: `Topic`, `PublisherNode`, `SubscriberNode`, `From`, `To`; always excludes `publisher_node == subscriber_node`
+  - Result sorted by `missing DESC, publish_wallclock`; limited to `query.Limit` (default 500, max 5000)
+  - First-sample edge case (§7.4): reported as-is with `PreviousSequence = 0`; not filtered; documented behavior
+- Domain records: `GapDetectionQuery`, `Gap`, `GapDetectionResult` (in `Tracer.WebApi/Queries/`)
+- Unit tests for gap detection, edge cases, and filter combinations
+
+**Out of scope:**
+- DTO mapping and HTTP endpoint (TRC-P9-010)
+- Frontend gap list rendering
+- Cross-referencing subscriber-join events to filter first-sample pseudo-gaps (deferred, §7.4)
+
+### Constraints
+- **Bundle-mode only**: mode gate at endpoint layer (TRC-P9-010)
+- The first-sample edge case (PreviousSequence = 0) is **intentionally reported** — the frontend UI handles this with a toggle; the service must not suppress it
+- `publisher_node == subscriber_node` rows excluded unconditionally (self-subscribe sequence-number gaps are a DDS internals concern, not a network gap)
+
+### Success Conditions
+1. **Test: GapDetectionService_ContinuousSequence_NoGaps** — Bundle with events seq 1, 2, 3, 4, 5 for one (topic, pub, sub) tuple. Assert: `Gaps` is empty.
+2. **Test: GapDetectionService_SingleGap_Detected** — Bundle with events seq 1, 2, 5 (missing 3, 4). Assert: one gap with `PreviousSequence = 2`, `ResumedAtSequence = 5`, `MissingCount = 2`.
+3. **Test: GapDetectionService_MultipleGaps_AllReported** — Bundle with three discontinuities. Assert: three gap entries.
+4. **Test: GapDetectionService_FirstSample_ReportedWithZeroPrevious** — Bundle where subscriber B's first event has seq = 10 (joined late). Assert: gap reported with `PreviousSequence = 0`, `ResumedAtSequence = 10`, `MissingCount = 9`.
+5. **Test: GapDetectionService_TupleFilter_Isolates** — Bundle with gaps in two different (topic, pub, sub) tuples. Call with one tuple's filters. Assert: only that tuple's gaps returned.
+6. **Test: GapDetectionService_SelfSubscribe_Excluded** — Bundle with self-subscribe rows that have gap. Assert: self-subscribe rows do not appear in results.
+7. **Test: GapDetectionService_TimeRange_Respected** — Bundle with gaps in first and second half. Query second half only. Assert: first-half gaps absent.
+8. **Test: GapDetectionService_SortedByMissingDesc** — Bundle with gaps of size 3, 10, 1. Assert: returned order is 10, 3, 1.
+9. **Test: GapDetectionService_LiveMode_Returns409** — No bundle open. Call endpoint. Assert: HTTP 409.
+
+---
+
+## TRC-P9-008 — `TopologyService`
+
+**Phase:** 9 — Replication Latency, Gap Detection, Network Topology  
+**Design reference:** [tracer_phase9_design.md §8 — Backend: Topology Service](./tracer_phase9_design.md#8-backend-topology-service), [§8.1 What This Returns](./tracer_phase9_design.md#81-what-this-returns), [§8.2 Service](./tracer_phase9_design.md#82-service)
+
+### Scope
+
+**In scope:**
+- `TopologyService.cs` in `Tracer.WebApi/Queries/` (extends or replaces Phase 3 stub if present)
+- `GetNetworkTopologyAsync(string sessionId, WallclockTime from, WallclockTime to, CancellationToken ct)` → `NetworkTopology`:
+  - DuckDB GROUP BY `(topic, publisher_node, subscriber_node)` with `COUNT(*)`, `MIN(publish_wallclock)`, `MAX(publish_wallclock)`
+  - Excludes `publisher_node == subscriber_node` rows
+  - Result sorted by `message_count DESC`
+  - Produces `NetworkTopology` with `IReadOnlyList<string> Nodes` (distinct union of publisher and subscriber nodes, sorted) and `IReadOnlyList<TopologyEdge> Edges`
+- Domain records: `NetworkTopology`, `TopologyEdge` (in `Tracer.WebApi/Queries/`)
+- Unit tests for edge cases
+
+**Out of scope:**
+- DTO mapping and HTTP endpoint (TRC-P9-010)
+- Frontend graph layout (`networkGraphLayout.ts` is a frontend task)
+- Anomaly detection ("node should be subscribing but isn't") — deferred
+
+### Constraints
+- **Bundle-mode only**: mode gate at endpoint layer (TRC-P9-010)
+- Self-subscribe edges excluded unconditionally; do not appear in `Edges` or contribute to `Nodes` count
+- Performance target: full-session topology query < 200 ms (§1.3 criterion 9)
+
+### Success Conditions
+1. **Test: TopologyService_ThreeNodeBundle_CorrectEdges** — Bundle with nodes A, B, C; edges A→B and A→C on topic `foo`. Assert: 2 edges, 3 nodes (`{A, B, C}`).
+2. **Test: TopologyService_SelfSubscribe_Excluded** — Bundle with A→A rows. Assert: `Edges` empty (only self-subscribe rows in bundle).
+3. **Test: TopologyService_MessageCount_Aggregated** — Bundle with 5 events A→B and 3 events A→C. Assert: `Edges[0].MessageCount == 5`, `Edges[1].MessageCount == 3` (sorted DESC).
+4. **Test: TopologyService_Nodes_AreUnionOfPubAndSub** — Bundle with edges A→B and C→B. Assert: `Nodes` contains `{A, B, C}`, sorted alphabetically.
+5. **Test: TopologyService_FirstLastSeen_Accurate** — Bundle with events spanning 10 minutes. Assert: `FirstSeenUtc < LastSeenUtc`; both within the session time range.
+6. **Test: TopologyService_MultiTopic_EachTopicHasOwnEdge** — Bundle with A→B on both `topic1` and `topic2`. Assert: 2 edges (not merged), each with its own `Topic`.
+7. **Test: TopologyService_EmptyBundle_EmptyResult** — Assert: `Nodes` and `Edges` both empty, no exception.
+8. **Test: TopologyService_LiveMode_Returns409** — No bundle open. Call endpoint. Assert: HTTP 409.
+
+---
+
+## TRC-P9-009 — `BudgetService`
+
+**Phase:** 9 — Replication Latency, Gap Detection, Network Topology  
+**Design reference:** [tracer_phase9_design.md §6.3 BudgetService](./tracer_phase9_design.md#63-budgetservice), [§6.2 Budget Storage in the Bundle](./tracer_phase9_design.md#62-budget-storage-in-the-bundle), [§1.1 What Phase 9 Delivers (Latency Budgets)](./tracer_phase9_design.md#11-what-phase-9-delivers)
+
+### Scope
+
+**In scope:**
+- `BudgetService.cs` in `Tracer.WebApi/Queries/`
+- `GetBudgetsAsync(string sessionId, CancellationToken ct)` → `IReadOnlyList<LatencyBudget>`:
+  - Bundle mode: reads `latencyBudgets` array from `{bundle.WorkingDirectory}/metadata.json`; deserializes to `IReadOnlyList<LatencyBudget>`
+  - Returns empty list if `metadata.json` absent, if `latencyBudgets` key missing, or if the array is empty
+  - Live mode: returns empty list (or from `InMemoryBudgetRegistry` if registered — registry support is a stub; not required to be fully functional in Phase 9)
+- Constructor accepts `BundleOpenManager?` (nullable) and `InMemoryBudgetRegistry?` (nullable) — both optional to support both modes without conditional DI registration
+- `InMemoryBudgetRegistry.cs` stub in `Tracer.WebApi/Queries/`: `GetAll()` returns `IReadOnlyList<LatencyBudget>` from an in-memory list; `Register(LatencyBudget budget)` adds to the list; no persistence
+- Unit tests for all read paths
+
+**Out of scope:**
+- Budget editing or writing (Tracer is read-only for budgets, §1.2)
+- Ingestion of `scenario.metadata.latency_budgets` DDS events (Phase 11+)
+- DTO mapping and HTTP endpoint (TRC-P9-010)
+
+### Constraints
+- Reads `metadata.json` with `System.Text.Json`; must handle malformed JSON gracefully (log and return empty, do not throw to callers)
+- `GetBudgetsAsync` must never throw; exceptions from file I/O or JSON parsing are caught and logged
+
+### Success Conditions
+1. **Test: BudgetService_BundleWithBudgets_ReturnsParsedList** — Write `metadata.json` with `latencyBudgets: [{ topic: "x", p99BudgetMs: 30, absoluteMaxMs: 100 }]`. Call `GetBudgetsAsync`. Assert: one `LatencyBudget` with correct field values.
+2. **Test: BudgetService_NoBudgetsSection_ReturnsEmpty** — Write `metadata.json` without `latencyBudgets` key. Assert: empty list.
+3. **Test: BudgetService_MetadataFileMissing_ReturnsEmpty** — Point service at a directory with no `metadata.json`. Assert: empty list, no exception.
+4. **Test: BudgetService_MalformedJson_ReturnsEmpty** — Write malformed JSON. Assert: empty list, no exception (logs the error).
+5. **Test: BudgetService_NullableFields_PreservedAsNull** — Budget entry with only `topic` key (no `p99BudgetMs`, no `absoluteMaxMs`). Assert: `P99BudgetMs == null`, `AbsoluteMaxMs == null`.
+6. **Test: BudgetService_LiveMode_ReturnsEmpty** — `BundleOpenManager` is null. Assert: empty list.
+7. **Test: BudgetService_InMemoryRegistry_ReturnsRegistered** — Register two budgets in `InMemoryBudgetRegistry`; pass it to service with null `BundleOpenManager`. Assert: two budgets returned.
+8. **Test: BudgetService_MultipleBudgets_AllReturned** — Write `metadata.json` with 5 budget entries. Assert: all 5 returned.
+
+---
+
+## TRC-P9-010 — Phase 9 API Endpoints, DTOs, `BundleModeGate`, and DI Wiring
+
+**Phase:** 9 — Replication Latency, Gap Detection, Network Topology  
+**Design reference:** [tracer_phase9_design.md §9 — Web API Endpoints and Mode Gating](./tracer_phase9_design.md#9-web-api-endpoints-and-mode-gating), [§9.1 Endpoint Surface](./tracer_phase9_design.md#91-endpoint-surface), [§9.2 Mode Gate](./tracer_phase9_design.md#92-mode-gate), [§9.3 LatencyEndpoints](./tracer_phase9_design.md#93-latencyendpoints), [§9.4 GapEndpoints and TopologyEndpoints](./tracer_phase9_design.md#94-gapendpoints-and-topologyendpoints), [§9.5 DTOs](./tracer_phase9_design.md#95-dtos), [§3.4 Index Considerations](./tracer_phase9_design.md#34-index-considerations)
+
+### Scope
+
+**In scope:**
+- `Tracer.WebApi/Util/BundleModeGate.cs`: static helper `CheckBundleOrLive(IServiceProvider sp)` → `IResult?`; returns `ProblemDetails` 409 when `BundleOpenManager` is absent from DI, null otherwise
+- `Tracer.WebApi/Endpoints/LatencyEndpoints.cs`: `Map(WebApplication app)` registering:
+  - `GET /api/latency/distribution` → `HandleDistributionAsync` (query params: `sessionId`, `from`, `to`, `topic?`, `publisherNode?`, `subscriberNode?`, `excludeSelf=true`)
+  - `GET /api/latency/pairs` → `HandlePairsAsync` (query params: `sessionId`, `from`, `to`, `minSamples=50`, `limit=100`)
+  - `GET /api/latency/timeseries` → `HandleTimeSeriesAsync` (query params: `sessionId`, `from`, `to`, `topic?`, `publisherNode?`, `subscriberNode?`)
+  - `GET /api/latency/outliers` → `HandleOutliersAsync` (query params: `sessionId`, `from`, `to`, `topic?`, `thresholdMs?`, `limit=100`)
+- `Tracer.WebApi/Endpoints/GapEndpoints.cs`: `GET /api/gaps` (query params: `sessionId`, `from`, `to`, `topic?`, `publisherNode?`, `subscriberNode?`, `limit=500`)
+- `Tracer.WebApi/Endpoints/TopologyEndpoints.cs`: `GET /api/topology/network` (query params: `sessionId`, `from`, `to`)
+- `Tracer.WebApi/Endpoints/BudgetEndpoints.cs`: `GET /api/scenario/budgets` (query param: `sessionId`) — **no 409 gate**: budgets endpoint works in both modes (returns empty list in live mode)
+- DTO types in `Tracer.WebApi/Contracts/Dto/`: `LatencyDistributionDto`, `HistogramBucketDto`, `LatencyPairSummaryDto`, `LatencyTimeSeriesDto`, `LatencyTimePointDto`, `LatencyOutlierDto`, `LatencyOutlierListDto`, `GapDto`, `GapResultDto`, `TopologyDto`, `TopologyEdgeDto`, `BudgetDto`, `BudgetListDto` — as specified in §9.5
+- DTO mapper helpers (static methods or classes) in `Tracer.WebApi/Contracts/Dto/`
+- DI registration in `Program.cs` or a `ServiceCollectionExtensions` class: all Phase 9 services (`LatencyDistributionService`, `LatencyTimeSeriesService`, `LatencyOutlierService`, `GapDetectionService`, `TopologyService`, `BudgetService`, `InMemoryBudgetRegistry`)
+- All endpoints decorated with `.WithOpenApi()`
+- Parameter validation: `limit` clamped to [1, 5000]; `from > to` returns HTTP 400 `ProblemDetails`; missing required params return 400
+- `idx_events_topic_pub_sub` index creation in `EventsConsolidator.Finalize` as described in §3.4
+- Integration tests in `Tracer.Tests.Integration/LatencyAnalysisRoundTripTests.cs`, `GapDetectionIntegrationTests.cs`, `TopologyIntegrationTests.cs`
+- Endpoint unit tests: all Phase 9 endpoints return 409 in live mode; return 200 with valid DTOs in bundle mode
+
+**Out of scope:**
+- Frontend integration (separate tasks TRC-P9-011+)
+- OpenAPI client code generation triggering (CI concern)
+
+### Constraints
+- **All latency, gap, and topology endpoints return HTTP 409** with `ProblemDetails` (`Title = "Bundle mode required"`, `Status = 409`) when called against a live Observer (i.e., when `BundleOpenManager` is not registered in DI). The body detail must include text explaining bundle mode is required (matches §9.2 exactly).
+- `GET /api/scenario/budgets` is **exempt from the 409 gate** — it returns an empty list in live mode; this is intentional (§6.3)
+- DTO types must be `sealed record` with `required` init-only properties
+- All endpoints must have `.WithOpenApi()` — required for TypeScript client generation in the CI pipeline
+
+### Success Conditions
+1. **Test: LatencyEndpoints_Distribution_LiveMode_Returns409** — Configure test host without `BundleOpenManager`. GET `/api/latency/distribution`. Assert: HTTP 409, `Content-Type: application/problem+json`, body contains `"Bundle mode required"`.
+2. **Test: LatencyEndpoints_Distribution_BundleMode_Returns200** — Configure test host with bundle open, `FakeNetworkModel` fixture events. GET `/api/latency/distribution?sessionId=...&from=...&to=...`. Assert: HTTP 200; `sampleCount > 0`; `p99Ms > 0`; `buckets` non-empty.
+3. **Test: GapEndpoints_LiveMode_Returns409** — No bundle open. GET `/api/gaps`. Assert: HTTP 409.
+4. **Test: GapEndpoints_BundleMode_GapDetected** — Bundle with injected gaps. GET `/api/gaps?sessionId=...`. Assert: HTTP 200; `gaps` list non-empty; `missingCount > 0`.
+5. **Test: TopologyEndpoints_LiveMode_Returns409** — No bundle open. GET `/api/topology/network`. Assert: HTTP 409.
+6. **Test: TopologyEndpoints_BundleMode_Returns200** — Multi-node bundle. GET `/api/topology/network?sessionId=...`. Assert: `nodes` and `edges` non-empty.
+7. **Test: BudgetEndpoints_LiveMode_Returns200Empty** — No bundle open. GET `/api/scenario/budgets?sessionId=...`. Assert: HTTP 200, `budgets` is empty array (not 409).
+8. **Test: BudgetEndpoints_BundleWithBudgets_Returns200List** — Bundle with `latencyBudgets` in metadata. GET `/api/scenario/budgets?sessionId=...`. Assert: HTTP 200; `budgets` contains the declared entries.
+9. **Test: LatencyEndpoints_InvalidLimit_Returns400** — GET `/api/latency/outliers?limit=-5`. Assert: HTTP 400 `ProblemDetails`.
+10. **Test: LatencyEndpoints_FromAfterTo_Returns400** — GET `/api/latency/distribution?from=<later>&to=<earlier>`. Assert: HTTP 400 `ProblemDetails`.
+11. **Test: AllPhase9Endpoints_HaveOpenApi** — Enumerate `app.Services.GetService<IApiDescriptionGroupCollectionProvider>()`. Assert: all 7 Phase 9 routes appear in OpenAPI description groups.
+12. **Test: LatencyRoundTrip_FakeNetwork_MatchesExpected** — Build bundle with `HealthyNetworkFixture`; query distribution; assert p99 < 5ms. Build with `DegradedNetworkFixture`; query; assert at least one pair reports p99 > 15ms.
+13. **Test: GapRoundTrip_LossyNetwork_GapsDetected** — Build bundle with `LossyNetworkFixture`; query gaps; assert gap count > 0 and `missingCount > 0`.
+14. **Test: TopologyRoundTrip_MultiNode_CorrectGraph** — Build bundle with 3-node `FakeNetworkModel` fixture; query topology; assert `nodes.length == 3`, `edges.length >= 2`.
+15. **Test: EventsConsolidator_CreatesIndex_OnFinalize** — After bundle consolidation, connect to `events.duckdb`; query `PRAGMA database_list`; assert index `idx_events_topic_pub_sub` exists on `events` table.
+
+*(frontend tasks TRC-P9-011+ to be appended)*
+
+---
+
+## TRC-P9-011 — `ReplicationLatencyView.vue` — Main Latency View
+
+**Phase:** 9 — Replication Latency, Gap Detection, Network Topology  
+**Design reference:** [tracer_phase9_design.md §10](./tracer_phase9_design.md#10-frontend-replication-latency-view)
+
+### Scope
+**In scope:**
+- `src/views/ReplicationLatencyView.vue` mounted at route `/v/latency/:sessionId`; route name `replication-latency`
+- On mount: fetch session range (from/to), latency budgets via `GET /api/scenario/budgets`, and pair list via `GET /api/latency/pairs` (minSamples=50, limit=200)
+- `selectedPair` reactive ref (initially `null`) — when set, narrows the distribution, time-series, and outlier composables to `{ topic, publisherNode, subscriberNode }` from that pair; × button clears it
+- Renders `PublisherSubscriberMatrix`, `LatencyDistributionChart`, `LatencyTimeSeriesChart`, `LatencyOutliersTable` in the three-panel layout (§10.1): matrix left, distribution + timeseries centre, outliers right
+- `BundleModeRequiredBanner` rendered (all content panels hidden) when any Phase 9 endpoint returns HTTP 409
+- Link to `/v/latency/:sessionId` added to bundle session card
+- Route registered in the SPA router
+
+**Out of scope:**
+- Sub-components themselves (TRC-P9-012 through TRC-P9-015 and TRC-P9-018)
+- Backend endpoints (TRC-P9-010)
+- Additional filter dropdowns for topic/pub/sub (pair selection via matrix is sufficient for Phase 9)
+
+### Constraints
+- Route path `/v/latency/:sessionId`, route name `replication-latency`
+- On any Phase 9 endpoint returning 409: show `BundleModeRequiredBanner` with the detail text from the response; hide all content panels
+- `selectedPair` is `null` by default; when set, all three detail composables receive `{ topic, publisherNode, subscriberNode }` from that pair
+- Banner message must contain text matching "requires bundle mode" (§9.2)
+
+### Success Conditions
+1. **Test: `ReplicationLatencyView_MountsWithPairList`** — Stub API returning a session with start/end and 3 pairs; mount the view; assert `PublisherSubscriberMatrix` receives a `pairs` prop with length 3.
+2. **Test: `ReplicationLatencyView_409_ShowsBanner`** — Stub pairs endpoint returning 409; mount view; assert `BundleModeRequiredBanner` is rendered and content panels are absent from the DOM.
+3. **Test: `ReplicationLatencyView_SelectPair_UpdatesComposableFilter`** — Mount with 3 pairs; simulate click on the second pair row; assert `selectedPair` equals the second pair object; assert the distribution composable `filter.topic` matches that pair's topic.
+4. **Test: `ReplicationLatencyView_ClearPair_ResetsFilter`** — With `selectedPair` set to a pair; click the × button; assert `selectedPair === null`.
+5. **Test: E2E `replication-latency-view.spec.ts` "bundle session shows pair matrix"** — Open a bundle session; navigate to `/v/latency/{sessionId}`; assert `.pair-matrix__row` is visible; assert `h1` text is "Replication latency".
+6. **Test: E2E `replication-latency-view.spec.ts` "live mode shows bundle required banner"** — Visit `/v/latency/live-session` against a live Observer instance; assert `.bundle-mode-required-banner` is visible; assert the banner contains text "requires bundle mode".
+
+---
+
+## TRC-P9-012 — `LatencyDistributionChart.vue` and `histogramRenderer.ts`
+
+**Phase:** 9 — Replication Latency, Gap Detection, Network Topology  
+**Design reference:** [tracer_phase9_design.md §10.3](./tracer_phase9_design.md#103-latencydistributionchartvue)
+
+### Scope
+**In scope:**
+- `src/rendering/histogramRenderer.ts`: exported `renderHistogram(ctx: CanvasRenderingContext2D, input: HistogramRenderInput)` function
+  - Logarithmic x-axis (log10 of latency ms); one bar per bucket using `lowMs`/`highMs` from `HistogramBucketDto`
+  - Dashed vertical percentile lines: p50 (`#4ec97a` green), p99 (`#e8b048` amber), p99.9 (`#e85c5c` red); labels at top of plot area
+  - Solid thicker vertical budget lines when `budget.absoluteMaxMs` or `budget.p99BudgetMs` is supplied
+  - Upper-right summary text: sample count, p50, p99, max
+  - Centred "No data in range" message when `sampleCount === 0` or `buckets` array is empty
+  - `formatMs(ms: number): string` helper for x-axis tick labels (μs / ms / s)
+- `src/components/LatencyDistributionChart.vue`: canvas wrapper that calls `renderHistogram` on prop changes and on canvas resize (ResizeObserver)
+
+**Out of scope:**
+- Time-series rendering (TRC-P9-013)
+- Data-fetching composable (TRC-P9-018)
+
+### Constraints
+- Canvas-based renderer; no third-party chart library
+- X-axis uses log10 scale; bucket bar widths derive from `b.lowMs` and `b.highMs`
+- Component is display-only; emits no events
+
+### Success Conditions
+1. **Test: `histogramRenderer.spec.ts` "EmptyDistribution_DrawsNoDataMessage"** — Pass a distribution with `sampleCount=0`; assert canvas `fillText` was called with "No data in range".
+2. **Test: `histogramRenderer.spec.ts` "SingleBucket_DrawsBar"** — Pass one bucket (`count=100, lowMs=1, highMs=2`); assert `fillRect` was called at least once.
+3. **Test: `histogramRenderer.spec.ts` "P99Line_DrawnAtCorrectX"** — Pass a distribution with `p99Ms=10`; assert a vertical stroke is drawn at the x-coordinate corresponding to `log10(10)` on the plot scale.
+4. **Test: `histogramRenderer.spec.ts` "BudgetLine_DrawnWhenPresent"** — Pass `budget.absoluteMaxMs=50`; assert an additional stroke at the x-coordinate corresponding to 50ms.
+5. **Test: `histogramRenderer.spec.ts` "BudgetLine_AbsentWhenBudgetNull"** — Pass `budget=null`; assert no budget-coloured thick vertical stroke is drawn.
+6. **Test: `LatencyDistributionChart_ResizeTriggers_Redraw`** — Mount the chart component; trigger the ResizeObserver callback; assert `renderHistogram` is called a second time.
+
+---
+
+## TRC-P9-013 — `LatencyTimeSeriesChart.vue`
+
+**Phase:** 9 — Replication Latency, Gap Detection, Network Topology  
+**Design reference:** [tracer_phase9_design.md §5.1](./tracer_phase9_design.md#51-what-this-returns)
+
+### Scope
+**In scope:**
+- `src/rendering/latencyTimeSeriesRenderer.ts`: `renderTimeSeries(ctx, input)` — two line series over a time x-axis; p50 (dim, dashed) and p99 (bright, solid); y-axis 0 to `maxP99 * 1.1` (minimum 1ms); "No data" message when `points` is empty
+- `hitTestTimeSeries(points, mouseX, canvasWidthPx)` helper returning the index of the closest time point for tooltip display
+- `src/components/LatencyTimeSeriesChart.vue`: canvas wrapper
+  - Props: `timeseries: LatencyTimeSeriesDto | null`, `loading: boolean`
+  - Hover interaction: display tooltip overlay with bucket start, p50, p99, and sample count at the hovered point
+
+**Out of scope:**
+- Distribution histogram (TRC-P9-012)
+- Data-fetching composable (TRC-P9-018)
+
+### Constraints
+- Canvas-based renderer; no third-party chart library
+- p99 line must be visually thicker or brighter than the p50 line
+- "No data" shown when `points` is empty or `timeseries` is null
+
+### Success Conditions
+1. **Test: `latencyTimeSeriesRenderer.spec.ts` "EmptyPoints_DrawsNoDataMessage"** — Pass `points=[]`; assert canvas `fillText` called with "No data".
+2. **Test: `latencyTimeSeriesRenderer.spec.ts` "TwoLines_P99ThickerThanP50"** — Pass 5 time points; assert the `lineWidth` set immediately before the p99 path stroke is greater than the `lineWidth` set before the p50 path stroke.
+3. **Test: `latencyTimeSeriesRenderer.spec.ts` "YAxis_UpperBoundCoversMaxP99"** — Pass points where max `p99Ms=80`; assert the y-axis upper bound used for scaling is ≥ 80.
+4. **Test: `LatencyTimeSeriesChart_HoverShowsTooltip`** — Mount the component with a 5-point series; simulate a mouse-move event to the x-position of point 3; assert a tooltip element is visible containing that point's `p99Ms` value.
+5. **Test: `LatencyTimeSeriesChart_LoadingState_ShowsIndicator`** — Pass `loading=true`; assert a loading indicator is visible (or the canvas content is hidden).
+
+---
+
+## TRC-P9-014 — `LatencyOutliersTable.vue` and Cross-View Pivot
+
+**Phase:** 9 — Replication Latency, Gap Detection, Network Topology  
+**Design reference:** [tracer_phase9_design.md §10.5](./tracer_phase9_design.md#105-latencyoutlierstable)
+
+### Scope
+**In scope:**
+- `src/components/LatencyOutliersTable.vue`: scrollable table of `LatencyOutlierDto[]`
+  - Columns: timestamp (`publishWallclockUtc`, formatted), topic, `publisherNode → subscriberNode`, `latencyMs` (ms, 2 d.p.), `thresholdMs` (ms, 2 d.p.), `budgetSource`
+  - Per-row "Timeline →" button: navigates to `{ name: 'timeline', params: { sessionId }, query: { from, to, topic, node: subscriberNode } }` where `from = (publishWallclockUtc - 1s).toISOString()`, `to = (publishWallclockUtc + 1s).toISOString()`
+  - "No outliers detected" empty state when `outliers` prop is `[]`
+  - Renders up to 100 rows (backend already caps at 100)
+
+**Out of scope:**
+- Outlier data-fetching composable (TRC-P9-018)
+- Timeline view modifications
+
+### Constraints
+- "Timeline →" pivot window: ± 1 second around `publishWallclockUtc`
+- `node` query param = `subscriberNode` (the receiving end of the outlier event)
+- Table is display-only; no row selection or editing
+
+### Success Conditions
+1. **Test: `LatencyOutliersTable_RendersAllRows`** — Pass 3 `LatencyOutlierDto` items; assert 3 `<tr>` elements exist inside `<tbody>`.
+2. **Test: `LatencyOutliersTable_EmptyState_ShowsMessage`** — Pass `outliers=[]`; assert `<tbody>` has no rows and "No outliers detected" text is visible.
+3. **Test: `LatencyOutliersTable_ShowInTimeline_NavigatesCorrectly`** — Mount with `sessionId="s1"`, one outlier (`publishWallclockUtc=T`, `topic="T1"`, `subscriberNode="node-B"`); click "Timeline →"; assert `router.push` was called with `params: { sessionId: "s1" }`, `query.from=(T-1s).toISOString()`, `query.to=(T+1s).toISOString()`, `query.topic="T1"`, `query.node="node-B"`.
+4. **Test: `LatencyOutliersTable_BudgetSource_Displayed`** — Row with `budgetSource="budget"` shows the text "budget" in its cell; row with `budgetSource="top-0.1%"` shows "top-0.1%".
+5. **Test: E2E `replication-latency-view.spec.ts` "outlier pivot to timeline"** — With the latency view showing at least one outlier row; click "Timeline →"; assert the URL changes to match `/v/timeline/`.
+
+---
+
+## TRC-P9-015 — `PublisherSubscriberMatrix.vue`
+
+**Phase:** 9 — Replication Latency, Gap Detection, Network Topology  
+**Design reference:** [tracer_phase9_design.md §10.4](./tracer_phase9_design.md#104-pair-matrix)
+
+### Scope
+**In scope:**
+- `src/components/PublisherSubscriberMatrix.vue`: scrollable list of `LatencyPairSummaryDto[]`
+  - Renders pairs in received order (backend sorts by p99 DESC)
+  - Per row: topic (monospace small), `publisherNode → subscriberNode`, p99 (primary stat, 1 d.p. ms), sample count
+  - CSS class `pair-matrix__row--over-budget` applied when `pair.p99Ms > budgetByTopic[pair.topic].p99BudgetMs`
+  - CSS class `pair-matrix__row--selected` applied to the row whose object matches the `selectedPair` prop
+  - Emits `select` event with the clicked `LatencyPairSummaryDto` on row click
+  - Section heading: "Worst legs (by p99)"
+
+**Out of scope:**
+- Overall view layout (TRC-P9-011)
+- Budget coloring based on `absoluteMaxMs` (only `p99BudgetMs` checked here)
+
+### Constraints
+- `max-height: 70vh; overflow-y: auto`
+- Budget comparison: if no budget entry exists for a topic, `--over-budget` class is not applied
+- `selectedPair` compared by object identity (same reference from the parent's pairs array)
+
+### Success Conditions
+1. **Test: `PublisherSubscriberMatrix_RendersAllPairs`** — Pass 5 pairs; assert 5 `li.pair-matrix__row` elements rendered.
+2. **Test: `PublisherSubscriberMatrix_OverBudget_AppliesClass`** — Pass one pair with `p99Ms=100` and a budget `{ topic: "T", p99BudgetMs: 50 }`; assert that row has class `pair-matrix__row--over-budget`.
+3. **Test: `PublisherSubscriberMatrix_NoBudget_NoOverBudgetClass`** — Pass a pair whose topic has no budget entry; assert the row does not have `pair-matrix__row--over-budget`.
+4. **Test: `PublisherSubscriberMatrix_ClickRow_EmitsSelect`** — Click row 2; assert the `select` event was emitted with row 2's pair object.
+5. **Test: `PublisherSubscriberMatrix_SelectedPair_AppliesSelectedClass`** — Pass `selectedPair` = the row-3 object; assert row 3 has `pair-matrix__row--selected`; assert rows 1, 2, 4, 5 do not.
+
+---
+
+## TRC-P9-016 — `GapDetectionView.vue` and `GapList.vue`
+
+**Phase:** 9 — Replication Latency, Gap Detection, Network Topology  
+**Design reference:** [tracer_phase9_design.md §12](./tracer_phase9_design.md#12-frontend-gap-detection-view)
+
+### Scope
+**In scope:**
+- `src/views/GapDetectionView.vue` at route `/v/gaps/:sessionId` (name `gap-detection`)
+  - On mount: load session range; fetch all gaps via `GET /api/gaps` for the full session time range
+  - Tuple summary panel: group gaps by `(topic, publisherNode, subscriberNode)`; sort tuples by sum of `missingCount` DESC; display topic, pub→sub, gap count, total missing messages
+  - Gap list panel: renders `<GapList>` with the full `gaps` array
+  - `BundleModeRequiredBanner` rendered on 409
+  - Route registered in the SPA router
+- `src/components/GapList.vue`: table of `GapDto[]`
+  - Columns: `resumedAtWallclockUtc` (formatted), topic, `publisherNode → subscriberNode`, `previousSequence`, last missing seq (`resumedAtSequence - 1`), `missingCount`, "Timeline →" button
+  - "Timeline →" pivot: `{ name: 'timeline', params: { sessionId }, query: { from: (T-5s).toISOString(), to: (T+1s).toISOString(), topic, node: subscriberNode } }` where T = `resumedAtWallclockUtc`
+  - "No gaps detected" empty state
+
+**Out of scope:**
+- Backend gap service (TRC-P9-007)
+- Per-tuple filter UI (full-session query only in Phase 9)
+
+### Constraints
+- Route: `/v/gaps/:sessionId`, name `gap-detection`
+- Tuple summary sorted by total `missingCount` DESC across all gaps for that tuple
+- Timeline pivot window: 5 seconds before to 1 second after `resumedAtWallclockUtc` (§14.4)
+- First-sample-edge-case gaps (where `previousSequence` is 0) displayed with the same visual weight as real gaps (§7.4 documented behaviour)
+
+### Success Conditions
+1. **Test: `GapDetectionView_409_ShowsBanner`** — Stub API returning 409; mount the view; assert `BundleModeRequiredBanner` is rendered.
+2. **Test: `GapDetectionView_TupleSummary_SortedByMissingCount`** — Provide 3 gaps: tuple A with total missing=10, tuple B with total missing=25; assert tuple B appears before tuple A in the summary list.
+3. **Test: `GapList_RendersGaps`** — Pass 3 `GapDto` items; assert 3 `<tr>` elements in `<tbody>`.
+4. **Test: `GapList_EmptyState_ShowsMessage`** — Pass `gaps=[]`; assert "No gaps detected" text is visible.
+5. **Test: `GapList_ShowInTimeline_NavigatesCorrectly`** — Gap with `resumedAtWallclockUtc=T`, `topic="T1"`, `subscriberNode="node-C"`; click "Timeline →"; assert `router.push` called with `query.from=(T-5s).toISOString()`, `query.to=(T+1s).toISOString()`, `query.topic="T1"`, `query.node="node-C"`.
+6. **Test: E2E `gap-detection.spec.ts` "gap detection view loads"** — Open a bundle session; navigate to `/v/gaps/{sessionId}`; assert `h1` contains "Gap detection"; assert no JavaScript errors in the console.
+
+---
+
+## TRC-P9-017 — `NetworkTopologyView.vue` and `NetworkGraphCanvas.vue`
+
+**Phase:** 9 — Replication Latency, Gap Detection, Network Topology  
+**Design reference:** [tracer_phase9_design.md §11](./tracer_phase9_design.md#11-frontend-network-topology-view)
+
+### Scope
+**In scope:**
+- `src/rendering/networkGraphLayout.ts`: exported `layoutGraph(input: GraphLayoutInput): LaidOutGraph`
+  - Fruchterman-Reingold-ish force-directed layout: 200 iterations, repulsive node forces, attractive edge forces scaled by `log10(weight + 1)`, temperature decay (§11.2)
+  - Initial positions arranged on a circle (deterministic given the same node ordering)
+  - Node positions clamped within canvas bounds (40px margin)
+- `src/rendering/networkGraphRenderer.ts`: exported `renderGraph(ctx, input: GraphRenderInput)`
+  - Bezier-curve edges with arrowheads; `lineWidth = clamp(log10(weight + 1) * 1.5, 1, 8)`; selected edge highlighted in `#5b9dff`
+  - Node circles (radius 14px normal, 18px hovered); node name label below the circle
+- `src/components/NetworkGraphCanvas.vue`: canvas component
+  - Props: `nodes: string[]`, `edges: { from: string; to: string; weight: number }[]`, `selectedEdge: { from: string; to: string } | null`
+  - Runs `layoutGraph` on mount and when `nodes`/`edges` change; re-renders via `renderGraph`
+  - Canvas click → proximity hit-test to edges → emits `select-edge({ from, to })`
+- `src/views/NetworkTopologyView.vue` at route `/v/topology/:sessionId` (name `network-topology`)
+  - On mount: fetch session + topology via `GET /api/topology/network`
+  - Bundles edges by `(publisherNode, subscriberNode)` pair by default, summing `messageCount` across topics
+  - `selectedEdge` ref → side panel listing per-topic breakdown for that edge pair
+  - "Latency →" per topic row: `router.push({ name: 'replication-latency', params: { sessionId }, query: { publisherNode, subscriberNode, topic } })`
+  - `BundleModeRequiredBanner` on 409
+
+**Out of scope:**
+- Topology data-fetching composable (TRC-P9-018)
+- Multi-bundle comparison; hierarchical layout for large fleets
+
+### Constraints
+- Route: `/v/topology/:sessionId`, name `network-topology`
+- No third-party graph library; plain TypeScript + Canvas API (§11.2)
+- Layout must complete in < 100ms for ≤ 30 nodes (Phase 9 target scale)
+- Layout is deterministic: same `nodes` array order produces the same initial circle positions and therefore the same converged layout
+
+### Success Conditions
+1. **Test: `networkGraphLayout.spec.ts` "EmptyGraph_ReturnsEmptyNodes"** — Pass empty `nodes` and `edges`; assert no error; `result.nodes.size === 0`.
+2. **Test: `networkGraphLayout.spec.ts` "SingleNode_PositionedNearCanvasCenter"** — 1 node, 400×400 canvas; resulting position within 80px of (200, 200).
+3. **Test: `networkGraphLayout.spec.ts` "ConnectedNodes_CloserThanDisconnected"** — 3 nodes A, B, C; edge A↔B with weight 100, no C edges; after layout, `distance(A,B) < distance(A,C)`.
+4. **Test: `networkGraphLayout.spec.ts` "Layout_IsDeterministic"** — Run `layoutGraph` twice with identical input; assert all node positions are equal between the two runs.
+5. **Test: `NetworkGraphCanvas_RendersCanvas`** — Mount with 3 nodes and 2 edges; assert a `<canvas>` element is present with non-zero width and height.
+6. **Test: `NetworkTopologyView_DrillIntoEdge_NavigatesCorrectly`** — Mount with topology data; select an edge so the side panel appears; click "Latency →" for one topic row; assert `router.push` was called with `name: 'replication-latency'`, correct `query.publisherNode`, `query.subscriberNode`, `query.topic`.
+7. **Test: `NetworkTopologyView_409_ShowsBanner`** — Stub the topology endpoint returning 409; mount the view; assert `BundleModeRequiredBanner` is rendered.
+8. **Test: E2E `network-topology-view.spec.ts` "topology view renders canvas"** — Open a bundle session; navigate to `/v/topology/{sessionId}`; assert a `<canvas>` element is visible; assert no JavaScript errors.
+
+---
+
+## TRC-P9-018 — Composables: `useLatencyDistribution`, `useLatencyTimeSeries`, `useLatencyOutliers`, `useGapDetection`, `useTopology`
+
+**Phase:** 9 — Replication Latency, Gap Detection, Network Topology  
+**Design reference:** [tracer_phase9_design.md §2](./tracer_phase9_design.md#2-project-layout-additions) (composables listing), [§10.2](./tracer_phase9_design.md#102-replicationlatencyviewvue) (usage in ReplicationLatencyView)
+
+### Scope
+**In scope:**
+- `src/composables/useLatencyDistribution.ts`: accepts a reactive `filter` ref; returns `{ distribution: Ref<LatencyDistributionDto | null>, loading: Ref<boolean>, error: Ref<{ status: number } | null> }`
+- `src/composables/useLatencyTimeSeries.ts`: same pattern; data type `LatencyTimeSeriesDto | null`
+- `src/composables/useLatencyOutliers.ts`: same pattern; data type `LatencyOutlierListDto | null`
+- `src/composables/useGapDetection.ts`: same pattern; data type `GapResultDto | null`
+- `src/composables/useTopology.ts`: same pattern; data type `TopologyDto | null`
+- All five composables share the following behaviour:
+  - `watch(filter, fetchFn, { immediate: true, deep: true })`
+  - One `AbortController` per in-flight request; previous controller aborted when filter changes
+  - `onUnmounted`: abort the current in-flight request
+  - `loading` set to `true` at fetch start, `false` on completion (success or error)
+  - On HTTP 409: set `error.value = { status: 409 }`; data ref stays `null`; do not throw
+  - Guard: no API call when required filter fields (`from`, `to`) are null or undefined
+
+**Out of scope:**
+- API service layer implementation (assumed present)
+- Cross-navigation caching (Vue lifecycle state within a single view mount is sufficient)
+- Complex `latencyStore.ts` state management (minimal store for lifted cross-component state only if needed)
+
+### Constraints
+- Use `AbortController` for cancellation; not a manual boolean flag
+- Named exports only; no default export from any composable file
+- Do not call the API when `filter.from` or `filter.to` is nullish
+
+### Success Conditions
+1. **Test: `useLatencyDistribution.spec.ts` "FilterChange_RefetchesCalled"** — Mount a test component using the composable; change `filter.topic`; assert the API method was called a second time.
+2. **Test: `useLatencyDistribution.spec.ts` "FilterChange_AbortsPreviousRequest"** — Trigger a filter change while the first request is still pending (delayed API mock); assert the first request's `AbortSignal.aborted` is `true`.
+3. **Test: `useLatencyDistribution.spec.ts` "On409_ErrorStatusSet_DataNull"** — API mock returns 409; assert `error.value.status === 409` and `distribution.value === null`.
+4. **Test: `useLatencyDistribution.spec.ts` "OnUnmount_RequestAborted"** — Start a fetch; unmount the component before the fetch resolves; assert the `AbortSignal` was aborted.
+5. **Test: `useGapDetection.spec.ts` "Loading_TrueWhileFetching_FalseAfter"** — API mock with a delayed promise; assert `loading.value === true` during the fetch and `false` after it resolves.
+6. **Test: `useTopology.spec.ts` "NoCallWhenFromIsNull"** — Mount the composable with `filter.from = null`; assert the API method was never called.
+
+---
+
+## TRC-P9-019 — Phase 9 Tests (Backend Unit, Integration, Frontend)
+
+**Phase:** 9 — Replication Latency, Gap Detection, Network Topology  
+**Design reference:** [tracer_phase9_design.md §14](./tracer_phase9_design.md#14-test-plan-for-phase-9) (§14.1–§14.4), [§1.3](./tracer_phase9_design.md#13-success-criteria)
+
+### Scope
+**In scope:**
+
+**Backend unit tests** (`Tracer.Tests.Unit/`):
+- `Util/QuantileSinkTests.cs` — streaming quantile computation: single value, sorted input, large uniform distribution
+- `Util/HistogramSinkTests.cs` — log-bucket histogram: bucket-index formula correctness, boundary values (e.g. 2ms → bucket 4), empty input
+- `WebApi/LatencyDistributionServiceTests.cs` — empty event set, single sample, uniform 1000 samples, `ExcludeSelfSubscribe` filter, histogram bucket boundaries, time-range filter, topic/pub/sub filter composition (§14.1)
+- `WebApi/LatencyTimeSeriesServiceTests.cs` — bucket size auto-selection across span ranges, 12-bucket result for 1h session, per-bucket sample counts sum to total, empty bucket not emitted, per-bucket p50/p99 plausibility (§14.1)
+- `WebApi/LatencyOutlierServiceTests.cs` — explicit threshold mode, top-0.1% fallback, `absoluteMaxMs` budget, per-topic budget application, `BudgetSource` values (§14.1)
+- `WebApi/GapDetectionServiceTests.cs` — continuous sequence (no gaps), single gap, multiple gaps, first-sample edge case, tuple filter, time-range filter (§14.1)
+- `WebApi/TopologyServiceTests.cs` — three-node graph, self-subscribe rows excluded, message count aggregated per tuple (§14.1)
+- `WebApi/BudgetServiceTests.cs` — bundle with budgets, missing `latencyBudgets` section, missing `metadata.json`, live mode (§14.1)
+- `WebApi/LatencyEndpointsTests.cs`, `GapEndpointsTests.cs`, `TopologyEndpointsTests.cs` — 409 in live mode, 200 in bundle mode, invalid params → 400, `from > to` → 400, all Phase 9 routes present in OpenAPI (§14.1)
+
+**Backend integration tests** (`Tracer.Tests.Integration/`):
+- `LatencyAnalysisRoundTripTests.cs` — `FakeNetworkModel` → bundle → latency endpoints; healthy-network fixture yields p99 < 5ms; degraded-network fixture yields at least one pair with p99 > 15ms (§14.2)
+- `GapDetectionIntegrationTests.cs` — `LossyNetworkFixture` → bundle → `GET /api/gaps`; assert gap count > 0 (§14.2)
+- `TopologyIntegrationTests.cs` — multi-node `FakeNetworkModel` fixture → bundle → `GET /api/topology/network`; assert node and edge counts match the fixture (§14.2)
+
+**Frontend Vitest unit tests** (`tracer-viewer/tests/unit/`):
+- `histogramRenderer.spec.ts` — empty distribution, single bucket, percentile line x-position, budget line presence/absence (§14.3)
+- `latencyTimeSeriesRenderer.spec.ts` — two-line rendering, p99 thicker than p50, y-axis coverage (§14.3)
+- `networkGraphLayout.spec.ts` — empty graph, single-node centering, connected-closer-than-disconnected, determinism (§14.3)
+- `useLatencyDistribution.spec.ts` — filter reactivity, request cancellation, 409 handling, unmount abort (§14.3)
+
+**Frontend E2E Playwright** (`tracer-viewer/tests/e2e/`):
+- `replication-latency-view.spec.ts` — bundle session loads; pair matrix visible; click pair; outlier pivot to timeline; live-mode banner (§14.4)
+- `gap-detection-view.spec.ts` — bundle session loads; heading visible; no JS errors (§14.4)
+- `network-topology-view.spec.ts` — bundle session loads; canvas visible; edge drill navigates to latency view (§14.4)
+
+**Out of scope:**
+- Automated performance benchmarks (§14.5 targets are documented but not automated at this stage)
+- Multi-bundle comparison test scenarios
+
+### Constraints
+- All Phase 1–8 tests must pass after Phase 9 implementation
+- Backend unit tests use in-memory DuckDB via the `TestHarness` fixture pattern from prior phases
+- Integration tests use `FakeNetworkModel` (TRC-P9-002) with four fixture profiles: Healthy, Degraded, Lossy, Spike
+- Frontend unit tests use Vitest + `@vue/test-utils`; mock `useRouter` / `useRoute` from `vue-router`
+
+### Success Conditions
+1. **Test: `QuantileSinkTests.SingleValue`** — Add one value `x`; assert `p50 == x` and `p99 == x`.
+2. **Test: `HistogramSinkTests.BucketIndex_2ms`** — Add value 2ms; assert the resulting bucket index equals `(long)Math.Floor(Math.Log2(2.0) * 4)` (equals 4).
+3. **Test: `LatencyDistributionServiceTests.EmptyEventSet_ZeroCount`** — Empty events table; call `GetAsync`; assert `SampleCount == 0` and `Buckets.Count == 0`.
+4. **Test: `LatencyDistributionServiceTests.ExcludeSelf_FiltersPublisherEqSubscriber`** — Two events: `pub=A, sub=B` and `pub=A, sub=A`; call `GetAsync` with `ExcludeSelfSubscribe=true`; assert `SampleCount == 1`.
+5. **Test: `GapDetectionServiceTests.SingleGap_MissingCountCorrect`** — Events with sequence numbers [1, 2, 5]; call `FindGapsAsync`; assert one gap entry with `MissingCount == 2` (sequences 3 and 4 missing).
+6. **Test: `GapDetectionServiceTests.ContinuousSequence_NoGaps`** — Events with sequence numbers [1, 2, 3, 4, 5]; call `FindGapsAsync`; assert `Gaps.Count == 0`.
+7. **Test: `TopologyServiceTests.ThreeNodeGraph_CorrectEdgeCount`** — Events covering A→B, A→C, B→C (excluding self-subscribe); call `GetNetworkTopologyAsync`; assert `Nodes.Count == 3` and `Edges.Count == 3`.
+8. **Test: `LatencyAnalysisRoundTripTests.DegradedNetwork_P99ExceedsThreshold`** — Build bundle with `DegradedNetworkFixture`; `GET /api/latency/pairs`; assert at least one pair has `p99Ms > 15`.
+9. **Test: `GapDetectionIntegrationTests.LossyNetwork_GapsPresent`** — Build bundle with `LossyNetworkFixture`; `GET /api/gaps`; assert `gaps` array is non-empty.
+10. **Test: E2E `replication-latency-view.spec.ts` "live mode shows bundle required banner"** — Visit the latency view URL against a live Observer instance; assert `.bundle-mode-required-banner` is visible; assert the banner text contains "requires bundle mode".
+11. **Test: E2E `gap-detection.spec.ts` "gap detection view loads bundle session"** — Open a bundle session; navigate to `/v/gaps/{sessionId}`; assert `h1` contains "Gap detection"; assert either a gap row or "No gaps detected" is visible; assert no JavaScript errors.
+
+<!-- PHASE 9 TASKS END -->
+
+<!-- PHASE 10 TASKS BEGIN -->
+
+# Phase 10 — SQL Console, Saved Queries, Bundle Library
+
+---
+
+## TRC-P10-001 — Read-Only SQL Executor: `SqlGuardrails` and `SqlExecutorService`
+
+**Phase:** 10 — SQL Console, Saved Queries, Bundle Library  
+**Design reference:** [tracer_phase10_design.md §3](./tracer_phase10_design.md#3-sql-executor-the-constrained-runner)
+
+### Scope
+
+**In scope:**
+- `Tracer.WebApi/Queries/SqlGuardrails.cs` — lightweight tokenizer + AST validator that rejects mutations, DDL, ATTACH, COPY, multi-statement queries, and path-reading functions (`read_csv_auto`, `read_parquet`, etc.)
+- `Tracer.WebApi/Queries/SqlExecutorService.cs` — accepts a `SqlExecutionRequest` (sql, parameters, timeoutSeconds, maxRows), runs guardrails, injects a `LIMIT` if absent, executes against the bundle/observer DuckDB via `LiveMultiIntervalReader`, applies a per-query `PRAGMA memory_limit`, cancels via `CancellationTokenSource` on timeout
+- `SqlExecutorConfig` record (DefaultTimeoutSeconds=30, DefaultMaxRows=100 000, MaxMemoryMb=1024)
+- `SqlExecutionRequest`, `SqlExecutionResult`, `SqlExecutionState` enum, `SqlColumnInfo`, `SqlExplainResult` record types
+- `SqlSchemaService.cs` — introspects the first attached interval's `information_schema`, caches the result in memory, exposes `GetAsync` / `InvalidateAsync`; `SqlSchemaSnapshot`, `SqlTableInfo` records
+- Unit tests in `Tracer.Tests.Unit/WebApi/SqlGuardrailsTests.cs` and `SqlExecutorServiceTests.cs` and `SqlSchemaServiceTests.cs`
+
+**Out of scope:** HTTP endpoint wiring (TRC-P10-002), DI registration (TRC-P10-010), frontend (TRC-P10-011+), multi-bundle cross-join queries.
+
+### Constraints
+- The DuckDB connection accessed via `LiveMultiIntervalReader` is already opened read-only by Phase 5 — the executor does NOT open a new connection; it leases from the pool.
+- Guardrails use a hand-rolled tokenizer (no third-party SQL parser library per §2.1). Forbidden keywords rejected anywhere in the token stream after comment stripping.
+- `PRAGMA` keyword is forbidden in user SQL; the service itself issues `PRAGMA memory_limit` internally before user query execution.
+- All `AllowedLeadingKeywords`: SELECT, WITH, EXPLAIN, DESCRIBE, SHOW, VALUES — others rejected immediately.
+- Row limit injection: if the tokenized query contains no `LIMIT` keyword, append `LIMIT {maxRows}` to the trimmed SQL.
+- `ExplainAsync` prefixes validated SQL with `EXPLAIN` and returns raw plan text.
+- Schema cache is invalidated when `IntervalSetTracker.SetChanged` fires (Phase 5 §3); wire invalidation call inside `SqlSchemaService`.
+
+### Success Conditions
+
+1. **Test: `SqlGuardrailsTests.Select_Accepted`** — Input `"SELECT * FROM events"` → `Validate` returns `IsValid = true`.
+2. **Test: `SqlGuardrailsTests.InsertInto_Rejected`** — Input `"INSERT INTO events VALUES (1)"` → `IsValid = false`, `RejectionReason` contains "Forbidden keyword".
+3. **Test: `SqlGuardrailsTests.CreateTable_Rejected`** — Input `"CREATE TABLE foo (id INT)"` → `IsValid = false`.
+4. **Test: `SqlGuardrailsTests.DropTable_Rejected`** — Input `"DROP TABLE events"` → `IsValid = false`.
+5. **Test: `SqlGuardrailsTests.Attach_Rejected`** — Input `"ATTACH 'other.db'"` → `IsValid = false`.
+6. **Test: `SqlGuardrailsTests.CopyTo_Rejected`** — Input `"COPY (SELECT 1) TO '/tmp/out.csv'"` → `IsValid = false`.
+7. **Test: `SqlGuardrailsTests.Pragma_Rejected`** — Input `"PRAGMA threads = 4"` → `IsValid = false`.
+8. **Test: `SqlGuardrailsTests.MultiStatement_Rejected`** — Input `"SELECT 1; SELECT 2"` → `IsValid = false`, reason contains "single statement".
+9. **Test: `SqlGuardrailsTests.BlockCommentHidingDdl_Rejected`** — Input `"SELECT 1 /* trick */ DROP TABLE events"` → `IsValid = false` (comment stripped, DROP detected).
+10. **Test: `SqlGuardrailsTests.ReadCsvAuto_Rejected`** — Input `"SELECT * FROM read_csv_auto('data.csv')"` → `IsValid = false`.
+11. **Test: `SqlGuardrailsTests.ReadParquet_Rejected`** — Input `"SELECT * FROM read_parquet('data.parquet')"` → `IsValid = false`.
+12. **Test: `SqlGuardrailsTests.QuotedIdentifierInsert_Accepted`** — Input `'SELECT "INSERT" FROM events'` (quoted identifier, not keyword) → `IsValid = true`.
+13. **Test: `SqlGuardrailsTests.MixedCaseInsert_Rejected`** — Input `"InSeRt InTo events VALUES (1)"` → `IsValid = false` (case-insensitive match).
+14. **Test: `SqlGuardrailsTests.With_Select_Accepted`** — Input `"WITH cte AS (SELECT 1) SELECT * FROM cte"` → `IsValid = true`.
+15. **Test: `SqlExecutorServiceTests.SimpleSelect_ReturnsRows`** — Set up fixture DuckDB with one events row; call `ExecuteAsync`; assert `State == Succeeded`, `Rows.Count == 1`, `Columns` includes expected column names.
+16. **Test: `SqlExecutorServiceTests.ParameterBinding_Honored`** — Query `"SELECT * FROM events WHERE topic = $topic"` with parameter `topic = "weapons.fire"`; assert returned rows all have `topic == "weapons.fire"`.
+17. **Test: `SqlExecutorServiceTests.DefaultLimitInjected_WhenAbsent`** — Query without LIMIT; check the executed SQL has `LIMIT 100000` appended (inspect via query interceptor or fixture row count).
+18. **Test: `SqlExecutorServiceTests.ExplicitLimit_NotModified`** — Query `"SELECT * FROM events LIMIT 10"` — assert no second LIMIT appended (no syntax error, rows ≤ 10).
+19. **Test: `SqlExecutorServiceTests.Timeout_ReturnsTimeoutState`** — Configure `DefaultTimeoutSeconds = 1`; execute a query that sleeps for 5 seconds (DuckDB `SELECT sleep(5)`); assert `State == Timeout`.
+20. **Test: `SqlExecutorServiceTests.InvalidSql_ReturnsFailedState`** — Query `"SELECT FROM"` (malformed); assert `State == Failed` and `ErrorMessage` is non-empty.
+21. **Test: `SqlSchemaServiceTests.GetAsync_ReturnsTables`** — Build a fixture DuckDB with `events` table; call `GetAsync`; assert `Tables` contains an entry with `Name == "events"` and columns matching the schema.
+22. **Test: `SqlSchemaServiceTests.Cache_SecondCallDoesNotRequery`** — Call `GetAsync` twice; assert the underlying connection is only acquired once (mock `LiveMultiIntervalReader`).
+23. **Test: `SqlSchemaServiceTests.Invalidate_ForcesRefresh`** — Call `GetAsync`, then `InvalidateAsync`, then `GetAsync` again; assert the connection is acquired twice.
+
+---
+
+## TRC-P10-002 — SQL API Endpoints: `/api/sql/execute`, `/api/sql/schema`, `/api/sql/explain`
+
+**Phase:** 10 — SQL Console, Saved Queries, Bundle Library  
+**Design reference:** [tracer_phase10_design.md §4](./tracer_phase10_design.md#4-sql-api-endpoints)
+
+### Scope
+
+**In scope:**
+- `Tracer.WebApi/Endpoints/SqlEndpoints.cs` — `Map(WebApplication app)` static method registering three routes:
+  - `POST /api/sql/execute` — body `SqlExecuteRequestDto`; delegates to `SqlExecutorService`; returns `SqlExecuteResultDto`
+  - `GET /api/sql/schema` — delegates to `SqlSchemaService`; returns `SqlSchemaDto`
+  - `POST /api/sql/explain` — body `SqlExplainRequestDto`; delegates to `SqlExecutorService.ExplainAsync`; returns `SqlExplainResultDto`
+- DTO records in `Tracer.WebApi/Contracts/Dto/`: `SqlExecuteRequestDto`, `SqlExecuteResultDto`, `SqlColumnInfoDto`, `SqlSchemaDto`, `SqlTableInfoDto`, `SqlExplainRequestDto`, `SqlExplainResultDto`
+- `SqlDtoMapper` static class mapping service result types to DTOs
+- Input validation: empty/whitespace `Sql` → HTTP 400 `ProblemDetails`
+- Unit tests in `Tracer.Tests.Unit/WebApi/SqlEndpointsTests.cs`
+
+**Out of scope:** `SqlExecutorService` and `SqlSchemaService` internals (TRC-P10-001), DI wiring (TRC-P10-010), frontend consumption (TRC-P10-011+).
+
+### Constraints
+- Endpoints use `TypedResults` (Minimal API pattern matching Phase 8/9 endpoints).
+- `POST /api/sql/execute` accepts optional `timeoutSeconds` (min 1, max 300) and `rowLimit` (min 1, max 1 000 000) in the request body; values outside ranges are clamped to the configured defaults, not rejected.
+- State `Rejected` (from guardrails) maps to HTTP 200 with `state = "Rejected"` in the body — it is not a 400 — so the frontend can display the rejection message in the result area uniformly.
+- `POST /api/sql/explain`: failure (invalid/forbidden SQL) → HTTP 400 `ProblemDetails` with `detail` = rejection reason.
+- All endpoints decorated with `.WithOpenApi()`.
+
+### Success Conditions
+
+1. **Test: `SqlEndpointsTests.Execute_ValidQuery_Returns200WithResults`** — POST `/api/sql/execute` with `{ "sql": "SELECT 1 AS n" }` → HTTP 200, body `state == "Succeeded"`, `columns[0].name == "n"`, `rows[0][0] == 1`.
+2. **Test: `SqlEndpointsTests.Execute_EmptySql_Returns400`** — POST `/api/sql/execute` with `{ "sql": "" }` → HTTP 400, `ProblemDetails.title` contains "SQL required".
+3. **Test: `SqlEndpointsTests.Execute_WhitespaceSql_Returns400`** — POST `/api/sql/execute` with `{ "sql": "   " }` → HTTP 400.
+4. **Test: `SqlEndpointsTests.Execute_ForbiddenSql_Returns200WithRejectedState`** — POST `/api/sql/execute` with `{ "sql": "DROP TABLE events" }` → HTTP 200, body `state == "Rejected"`, `errorMessage` contains "Forbidden keyword".
+5. **Test: `SqlEndpointsTests.Execute_TimeoutExceeded_Returns200WithTimeoutState`** — Mock `SqlExecutorService` returning a Timeout result → HTTP 200, `state == "Timeout"`.
+6. **Test: `SqlEndpointsTests.Schema_Returns200WithTables`** — GET `/api/sql/schema` → HTTP 200, body has `tables` array with at least `"events"` entry.
+7. **Test: `SqlEndpointsTests.Explain_ValidSql_Returns200WithPlanText`** — POST `/api/sql/explain` with `{ "sql": "SELECT * FROM events" }` → HTTP 200, body `planText` is non-empty string.
+8. **Test: `SqlEndpointsTests.Explain_EmptySql_Returns400`** — POST `/api/sql/explain` with `{ "sql": "" }` → HTTP 400.
+9. **Test: `SqlEndpointsTests.Explain_ForbiddenSql_Returns400`** — POST `/api/sql/explain` with forbidden SQL → HTTP 400 `ProblemDetails`.
+10. **Test: `SqlConsoleIntegrationTests.Execute_SelectCount_CorrectCount`** — Set up a bundle with 50 known events; POST `/api/sql/execute` with `SELECT COUNT(*) AS n FROM events`; assert `rows[0][0] == 50`.
+11. **Test: `SqlConsoleIntegrationTests.Execute_ParameterizedQuery_BindsCorrectly`** — POST `/api/sql/execute` with parameterized query and `parameters: { "topic": "weapons.fire" }`; assert only events with that topic returned.
+12. **Test: `SqlConsoleIntegrationTests.Schema_ReturnsExpectedColumns`** — GET `/api/sql/schema` against a live bundle; assert the `events` table entry contains columns `topic`, `event_id`, `publish_wallclock`, `publisher_node`.
+
+---
+
+## TRC-P10-003 — Saved Queries Data Store
+
+**Phase:** 10 — SQL Console, Saved Queries, Bundle Library  
+**Design reference:** [tracer_phase10_design.md §6](./tracer_phase10_design.md#6-saved-queries)
+
+### Scope
+
+**In scope:**
+- New project `Tracer.Storage.SavedQueries/Tracer.Storage.SavedQueries.csproj`
+- `SavedQueryRecord` record with fields: `SavedQueryId` (ULID string), `Label`, `Description`, `Sql`, `Parameters` (`IReadOnlyList<SavedQueryParameter>`), `Tags`, `IsBuiltIn`, `IsFavorite`, `Author`, `CreatedAtUtc`, `LastRunAtUtc`, `RunCount`
+- `SavedQueryParameter` record: `Name`, `DuckType`, `DefaultValueText`, `Description`
+- `ISavedQueryStore` interface: `ListAsync(SavedQueryFilter, CancellationToken)`, `GetAsync(string id, CancellationToken)`, `CreateAsync(SavedQueryRecord, CancellationToken)`, `UpdateAsync(SavedQueryRecord, CancellationToken)`, `DeleteAsync(string id, CancellationToken)`, `IncrementRunCountAsync(string id, CancellationToken)`
+- `SavedQueryFilter` record: `IsBuiltIn?`, `IsFavorite?`, `Tag?`, `Author?`
+- `SqliteSavedQueryStore` implementing `ISavedQueryStore` — adds `saved_queries` table to the existing Phase 8 `annotations.db` SQLite file on construction
+- `Schema/SavedQueriesSchema.cs` — DDL constants: table creation SQL, index on `label`, index on `is_favorite`
+- `UpdateAsync` returns `false` (or throws) when `IsBuiltIn = true`; `DeleteAsync` same
+- Unit tests in `Tracer.Tests.Unit/` (or integration tests in `SavedQueriesRoundTripTests.cs`)
+
+**Out of scope:** API endpoints (TRC-P10-004), built-in query seeding (TRC-P10-005), DI wiring (TRC-P10-010).
+
+### Constraints
+- Uses the same SQLite connection/file as Phase 8 `AnnotationStore` (shares `annotations.db`); migration logic applies `CREATE TABLE IF NOT EXISTS` at startup.
+- `parameters_json` and `tags_json` columns store JSON arrays; serialized/deserialized via `System.Text.Json`.
+- ULID generation for new IDs (use `Ulid.NewUlid().ToString()`).
+- `UpdateAsync` on a built-in query: throws `InvalidOperationException("Built-in queries are read-only; clone first")`.
+- `DeleteAsync` on a built-in query: throws `InvalidOperationException("Built-in queries are read-only; clone first")`.
+- `ListAsync` with no filter criteria returns all queries; each filter field ANDs with others when non-null.
+
+### Success Conditions
+
+1. **Test: `SavedQueriesRoundTripTests.Create_ThenList_Appears`** — Create a `SavedQueryRecord`; call `ListAsync(new SavedQueryFilter())`; assert record appears with correct `Label` and `Sql`.
+2. **Test: `SavedQueriesRoundTripTests.Update_PersistsChanges`** — Create record; call `UpdateAsync` with changed `Label`; call `GetAsync`; assert new label returned.
+3. **Test: `SavedQueriesRoundTripTests.Delete_RemovesRecord`** — Create record; call `DeleteAsync`; call `ListAsync`; assert record absent.
+4. **Test: `SavedQueriesRoundTripTests.UpdateBuiltIn_Throws`** — Create record with `IsBuiltIn = true`; call `UpdateAsync`; assert `InvalidOperationException` thrown.
+5. **Test: `SavedQueriesRoundTripTests.DeleteBuiltIn_Throws`** — Create built-in record; call `DeleteAsync`; assert `InvalidOperationException`.
+6. **Test: `SavedQueriesRoundTripTests.FilterByFavorite_ReturnsOnlyFavorites`** — Create two records (one favorite, one not); filter `IsFavorite = true`; assert only the favorite returned.
+7. **Test: `SavedQueriesRoundTripTests.FilterByTag_ReturnsMatchingOnly`** — Create records with tags `["latency"]` and `["overview"]`; filter `Tag = "latency"`; assert only the latency record returned.
+8. **Test: `SavedQueriesRoundTripTests.IncrementRunCount_UpdatesCountAndTimestamp`** — Create record with `RunCount = 0`; call `IncrementRunCountAsync`; reload; assert `RunCount == 1` and `LastRunAtUtc` is non-null and recent.
+9. **Test: `SavedQueriesRoundTripTests.Parameters_RoundTrip`** — Create record with two `SavedQueryParameter` entries; reload from DB; assert both parameters present with correct `Name`, `DuckType`, `DefaultValueText`.
+10. **Test: `SavedQueriesRoundTripTests.Tags_RoundTrip`** — Create record with `Tags = ["a", "b", "c"]`; reload; assert tags list equals original.
+11. **Test: `SavedQueriesRoundTripTests.Idempotent_SchemaCreation`** — Call store constructor twice against same DB file; no exception; list returns expected rows.
+
+---
+
+## TRC-P10-004 — Saved Queries API Endpoints
+
+**Phase:** 10 — SQL Console, Saved Queries, Bundle Library  
+**Design reference:** [tracer_phase10_design.md §6.4](./tracer_phase10_design.md#64-saved-query-endpoints)
+
+### Scope
+
+**In scope:**
+- `Tracer.WebApi/Endpoints/SavedQueriesEndpoints.cs` — `Map(WebApplication app)` registering:
+  - `GET /api/saved-queries` — query params: `tag`, `author`, `favorite` (bool), `builtIn` (bool); returns `IReadOnlyList<SavedQueryDto>`
+  - `GET /api/saved-queries/{id}` — returns single `SavedQueryDto` or 404
+  - `POST /api/saved-queries` — body `CreateSavedQueryDto`; returns 201 with created record
+  - `PUT /api/saved-queries/{id}` — body `UpdateSavedQueryDto`; returns 200 or 405 for built-ins
+  - `DELETE /api/saved-queries/{id}` — returns 204 or 405 for built-ins
+  - `POST /api/saved-queries/{id}/favorite` — toggles `IsFavorite`; returns 200
+  - `POST /api/saved-queries/{id}/clone` — clones to a new user-editable record with fresh ULID; returns 201 with clone
+  - `POST /api/saved-queries/{id}/run` — calls `IncrementRunCountAsync`; returns 204
+- `SavedQueryDto` and related DTOs in `Tracer.WebApi/Contracts/Dto/SavedQueryDto.cs`
+- Unit tests in `Tracer.Tests.Unit/WebApi/SavedQueryEndpointsTests.cs`
+
+**Out of scope:** `ISavedQueryStore` implementation (TRC-P10-003), built-in seeding (TRC-P10-005), DI wiring (TRC-P10-010).
+
+### Constraints
+- `PUT` and `DELETE` on a built-in query: return HTTP 405 with `ProblemDetails` detail = `"Built-in queries are read-only; clone first"`.
+- `POST /api/saved-queries/{id}/clone` copies all fields (label, description, sql, parameters, tags) but sets `IsBuiltIn = false`, `IsFavorite = false`, generates a new ULID, sets `CreatedAtUtc = UtcNow`, `RunCount = 0`, `Author` from the clone request body (optional).
+- Empty `label` on create/update → HTTP 400.
+- Non-existent `{id}` on get/put/delete/clone → HTTP 404.
+- All endpoints `.WithOpenApi()`.
+
+### Success Conditions
+
+1. **Test: `SavedQueryEndpointsTests.Get_All_Returns200`** — Seed two records; GET `/api/saved-queries`; assert HTTP 200, array length ≥ 2.
+2. **Test: `SavedQueryEndpointsTests.Get_FilterByFavorite_ReturnsSubset`** — Seed one favorite, one not; GET `/api/saved-queries?favorite=true`; assert count == 1.
+3. **Test: `SavedQueryEndpointsTests.Get_ById_Returns200`** — Seed one record; GET `/api/saved-queries/{id}`; assert 200 with correct `label`.
+4. **Test: `SavedQueryEndpointsTests.Get_ById_NotFound_Returns404`** — GET `/api/saved-queries/nonexistent-id`; assert HTTP 404.
+5. **Test: `SavedQueryEndpointsTests.Post_ValidRecord_Returns201`** — POST `/api/saved-queries` with valid DTO; assert HTTP 201, response `savedQueryId` is non-empty ULID.
+6. **Test: `SavedQueryEndpointsTests.Post_EmptyLabel_Returns400`** — POST with `label = ""`; assert HTTP 400.
+7. **Test: `SavedQueryEndpointsTests.Put_UserRecord_Returns200`** — Create user record; PUT with updated label; assert HTTP 200 and GET returns new label.
+8. **Test: `SavedQueryEndpointsTests.Put_BuiltInRecord_Returns405`** — Create built-in record; PUT; assert HTTP 405, `ProblemDetails.detail` contains "Built-in".
+9. **Test: `SavedQueryEndpointsTests.Delete_UserRecord_Returns204`** — Create user record; DELETE; assert HTTP 204; subsequent GET returns 404.
+10. **Test: `SavedQueryEndpointsTests.Delete_BuiltInRecord_Returns405`** — Create built-in; DELETE; assert HTTP 405.
+11. **Test: `SavedQueryEndpointsTests.Clone_BuiltIn_Returns201EditableCopy`** — Seed built-in; POST `/api/saved-queries/{id}/clone`; assert HTTP 201; new record `isBuiltIn == false`, `savedQueryId` differs from original; GET original built-in still present.
+12. **Test: `SavedQueryEndpointsTests.Run_IncrementRunCount`** — Seed record with `runCount = 0`; POST `/api/saved-queries/{id}/run`; GET record; assert `runCount == 1`.
+
+---
+
+## TRC-P10-005 — Built-In Saved Queries Seeding
+
+**Phase:** 10 — SQL Console, Saved Queries, Bundle Library  
+**Design reference:** [tracer_phase10_design.md §6.3](./tracer_phase10_design.md#63-built-in-queries)
+
+### Scope
+
+**In scope:**
+- `Tracer.Storage.SavedQueries/BuiltIn/builtin-queries.json` embedded resource — exactly 5 built-in queries:
+  1. `builtin-top-topics-by-volume` — top topics by event count (`$from`, `$to` parameters, tags: `["overview", "topics"]`)
+  2. `builtin-events-by-trace` — events on a trace (`$trace_id` parameter, tags: `["traces", "lineage"]`)
+  3. `builtin-event-counts-per-node` — volume per publisher node (`$from`, `$to`, tags: `["overview", "nodes"]`)
+  4. `builtin-latency-distribution-by-topic` — per-topic p50/p99 latency, bundle-only (`$from`, `$to`, tags: `["latency", "performance"]`)
+  5. `builtin-entity-events` — all events for an entity (`$entity_id`, `$from`, `$to`, tags: `["entities"]`)
+- `Tracer.Storage.SavedQueries/BuiltIn/BuiltInLoader.cs` — `EnsureLoadedAsync(ISavedQueryStore, CancellationToken)`: reads the embedded JSON, skips IDs already in the store, inserts missing ones as `IsBuiltIn = true`; idempotent on repeated calls
+- The JSON is embedded as a manifest resource via the `.csproj`
+- Unit tests via `BuiltInQueriesServiceTests.cs`
+
+**Out of scope:** API endpoints (TRC-P10-004), DI call site for `EnsureLoadedAsync` (TRC-P10-010).
+
+### Constraints
+- `EnsureLoadedAsync` must be idempotent: calling it twice inserts each built-in at most once (checks by ID, not label).
+- All built-in query SQL templates must pass `SqlGuardrails.Validate` (only SELECT/WITH allowed).
+- Each built-in has at least one parameter with `DefaultValueText` set; `session_start` and `session_end` are valid defaults resolved frontend-side.
+- `builtin-latency-distribution-by-topic` uses `APPROX_QUANTILE` and `EXTRACT(EPOCH ...)` — valid DuckDB SELECT syntax.
+
+### Success Conditions
+
+1. **Test: `BuiltInQueriesServiceTests.FirstLoad_InsertsAllFiveBuiltIns`** — Empty store; call `EnsureLoadedAsync`; call `ListAsync(IsBuiltIn = true)`; assert count == 5.
+2. **Test: `BuiltInQueriesServiceTests.SecondLoad_DoesNotDuplicate`** — Call `EnsureLoadedAsync` twice; list built-ins; assert count still == 5.
+3. **Test: `BuiltInQueriesServiceTests.AllBuiltIns_MarkedIsBuiltInTrue`** — After seeding, every record from `ListAsync(IsBuiltIn = true)` has `IsBuiltIn = true`.
+4. **Test: `BuiltInQueriesServiceTests.AllBuiltInSql_PassesGuardrails`** — For each loaded built-in, call `SqlGuardrails.Validate(record.Sql)`; assert all return `IsValid = true`.
+5. **Test: `BuiltInQueriesServiceTests.BuiltInTopTopics_HasExpectedParams`** — Load built-ins; find `builtin-top-topics-by-volume`; assert `Parameters` contains entries with `Name == "from"` and `Name == "to"`.
+6. **Test: `BuiltInQueriesServiceTests.BuiltInEventsByTrace_HasTraceIdParam`** — Find `builtin-events-by-trace`; assert single parameter with `Name == "trace_id"` and `DuckType == "UBIGINT"`.
+7. **Test: `BuiltInQueriesServiceTests.BuiltInLatency_HasLatencyTag`** — Find `builtin-latency-distribution-by-topic`; assert `Tags` contains `"latency"`.
+8. **Test: `BuiltInQueriesServiceTests.PartialExistingLoad_OnlyInsertsNewOnes`** — Pre-seed 2 of the 5 built-in IDs manually; call `EnsureLoadedAsync`; assert total built-ins == 5 (not 7).
+
+---
+
+## TRC-P10-006 — Bundle Library Metadata Store: `BundleLibraryService`
+
+**Phase:** 10 — SQL Console, Saved Queries, Bundle Library  
+**Design reference:** [tracer_phase10_design.md §7.3](./tracer_phase10_design.md#73-bundlelibraryservice)
+
+### Scope
+
+**In scope:**
+- `Tracer.WebApi/Queries/BundleLibraryService.cs` — file-system-backed metadata service:
+  - `ListAsync(CancellationToken)` — enumerates `_bundlesRoot` directories; for each, reads immutable `metadata.json` (aggregator-written, Phase 4) and `bundle-metadata.json` (user-editable); combines into `BundleLibraryEntry` list; skips directories missing `metadata.json`
+  - `UpdateMetadataAsync(string bundleId, BundleMetadataUpdate, CancellationToken)` — writes/updates `bundle-metadata.json` in the bundle directory; never touches `metadata.json`
+  - `RecordOpenedAsync(string bundleId, CancellationToken)` — convenience: sets `LastOpenedAtUtc = UtcNow`
+  - `DeleteAsync(string bundleId, CancellationToken)` — removes the bundle directory recursively
+- Record types: `BundleLibraryEntry`, `BundleUserMetadata`, `BundleMetadataUpdate`
+- `ComputeDirectorySize` — sums all file lengths recursively
+- Unit tests in `Tracer.Tests.Unit/WebApi/BundleLibraryServiceTests.cs`; integration tests in `BundleLibraryRoundTripTests.cs`
+
+**Out of scope:** HTTP endpoints (TRC-P10-007), import/export (TRC-P10-008), DI wiring (TRC-P10-010), frontend (TRC-P10-011+).
+
+### Constraints
+- `bundle-metadata.json` and `metadata.json` are separate files. `UpdateMetadataAsync` MUST NOT write to `metadata.json`.
+- `bundle-metadata.json` is a JSON-serialized `BundleUserMetadata`; missing file is treated as empty/default metadata.
+- `ListAsync` on a non-existent `_bundlesRoot` returns an empty list (no exception).
+- `DeleteAsync` returns `false` if the bundle directory does not exist.
+- `SizeBytes` includes all files under the bundle directory, including both metadata files.
+- Partial `BundleMetadataUpdate` (null fields) preserves existing values — a `null` Tags does not overwrite the existing tags array.
+
+### Success Conditions
+
+1. **Test: `BundleLibraryServiceTests.List_NoBundlesRoot_ReturnsEmpty`** — Configure service with a non-existent path; `ListAsync` returns empty list without exception.
+2. **Test: `BundleLibraryServiceTests.List_BundleWithoutUserMetadata_ReturnsNullLabelAndEmptyTags`** — Create bundle dir with only `metadata.json`; assert returned entry has `Label == null`, `Tags.Count == 0`, `IsArchived == false`.
+3. **Test: `BundleLibraryServiceTests.List_BundleWithUserMetadata_ReturnsMergedEntry`** — Create bundle dir with `metadata.json` and `bundle-metadata.json` (label="My Bundle", tags=["test"]); assert returned entry has `Label == "My Bundle"` and tags contains "test".
+4. **Test: `BundleLibraryServiceTests.Update_WritesToBundleMetadataJson`** — `UpdateMetadataAsync` with label="Renamed"; reload `bundle-metadata.json`; assert label matches.
+5. **Test: `BundleLibraryServiceTests.Update_DoesNotTouchAggregatorMetadata`** — `UpdateMetadataAsync`; assert `metadata.json` byte-for-byte unchanged.
+6. **Test: `BundleLibraryServiceTests.Update_PartialUpdate_PreservesExistingFields`** — Set label="Existing", tags=["a"]; call `UpdateMetadataAsync` with only `Description = "desc"` (other fields null); reload; assert label still "Existing", tags still ["a"], description now "desc".
+7. **Test: `BundleLibraryServiceTests.Delete_RemovesBundleDirectory`** — Create bundle dir; `DeleteAsync`; assert directory no longer exists; returns `true`.
+8. **Test: `BundleLibraryServiceTests.Delete_NonExistent_ReturnsFalse`** — `DeleteAsync("no-such-bundle")`; assert returns `false`.
+9. **Test: `BundleLibraryServiceTests.SizeBytes_IncludesNestedFiles`** — Create bundle dir with two files totalling 1000 bytes; assert returned `SizeBytes == 1000`.
+10. **Test: `BundleLibraryRoundTripTests.CreateBundle_ListUpdate_Archive_Persist`** — Build a bundle via test harness; list; update label and tags; reload; assert persisted; archive (set `IsArchived = true`); list again; assert entry present with `IsArchived = true`.
+
+---
+
+## TRC-P10-007 — Bundle Library API Endpoints
+
+**Phase:** 10 — SQL Console, Saved Queries, Bundle Library  
+**Design reference:** [tracer_phase10_design.md §7.4](./tracer_phase10_design.md#74-endpoint-extension)
+
+### Scope
+
+**In scope:**
+- `Tracer.WebApi/Endpoints/BundleLibraryEndpoints.cs` — extends Phase 4 bundle endpoints by registering:
+  - `GET /api/bundles/library` — returns all `BundleLibraryEntry` records as `BundleLibraryEntryDto[]`; optional query params `archived` (bool, default false), `tag`, `sortBy` (`builtAt|sessionStart|size|label`), `desc` (bool)
+  - `PUT /api/bundles/{id}/metadata` — body `{ label?, description?, tags?, archived? }`; 200 or 404
+  - `POST /api/bundles/{id}/opened` — records `LastOpenedAtUtc`; 204 or 404
+  - `DELETE /api/bundles/{id}` — deletes bundle directory; 204 or 404
+  - `POST /api/bundles/import` — multipart upload of `.bundle.zip`; delegates to `BundleImportService` (TRC-P10-008); 201 with created bundle entry, or 409 Conflict if bundle already exists, or 400 if invalid zip
+- `BundleLibraryEntryDto` in `Tracer.WebApi/Contracts/Dto/BundleLibraryEntryDto.cs`
+- Unit tests in `Tracer.Tests.Unit/WebApi/BundleLibraryEndpointsTests.cs` (via mock `BundleLibraryService` and `BundleImportService`)
+
+**Out of scope:** `BundleLibraryService` internals (TRC-P10-006), export endpoint (lives in TRC-P10-008 alongside `BundleExportService`), DI wiring (TRC-P10-010).
+
+### Constraints
+- `GET /api/bundles/library` filters `isArchived` server-side when `archived=false` (default) — archived bundles excluded from default listing.
+- `GET /api/bundles/library?archived=true` returns ALL bundles including archived.
+- `DELETE /api/bundles/{id}` is destructive and irreversible — no soft-delete.
+- `POST /api/bundles/import` stream is extracted by `BundleImportService`; this endpoint only handles HTTP binding and delegates.
+- All endpoints `.WithOpenApi()`.
+
+### Success Conditions
+
+1. **Test: `BundleLibraryEndpointsTests.GetLibrary_DefaultExcludesArchived`** — Two bundles: one archived, one not; GET `/api/bundles/library`; assert only non-archived returned.
+2. **Test: `BundleLibraryEndpointsTests.GetLibrary_WithArchivedTrue_ReturnsBoth`** — GET `/api/bundles/library?archived=true`; assert both returned.
+3. **Test: `BundleLibraryEndpointsTests.GetLibrary_FilterByTag_ReturnsSubset`** — Bundle A tags=["prod"], Bundle B tags=["dev"]; GET `/api/bundles/library?tag=prod`; assert only A returned.
+4. **Test: `BundleLibraryEndpointsTests.GetLibrary_SortBySize_Descending`** — Two bundles with different sizes; GET `/api/bundles/library?sortBy=size&desc=true`; assert larger bundle first.
+5. **Test: `BundleLibraryEndpointsTests.PutMetadata_Returns200`** — PUT `/api/bundles/{id}/metadata` with `{ "label": "New" }`; assert HTTP 200; reload; assert label updated.
+6. **Test: `BundleLibraryEndpointsTests.PutMetadata_NotFound_Returns404`** — PUT `/api/bundles/nonexistent/metadata`; assert HTTP 404.
+7. **Test: `BundleLibraryEndpointsTests.PostOpened_Returns204`** — POST `/api/bundles/{id}/opened`; assert HTTP 204; reload entry; assert `lastOpenedAtUtc` is recent.
+8. **Test: `BundleLibraryEndpointsTests.Delete_Returns204`** — DELETE `/api/bundles/{id}`; assert HTTP 204; GET library; assert bundle absent.
+9. **Test: `BundleLibraryEndpointsTests.Delete_NotFound_Returns404`** — DELETE `/api/bundles/nonexistent`; assert HTTP 404.
+10. **Test: `BundleLibraryEndpointsTests.Import_ValidZip_Returns201`** — POST `/api/bundles/import` with a valid bundle zip; assert HTTP 201, response contains `bundleId`.
+11. **Test: `BundleLibraryEndpointsTests.Import_DuplicateBundle_Returns409`** — Import same zip twice; assert second import returns HTTP 409.
+12. **Test: `BundleLibraryEndpointsTests.Import_InvalidZip_Returns400`** — POST with a corrupt/empty zip; assert HTTP 400.
+
+---
+
+## TRC-P10-008 — Bundle Import/Export Service
+
+**Phase:** 10 — SQL Console, Saved Queries, Bundle Library  
+**Design reference:** [tracer_phase10_design.md §7.4](./tracer_phase10_design.md#74-endpoint-extension); [§10 risks (zip-slip)](./tracer_phase10_design.md#10-phase-10-risks-and-mitigations)
+
+### Scope
+
+**In scope:**
+- `Tracer.WebApi/Queries/BundleExportService.cs`:
+  - `ExportAsync(string bundleId, Stream destination, CancellationToken ct)` — streams a zip archive of the entire bundle directory to `destination`; uses `System.IO.Compression.ZipArchive`; entries use relative paths (no leading slash); returns `false` if bundle not found
+  - `GET /api/bundles/{id}/download` endpoint registered in `BundleLibraryEndpoints.cs` (or its own endpoints file) — sets `Content-Type: application/zip`, `Content-Disposition: attachment; filename="{bundleId}.bundle.zip"`, streams via `ExportAsync`
+- `Tracer.WebApi/Queries/BundleImportService.cs`:
+  - `ImportAsync(Stream zipStream, CancellationToken ct)` — extracts the zip to `_bundlesRoot/{bundleId}/`, validates each entry (no `..` path components, no absolute paths, only expected file types), calls Phase 4's bundle validator to check `metadata.json` integrity; returns `BundleImportResult` with the new `bundleId` or rejection reason
+  - Zip-slip defense: reject any `ZipArchiveEntry.FullName` containing `..` or starting with `/` or `\`
+  - Duplicate detection: if a directory with the extracted `bundleId` already exists in `_bundlesRoot`, return `AlreadyExists` result
+- `BundleImportResult` record: `Success`, `BundleId?`, `AlreadyExists`, `InvalidFormat`, `ErrorMessage?`
+- Unit tests in `Tracer.Tests.Unit/WebApi/BundleLibraryServiceTests.cs` (export + import)
+
+**Out of scope:** HTTP endpoint binding (TRC-P10-007), `BundleLibraryService` listing (TRC-P10-006), DI wiring (TRC-P10-010).
+
+### Constraints
+- Export streams directly to the HTTP response body — no temp file on disk during export.
+- Import writes to a temp subdirectory first; only renames to the final bundle directory after successful validation (atomic move).
+- The Phase 4 bundle validator (`BundleValidator`) is called on the extracted `metadata.json`; if validation fails, the temp directory is deleted and `InvalidFormat` is returned.
+- Allowed zip entry extensions: `.parquet`, `.json`, `.db` — any other extension causes `InvalidFormat`.
+- Maximum import zip size: 10 GB (configurable); exceeding it returns `InvalidFormat` immediately.
+
+### Success Conditions
+
+1. **Test: `BundleExportServiceTests.Export_ProducesReadableZip`** — Build a bundle with known files; call `ExportAsync` to a `MemoryStream`; open resulting zip; assert all bundle files present with relative paths.
+2. **Test: `BundleExportServiceTests.Export_NotFound_ReturnsFalse`** — Call `ExportAsync` with non-existent bundleId; assert returns `false`.
+3. **Test: `BundleExportServiceTests.Export_NoAbsolutePaths`** — Inspect all zip entry names; assert none start with `/`, `\`, or a drive letter (`C:`).
+4. **Test: `BundleImportServiceTests.Import_ValidZip_Succeeds`** — Export a bundle, then import the zip; assert `Success = true`, `BundleId` matches original; directory exists under `_bundlesRoot`.
+5. **Test: `BundleImportServiceTests.Import_Duplicate_ReturnsAlreadyExists`** — Import the same zip twice; assert second call returns `AlreadyExists = true`.
+6. **Test: `BundleImportServiceTests.Import_ZipSlash_Rejected`** — Craft a zip with an entry named `../escape/evil.json`; assert `InvalidFormat = true`, temp dir cleaned up.
+7. **Test: `BundleImportServiceTests.Import_UnexpectedExtension_Rejected`** — Craft a zip with a `.exe` entry; assert `InvalidFormat = true`.
+8. **Test: `BundleImportServiceTests.Import_InvalidMetadata_Rejected`** — Craft a zip with a corrupt `metadata.json`; assert `InvalidFormat = true` (Phase 4 validator rejects), temp dir cleaned up.
+9. **Test: `BundleImportServiceTests.Import_AtomicWrite_TempCleanedOnFailure`** — Simulate a validator failure mid-import; assert no partial directory remains under `_bundlesRoot`.
+10. **Test: `BundleLibraryRoundTripTests.ExportThenImport_RoundTrip`** — Build bundle, export to zip, delete bundle directory, import zip; list library; assert bundle reappears with correct session metadata.
+
+---
+
+## TRC-P10-009 — "Show SQL for This View" Backend Template Endpoint
+
+**Phase:** 10 — SQL Console, Saved Queries, Bundle Library  
+**Design reference:** [tracer_phase10_design.md §8](./tracer_phase10_design.md#8-cross-view-show-sql-for-this-view-affordance)
+
+### Scope
+
+**In scope:**
+- `GET /api/sql/view-template` — query params: `view` (enum: `timeline`, `entity-history`, `causal`, `latency`, `gaps`, `topology`), plus view-specific filter params matching each view's existing query model
+- `SqlEndpoints.cs` extended with `HandleViewTemplateAsync` handler (or a new `ViewTemplateEndpoints.cs` if cleaner)
+- Per-view SQL template generators as a backend parallel to the frontend `showSqlGenerators.ts` — a `ViewSqlTemplateService` that maps `(view, filter params)` → parameterized SQL string. Uses the same service methods already implemented (Phase 5–9) to derive filter clauses:
+  - `timeline` → `SELECT publish_wallclock, publisher_node, topic, event_id FROM events WHERE [time range] [AND topic=?] [AND publisher_node=?] ... ORDER BY publish_wallclock LIMIT 1000`
+  - `entity-history` → `SELECT event_id, topic, publish_wallclock FROM events WHERE entity_id = $entity_id AND [time range] ORDER BY publish_wallclock`
+  - `causal` → `SELECT event_id, publisher_node, topic, publish_wallclock FROM events WHERE trace_id = $trace_id ORDER BY publish_wallclock`
+  - `latency` → mirrors the `LatencyDistributionService` query pattern (APPROX_QUANTILE grouping)
+  - `gaps` → mirrors `GapDetectionService` query pattern
+  - `topology` → mirrors `TopologyService` query pattern
+- Response: `{ sql: string, description: string }` where `description` is a human-readable explanation of what the SQL computes
+- Unknown `view` value → HTTP 400
+
+**Out of scope:** Frontend `ShowSqlButton.vue` (TRC-P10-011+), SQL execution (TRC-P10-001/002), DI wiring (TRC-P10-010). Note: the frontend generates SQL client-side from §8.1 generators; this backend endpoint is the authoritative version for cross-view pivots and testing.
+
+### Constraints
+- The endpoint is purely a template generator — it does NOT execute the SQL.
+- Generated SQL must pass `SqlGuardrails.Validate` (it is SELECT-only by definition).
+- Parameter values from the query string are used to construct literal SQL clauses (with proper escaping via `sqlEscape` — replace `'` with `''` in string values) — NOT bound as DuckDB parameters, since this is returning SQL text.
+- Time range params (`from`, `to`) parsed as ISO 8601; invalid format → 400.
+
+### Success Conditions
+
+1. **Test: `ViewTemplateEndpointsTests.Timeline_Returns200WithSelectStatement`** — GET `/api/sql/view-template?view=timeline&from=2026-01-01T00:00:00Z&to=2026-01-01T01:00:00Z`; assert HTTP 200, `sql` starts with `SELECT`, contains `FROM events`, contains the time range.
+2. **Test: `ViewTemplateEndpointsTests.Timeline_WithTopic_IncludesTopicClause`** — Add `&topic=weapons.fire`; assert returned SQL contains `topic = 'weapons.fire'`.
+3. **Test: `ViewTemplateEndpointsTests.EntityHistory_Returns200`** — GET with `view=entity-history&entityId=some-entity`; assert `sql` contains `entity_id`.
+4. **Test: `ViewTemplateEndpointsTests.Causal_Returns200`** — GET with `view=causal&traceId=0xABCDEF`; assert `sql` contains `trace_id`.
+5. **Test: `ViewTemplateEndpointsTests.Latency_Returns200`** — GET with `view=latency&from=...&to=...`; assert `sql` contains `APPROX_QUANTILE`.
+6. **Test: `ViewTemplateEndpointsTests.UnknownView_Returns400`** — GET with `view=nonexistent`; assert HTTP 400.
+7. **Test: `ViewTemplateEndpointsTests.GeneratedSql_PassesGuardrails`** — For all six view types, call the endpoint and pass the returned SQL to `SqlGuardrails.Validate`; assert all return `IsValid = true`.
+8. **Test: `ViewTemplateEndpointsTests.SqlInjection_InTopic_IsEscaped`** — GET with `topic='; DROP TABLE events; --`; assert returned SQL contains `''` (escaped single quote), does NOT contain `DROP`.
+9. **Test: `ViewTemplateEndpointsTests.InvalidTimeRange_Returns400`** — GET with `from=not-a-date`; assert HTTP 400.
+
+---
+
+## TRC-P10-010 — Phase 10 Wiring and DI
+
+**Phase:** 10 — SQL Console, Saved Queries, Bundle Library  
+**Design reference:** [tracer_phase10_design.md §2](./tracer_phase10_design.md#2-project-layout-additions); [§4.4](./tracer_phase10_design.md#44-wiring)
+
+### Scope
+
+**In scope:**
+- Update `Tracer.WebApi` project file to reference `Tracer.Storage.SavedQueries`
+- `ObserverHostBuilder.cs` DI registrations:
+  - `AddSingleton<SqlExecutorService>()`
+  - `AddSingleton<SqlSchemaService>()`
+  - `AddSingleton(new SqlExecutorConfig { DefaultTimeoutSeconds = 30, DefaultMaxRows = 100_000, MaxMemoryMb = 1024 })`
+  - `AddSingleton<ISavedQueryStore, SqliteSavedQueryStore>()` (reuses existing `annotations.db` path)
+  - `AddSingleton<BundleLibraryService>()` (bound to configured bundles root path)
+  - `AddSingleton<BundleExportService>()`
+  - `AddSingleton<BundleImportService>()`
+  - `AddSingleton<ViewSqlTemplateService>()`
+- `OfflineViewerHostBuilder.cs` — same registrations (shared code path or duplication as appropriate per existing pattern)
+- `ConfigureMiddleware` (or app build step):
+  - `SqlEndpoints.Map(app)` including `/api/sql/view-template`
+  - `SavedQueriesEndpoints.Map(app)`
+  - `BundleLibraryEndpoints.Map(app)`
+- `BuiltInLoader.EnsureLoadedAsync(store, ct)` called during `IHostedService` startup (or `app.Lifetime.ApplicationStarted`)
+- `SqlSchemaService.InvalidateAsync()` wired to `IntervalSetTracker.SetChanged` event (Phase 5)
+- Smoke test: `dotnet build Tracer.sln` succeeds; `GET /api/sql/schema` reachable; `GET /api/bundles/library` reachable; `GET /api/saved-queries` returns built-in queries on fresh start
+
+**Out of scope:** All service/endpoint implementations (TRC-P10-001 through TRC-P10-009), frontend routing (TRC-P10-011+).
+
+### Constraints
+- `SqlExecutorConfig` values must be overridable via `appsettings.json` (bind from `"SqlExecutor"` config section; DI registers as `IOptions<SqlExecutorConfig>` or direct singleton with bound values).
+- `BuiltInLoader.EnsureLoadedAsync` must run before the first HTTP request is served — use `IHostedService` or `app.MapGet(...).WithOrder(-1)` startup hook.
+- If `ISavedQueryStore` fails to initialize (e.g., DB file locked), the application must log the error and fail fast rather than continue with a null store.
+- `BundleLibraryService` is configured with the same bundles root used by the aggregator (Phase 4); this path comes from `appsettings.json` `"Bundles:RootPath"`.
+
+### Success Conditions
+
+1. **Test: `WiringTests.ObserverBuild_AllPhase10ServicesResolvable`** — Build the Observer DI container in a test; resolve `SqlExecutorService`, `SqlSchemaService`, `ISavedQueryStore`, `BundleLibraryService`, `BundleExportService`, `BundleImportService`; assert no `InvalidOperationException`.
+2. **Test: `WiringTests.OfflineViewerBuild_AllPhase10ServicesResolvable`** — Same as above for the OfflineViewer DI container.
+3. **Test: `WiringTests.BuiltInLoader_RunsOnStartup_QueriesPresent`** — Start the Observer (in-process test server); GET `/api/saved-queries?builtIn=true`; assert at least 5 results.
+4. **Test: `WiringTests.SqlSchema_InvalidatedOnIntervalChange`** — Get schema (populate cache); fire `IntervalSetTracker.SetChanged`; get schema again; assert second call re-queries (cache miss — verify via call count mock or log message).
+5. **Test: `WiringTests.SqlExecutorConfig_OverridableFromConfig`** — Start with `appsettings.json` containing `"SqlExecutor": { "DefaultTimeoutSeconds": 60 }`; resolve `SqlExecutorConfig`; assert `DefaultTimeoutSeconds == 60`.
+6. **Test: `WiringTests.OpenApi_ContainsNewEndpoints`** — GET `/openapi/v1.json` (or equivalent); assert paths include `/api/sql/execute`, `/api/sql/schema`, `/api/sql/explain`, `/api/saved-queries`, `/api/bundles/library`.
+7. **Test: `WiringTests.GetBundleLibrary_EmptyBundlesRoot_Returns200EmptyArray`** — Start server with empty bundles root; GET `/api/bundles/library`; assert HTTP 200 with empty `entries` array.
+8. **Test: `WiringTests.GetSavedQueries_FreshStart_ReturnsBuiltIns`** — Fresh `annotations.db`; GET `/api/saved-queries`; assert response contains `label == "Top topics by event count"`.
+
+---
+
+*(frontend tasks TRC-P10-011+ to be appended)*
+
+---
+
+## TRC-P10-011 — `SqlConsoleView.vue` — Editor and Result Table
+
+**Phase:** 10 — SQL Console, Saved Queries, Bundle Library  
+**Design reference:** [tracer_phase10_design.md §5](./tracer_phase10_design.md#5-sql-console-frontend) — §5.1 SqlConsoleView Layout, §5.2 SqlEditor.vue, §5.3 SqlConsoleView.vue, §5.4 SqlResultTable
+
+### Scope
+**In scope:**
+- `SqlConsoleView.vue` registered at route `/v/sql/:sessionId`
+- `SqlEditor.vue` wrapping CodeMirror 6 (`@codemirror/lang-sql`, `@codemirror/autocomplete`) with SQL syntax highlighting, schema-aware autocomplete (tables and columns from `/api/sql/schema`), and `Cmd+Enter` / `Ctrl+Enter` execution shortcut
+- `SchemaPanel.vue` — collapsible left sidebar listing queryable tables and their columns; clicking a table name or column name inserts text at the current editor cursor
+- History sidebar — the last 50 queries run in the session, persisted in `localStorage` under key `tracer:sqlHistory`; clicking a history entry loads it into the editor
+- Execute button in the toolbar; loading/cancellation state shown
+- `useSqlExecution` composable wrapping `POST /api/sql/execute` with per-request cancellation via `AbortController`
+- `useSqlSchema` composable wrapping `GET /api/sql/schema` (called once on mount, cached in Pinia `sqlConsoleStore`)
+- `SqlResultTable.vue` — paginated (virtual scroll or page navigation), column headers show DuckDB type in parentheses (e.g., `topic (VARCHAR)`), client-side column sort
+- "Truncated to N rows" banner when `result.truncated === true`
+- Export buttons: **CSV** (browser download via `Blob`), **JSON** (browser download), **Copy to clipboard** (`navigator.clipboard`)
+- URL query parameter `?sql=` pre-populates the editor on mount (used by "Show SQL for this view" in TRC-P10-016)
+- Error state rendering for all four result states: `Succeeded` (table), `Failed` (DuckDB error message), `Timeout` (timeout message), `Rejected` (guardrails rejection reason) — each displayed in a styled `.sql-console__error` panel
+
+**Out of scope:**
+- Chart view (TRC-P10-012)
+- Pivot affordances in result rows (TRC-P10-017)
+- Save-query dialog (TRC-P10-014)
+- Saved-query picker/browser (TRC-P10-013/014)
+- SQL Explain UI beyond a plain placeholder alert (can be improved post-phase)
+
+### Constraints
+- CodeMirror 6 packages (`@codemirror/lang-sql`, `@codemirror/state`, `@codemirror/view`, `@codemirror/autocomplete`, `@codemirror/commands`, `@codemirror/theme-one-dark`) must be added to `package.json`; frontend bundle size target remains under 3 MB gzipped after addition (per §11 definition of done)
+- The editor must destroy its `EditorView` instance in `onBeforeUnmount` to avoid memory leaks
+- The SQL console must not allow mutations silently — if the backend returns `state === 'Rejected'` the error message is displayed verbatim; no retry omitting the rejection
+- History is session-local (localStorage); no backend persistence for history in this task
+- Export CSV must correctly escape values containing commas, newlines, or double-quotes per RFC 4180
+
+### Success Conditions
+1. **Test: `SqlConsoleView.spec.ts` — editor renders** — Mount `SqlConsoleView` with mocked `useSqlSchema` and `useSqlExecution`; assert the `div.sql-editor` element is present in the DOM.
+2. **Test: `SqlConsoleView.spec.ts` — Cmd+Enter dispatches run** — Mount with mocks; simulate `Mod+Enter` keydown inside the editor; assert the `run` composable function was called.
+3. **Test: `SqlConsoleView.spec.ts` — ?sql= param pre-populates** — Provide route mock with `query.sql = 'SELECT 1'`; mount; assert editor content equals `'SELECT 1'`.
+4. **Test: `SqlConsoleView.spec.ts` — Rejected state shows guardrail error** — Mock `run` to resolve with `{ state: 'Rejected', errorMessage: 'Forbidden keyword: DROP' }`; call execute; assert `.sql-console__error` text contains `'Forbidden keyword: DROP'`.
+5. **Test: `SqlConsoleView.spec.ts` — Timeout state shows timeout message** — Mock `run` to resolve with `{ state: 'Timeout', errorMessage: 'Query exceeded the 30-second budget' }`; assert `.sql-console__error` is visible and contains the timeout text.
+6. **Test: `SqlConsoleView.spec.ts` — Truncated banner shown** — Mock result with `state: 'Succeeded', truncated: true, rows: [...]`; assert the truncation banner element is visible.
+7. **Test: `SqlConsoleView.spec.ts` — Export CSV produces RFC 4180 content** — Mount with a result of 2 columns and 2 rows, one cell value containing a comma; click Export CSV; assert the Blob content wraps the comma-containing value in double-quotes.
+8. **Test: `SqlConsoleView.spec.ts` — history persists to localStorage** — Run a query successfully; assert `localStorage.getItem('tracer:sqlHistory')` is non-null and contains the executed SQL string.
+9. **Test: `SqlResultTable.spec.ts` — column type shown in header** — Render `SqlResultTable` with a column `{ name: 'topic', duckType: 'VARCHAR' }`; assert the `<th>` text contains `"VARCHAR"`.
+10. **Test: `SqlResultTable.spec.ts` — client-side sort ascending then descending** — Render with 3 rows having distinct numeric values in a column; click the column header once; assert rows are in ascending order; click again; assert descending order.
+11. **E2E: `sql-console.spec.ts` — execute and see result** — Navigate to `/v/sql/test-session`; type `SELECT topic, COUNT(*) FROM events GROUP BY topic LIMIT 5`; press `Control+Enter`; wait for `.sql-result-table`; assert the table is visible and contains at least one `<tr>` in `<tbody>`.
+
+---
+
+## TRC-P10-012 — SQL Console Chart View
+
+**Phase:** 10 — SQL Console, Saved Queries, Bundle Library  
+**Design reference:** [tracer_phase10_design.md §5.1](./tracer_phase10_design.md#51-sqlconsoleview-layout) — result tabs; [§5.3](./tracer_phase10_design.md#53-sqlconsoleviewvue) — `isChartable()` logic and `SqlResultChart` rendering
+
+### Scope
+**In scope:**
+- `SqlResultChart.vue` component, conditionally rendered when the user selects the "Chart" tab in `SqlConsoleView`
+- Two supported chart shapes detected by `isChartable()` in `SqlConsoleView`:
+  - **Bar chart**: result has exactly 1 categorical (non-numeric) column + 1 numeric column (e.g., `topic, COUNT(*)`)
+  - **Line chart**: result has 1 TIMESTAMP/DATE column + 1 or more numeric columns (e.g., time-bucketed event counts)
+- Chart rendering via the existing shared chart library already used by Phase 5/9 views; no new charting dependency unless the existing one is insufficient
+- `isChartable()` returns `true` when result has ≥ 2 columns and at least one column whose DuckDB type contains `INT`, `FLOAT`, `DOUBLE`, `DECIMAL`, `HUGEINT`, `BIGINT`, or `NUMERIC`
+- "Chart" tab button is **disabled** (not hidden) when `isChartable()` returns false
+- When the result has a plottable shape but > 10,000 data points, show an informational "Too many points to chart; use table view" message instead of a broken chart
+
+**Out of scope:**
+- Pie charts, scatter plots, or other chart types beyond bar and line
+- Chart export (CSV/JSON export remains on the table tab only)
+- Chart configuration (axis labels, custom colors, legend customisation)
+
+### Constraints
+- Must use the same charting library as Phase 5/9 views to avoid duplicate bundle weight
+- Chart and table views share the same result data; no duplicate API call
+- The 10,000-point cap is a client-side check on `result.rows.length`; it does not affect the row-limit shown in the backend
+
+### Success Conditions
+1. **Test: `SqlConsoleView.spec.ts` — chart tab disabled when no numeric column** — Provide a result with two VARCHAR columns; assert the "Chart" tab button has the `disabled` attribute.
+2. **Test: `SqlConsoleView.spec.ts` — chart tab enabled with a numeric column** — Provide a result with a VARCHAR column and a BIGINT column; assert the "Chart" tab button does NOT have `disabled`.
+3. **Test: `SqlConsoleView.spec.ts` — switching to chart tab renders SqlResultChart** — Enable condition met; click "Chart" tab; assert `SqlResultChart` is mounted; click "Table" tab; assert `SqlResultTable` is mounted and `SqlResultChart` is unmounted.
+4. **Test: `SqlResultChart.spec.ts` — bar chart for 1 label + 1 numeric column** — Mount `SqlResultChart` with `columns: [{name:'topic',duckType:'VARCHAR'},{name:'count',duckType:'BIGINT'}]` and 3 rows; assert a bar chart element (canvas or SVG) is present.
+5. **Test: `SqlResultChart.spec.ts` — line chart for timestamp + numeric** — Mount with `columns: [{name:'bucket',duckType:'TIMESTAMP'},{name:'count',duckType:'BIGINT'}]` and 5 rows; assert a line chart element is present.
+6. **Test: `SqlResultChart.spec.ts` — too-many-points fallback shown** — Mount with a result having 10,001 rows; assert the "Too many points" message is shown and no chart element is rendered.
+
+---
+
+## TRC-P10-013 — `SavedQueriesView.vue`
+
+**Phase:** 10 — SQL Console, Saved Queries, Bundle Library  
+**Design reference:** [tracer_phase10_design.md §6](./tracer_phase10_design.md#6-saved-queries) — §6.1 Data Model, §6.3 Built-in Queries, §6.4 Saved Query Endpoints, §6.5 Parameter Default Resolution
+
+### Scope
+**In scope:**
+- `SavedQueriesView.vue` registered at route `/v/saved-queries`
+- `useSavedQueries` composable wrapping `GET /api/saved-queries`, `POST /api/saved-queries/{id}/favorite`, and `POST /api/saved-queries/{id}/clone`
+- List rendered as cards/rows; each entry shows: label, description excerpt, tags (chips), author, favorite star, run count, last-run date
+- Filter bar: free-text search (label + description), filter by tag (multi-select chips), filter by author, "Favorites only" toggle
+- Built-in queries displayed with a `[Built-in]` badge; Edit and Delete buttons are absent for them
+- **Star toggle** — clicking calls `POST /api/saved-queries/{id}/favorite`; optimistically updates UI before API confirms
+- **Clone button** (built-in queries only) — calls `POST /api/saved-queries/{id}/clone`; on success reloads the list and scrolls to the new entry
+- **Run button** — executes the query inline using `useSqlExecution`; results appear in a collapsible panel below the card
+- **Parameter prompting dialog** — when a query has `parameters.length > 0`, a modal is shown before execution with one input per parameter (pre-filled with default values resolved client-side per §6.5); user confirms or cancels; on confirm the parameters dict is passed to `POST /api/sql/execute`
+- Loading, empty, and error states handled throughout
+
+**Out of scope:**
+- Creating a new saved query from this view (done in `SqlConsoleView` via TRC-P10-014)
+- Editing a saved query's SQL text (redirect to `SqlConsoleView`)
+- "Open in SQL Console" button (TRC-P10-014)
+- Deleting user-created queries from this view (future affordance; Phase 10 focuses on reading and running)
+
+### Constraints
+- Built-in queries are identified by `isBuiltIn === true` in the API response; the frontend must not render delete/edit actions for them regardless of any API permissiveness
+- The parameter prompting dialog must validate that numeric-typed parameters (`INT`, `BIGINT`, `DOUBLE`, etc.) are parseable before enabling the Run button
+- Special default-value tokens (`session_start`, `session_end`, `now`) are displayed as-is in the dialog input; the API resolves them at execution time
+
+### Success Conditions
+1. **Test: `SavedQueriesView.spec.ts` — list renders N cards** — Mock `useSavedQueries` to return 3 queries; mount; assert 3 query card elements are present.
+2. **Test: `SavedQueriesView.spec.ts` — built-in badge shown; Delete absent** — Include one query with `isBuiltIn: true`; assert `[Built-in]` badge is visible; assert no Delete button exists for that card.
+3. **Test: `SavedQueriesView.spec.ts` — text filter narrows list** — 3 queries with distinct labels; type one label into the search box; assert only 1 card is visible.
+4. **Test: `SavedQueriesView.spec.ts` — star toggle calls API and updates UI** — Click the star on a non-favorite query; assert `POST /api/saved-queries/:id/favorite` was called; assert the star icon reflects the updated state before the API confirms.
+5. **Test: `SavedQueriesView.spec.ts` — parameter dialog shown for parameterised query** — Query with 1 parameter (`name: 'topic', duckType: 'VARCHAR', defaultValueText: 'weapons.fire'`); click Run; assert the parameter modal is visible with an input pre-filled with `'weapons.fire'`.
+6. **Test: `SavedQueriesView.spec.ts` — cancel parameter dialog aborts run** — Show parameter dialog; click Cancel; assert `useSqlExecution.run` was NOT called.
+7. **Test: `SavedQueriesView.spec.ts` — invalid numeric parameter disables Run** — Parameter with `duckType: 'BIGINT'`; clear the default and type `'not-a-number'`; assert the Run confirm button is disabled.
+8. **Test: `SavedQueriesView.spec.ts` — clone built-in reloads list** — Click Clone on a built-in query; mock clone API to return a new query; assert the list reloads with one additional entry.
+9. **E2E: `saved-queries.spec.ts` — built-ins visible and star toggles** — Navigate to `/v/saved-queries`; assert at least 5 rows visible (built-in queries seeded on startup); click the star on the first non-starred entry; assert the star icon changes state.
+
+---
+
+## TRC-P10-014 — "Save Query" and "Open in SQL Console" Affordances
+
+**Phase:** 10 — SQL Console, Saved Queries, Bundle Library  
+**Design reference:** [tracer_phase10_design.md §6.4](./tracer_phase10_design.md#64-saved-query-endpoints) — `POST /api/saved-queries`; [§5.3](./tracer_phase10_design.md#53-sqlconsoleviewvue) — `loadSavedQuery`, `showSavedQueries` toggle; [§6.3](./tracer_phase10_design.md#63-built-in-queries) — clone semantics
+
+### Scope
+**In scope:**
+- **"Save" button in `SqlConsoleView`** toolbar: opens `SaveQueryDialog.vue` — a modal prompting for label (required), description (optional), tags (optional, chip input); on submit calls `POST /api/saved-queries`; on success shows a brief confirmation message and closes the modal
+- `SaveQueryDialog.vue` component — modal with label text input, description textarea, tag chip editor; Save button is disabled while label is empty
+- **"Saved queries…" button in `SqlConsoleView`** toolbar: opens `SavedQueryPicker.vue` — a compact modal listing saved queries with a search box; selecting an entry closes the modal and loads its `sql` into the editor via `loadSavedQuery()`
+- **"Open in SQL Console" action in `SavedQueriesView`** — per-query button that pushes `router.push({ name: 'sql-console', params: { sessionId: currentSessionId }, query: { sql: query.sql } })`; for queries with parameters the SQL is loaded with placeholders un-substituted so the user can adjust in the console; disabled (with tooltip) when no bundle/session is currently active
+- Current session ID is sourced from the Pinia store or an active-session route param
+
+**Out of scope:**
+- Editing the SQL or parameters of an existing saved query (future affordance)
+- Parameter authoring UI (frontend sends `parameters: []` when saving from `SqlConsoleView`)
+
+### Constraints
+- The Save button in `SqlConsoleView` must be disabled while a query is actively running (loading state)
+- `SavedQueryPicker` modal must be keyboard-navigable, focus-trapped while open, and closeable with Escape
+- `POST /api/saved-queries` payload must include `{ label, description, sql, tags, parameters: [] }`; omitting `sql` or sending an empty string must not be possible through the UI
+
+### Success Conditions
+1. **Test: `SaveQueryDialog.spec.ts` — Save button disabled with empty label** — Mount `SaveQueryDialog` with `sql='SELECT 1'`; leave label input empty; assert Save button has `disabled` attribute.
+2. **Test: `SaveQueryDialog.spec.ts` — submits correct payload** — Fill label `'My query'`, description `'desc'`, add tag `'perf'`; click Save; assert `POST /api/saved-queries` called with `{ label: 'My query', description: 'desc', tags: ['perf'], sql: 'SELECT 1', parameters: [] }`.
+3. **Test: `SqlConsoleView.spec.ts` — Save button opens dialog** — Click the Save toolbar button; assert `SaveQueryDialog` is rendered.
+4. **Test: `SqlConsoleView.spec.ts` — Save button disabled while running** — Set `loading = true` in `useSqlExecution` mock; assert the Save button is disabled.
+5. **Test: `SqlConsoleView.spec.ts` — Saved queries picker opens on button click** — Click the "Saved queries…" toolbar button; assert `SavedQueryPicker` is rendered.
+6. **Test: `SavedQueryPicker.spec.ts` — selecting a query loads SQL and closes picker** — Mock list with 2 queries; click the first entry; assert `loadSavedQuery` was called with that query's SQL and the picker is no longer rendered.
+7. **Test: `SavedQueriesView.spec.ts` — Open in console disabled without active session** — Render with no active session in store; assert the "Open in console" button is disabled or absent.
+8. **Test: `SavedQueriesView.spec.ts` — Open in console pushes correct route** — Mock active session `'sess-abc'`; click "Open in console" on a query with `sql: 'SELECT 1'`; assert `router.push` called with `{ name: 'sql-console', params: { sessionId: 'sess-abc' }, query: { sql: 'SELECT 1' } }`.
+9. **E2E: `sql-console.spec.ts` — save query and find in SavedQueriesView** — Execute a query; click Save; fill label `'E2E Saved Query'`; confirm; navigate to `/v/saved-queries`; assert `'E2E Saved Query'` appears in the list.
+
+---
+
+## TRC-P10-015 — `BundleLibraryView.vue` — Full Bundle Library
+
+**Phase:** 10 — SQL Console, Saved Queries, Bundle Library  
+**Design reference:** [tracer_phase10_design.md §7](./tracer_phase10_design.md#7-bundle-library-enhancements) — §7.1 BundleCard.vue, §7.2 BundleLibraryView.vue, §7.3 BundleLibraryService, §7.4 Endpoint Extension
+
+### Scope
+**In scope:**
+- `BundleLibraryView.vue` registered at route `/v/bundles`, replacing Phase 5's basic bundle listing
+- `BundleCard.vue` component — displays per-bundle: label (shows `"(unlabeled)"` placeholder when absent), description, tags as chips, session time range, built date (relative), file size (human-readable bytes), last-opened date with a stale CSS class when > 30 days ago; actions: Open, Edit, Export, Archive, Delete
+- `BundleFilterPanel.vue` — tag multi-select checkboxes, date-range pickers for session start, "Show archived" toggle, free-text search (label + description + tags)
+- `BundleMetadataEditor.vue` — modal dialog for editing label, description, and tags; calls `PUT /api/bundles/{id}/metadata` on save
+- Sort controls: sort by built date, session start, size, or label; ascending/descending toggle
+- **Open** action: calls `POST /api/bundles/{id}/opened` to record last-opened timestamp, then navigates to `/v/scenario/{sessionId}`
+- **Export** action: triggers download via `window.location.href = /api/bundles/{id}/download`
+- **Import** button (in header): hidden `<input type="file" accept=".zip">` triggered programmatically; on file selection POSTs to `POST /api/bundles/import` as `multipart/form-data`; shows uploading state; reloads list on success; resets the file input after each attempt so the same file can be re-imported
+- **Archive** action: calls `PUT /api/bundles/{id}/metadata` with `{ isArchived: true }`; bundle disappears from default list; revealed by "Show archived" toggle
+- **Delete** action: shows `confirm()` dialog with the bundle label; on confirmation calls `DELETE /api/bundles/{id}`; reloads list
+- Empty states: `"No bundles yet."` (empty list) and `"No bundles match the filter."` (filtered empty)
+- `useBundleLibrary` composable wrapping `GET /api/bundles/library`
+
+**Out of scope:**
+- Bundle rebuild or re-aggregation from this view
+- Bulk operations (multi-select delete or archive)
+- Bundle versioning or diff
+
+### Constraints
+- Zip-slip protection on import is enforced **backend** (TRC-P10-008); the frontend only validates MIME type (`.zip`) in the file picker accept attribute
+- Delete confirmation uses `confirm()` (browser native) for Phase 10; a custom modal can replace it post-phase
+- The file input element must be reset after each import attempt (set `inputEl.value = ''`) so the same file can be re-selected
+
+### Success Conditions
+1. **Test: `BundleLibraryView.spec.ts` — renders one card per bundle** — Mock `useBundleLibrary` returning 3 bundles; assert 3 `BundleCard` instances rendered.
+2. **Test: `BundleLibraryView.spec.ts` — filter by tag** — 3 bundles; two tagged `'production'`, one tagged `'debug'`; check `'production'` filter; assert 2 cards visible.
+3. **Test: `BundleLibraryView.spec.ts` — archived bundles hidden by default** — 1 archived bundle; default state: 0 visible; enable "Show archived"; assert 1 card visible.
+4. **Test: `BundleLibraryView.spec.ts` — sort by size descending** — 3 bundles with `sizeBytes` 100, 200, 50; sort descending by size; assert order is 200 → 100 → 50.
+5. **Test: `BundleMetadataEditor.spec.ts` — save calls PUT with correct payload** — Mount with a bundle; change label to `'Sprint 42'`; click Save; assert `PUT /api/bundles/:id/metadata` called with `{ label: 'Sprint 42' }`.
+6. **Test: `BundleCard.spec.ts` — unlabeled placeholder shown** — Mount with `bundle.label = null`; assert displayed text is `'(unlabeled)'`.
+7. **Test: `BundleCard.spec.ts` — stale CSS class applied for last-opened > 30 days ago** — Bundle with `lastOpenedAtUtc` 40 days in the past; assert the last-opened element has the stale CSS class.
+8. **Test: `BundleLibraryView.spec.ts` — delete calls API after confirm** — Mock `window.confirm` to return `true`; click Delete; assert `DELETE /api/bundles/:id` was called and `useBundleLibrary.load()` re-invoked.
+9. **Test: `BundleLibraryView.spec.ts` — delete cancelled stops API call** — Mock `window.confirm` to return `false`; click Delete; assert no DELETE request was made.
+10. **Test: `BundleLibraryView.spec.ts` — import file input posts multipart** — Simulate file input `change` event with a `.zip` File object; assert `POST /api/bundles/import` was called with `multipart/form-data`; assert file input value reset to `''` after call.
+11. **E2E: `bundle-library.spec.ts` — edit label persists** — Navigate to `/v/bundles`; click Edit on first bundle; fill label `'E2E Label'`; save; assert the bundle card updates to show `'E2E Label'`.
+12. **E2E: `bundle-library.spec.ts` — archive hides then show-archived reveals** — Click Archive on a bundle; assert it disappears from the list; enable "Show archived"; assert it reappears with the Archived badge.
+
+---
+
+## TRC-P10-016 — "Show SQL for This View" Affordance
+
+**Phase:** 10 — SQL Console, Saved Queries, Bundle Library  
+**Design reference:** [tracer_phase10_design.md §8](./tracer_phase10_design.md#8-cross-view-show-sql-for-this-view-affordance) — §8.1 SQL Generation Per View, §8.2 Educational Value; [§1.1](./tracer_phase10_design.md#11-what-phase-10-delivers) — Cross-View Polish; [§1.3](./tracer_phase10_design.md#13-success-criteria) — success criterion #1
+
+### Scope
+**In scope:**
+- `ShowSqlButton.vue` — reusable button accepting `:sql` and `:session-id` props; on click pushes `{ name: 'sql-console', params: { sessionId }, query: { sql } }` to the router; has a `title="Open the current filter as SQL"` attribute for accessibility
+- `src/utils/showSqlGenerators.ts` — pure functions that convert each view's current filter state to an equivalent SQL string:
+  - `timelineFilterToSql(filter)` — `SELECT` from `events` with the current time range, topic, publisher node, subscriber node, trace ID, and entity ID as `WHERE` clauses
+  - `causalTreeFilterToSql(traceId)` — `SELECT event_id, publisher_node, topic, publish_wallclock FROM events WHERE trace_id = <decimal>`
+  - `entityHistoryFilterToSql(entityId, from, to)` — `SELECT ... FROM events WHERE entity_id = '...' AND publish_wallclock >= ... AND publish_wallclock < ...`
+  - `replicationLatencyFilterToSql(filter)` — `APPROX_QUANTILE` aggregate matching Phase 9's latency view filter shape
+  - `gapDetectionFilterToSql(filter)` — gap-detection logic matching Phase 9's filter parameters
+- Add `<ShowSqlButton>` to the toolbar of: `TimelineView.vue`, `CausalTreeView.vue` (Phase 6), `EntityHistoryView.vue` (Phase 7), `ReplicationLatencyView.vue` (Phase 9), `GapDetectionView.vue` (Phase 9)
+- Each view computes the SQL string reactively from its current filter state and passes it to `ShowSqlButton`; the SQL Console reads `?sql=` on mount (TRC-P10-011)
+
+**Out of scope:**
+- Backend `/api/sql/view-template` endpoint (covered by TRC-P10-009); TRC-P10-016 uses the frontend-side generators
+- Exact semantic equivalence with the view's internal multi-interval union query — the generated SQL is "shape-equivalent, not literal" per §8.2
+- `NetworkTopologyView` — the graph view is not reducible to a simple tabular query in Phase 10
+
+### Constraints
+- SQL string values embedded in generated `WHERE` clauses must be escaped with single-quote doubling (`'` → `''`) to prevent inadvertent syntax errors when pasted into the editor
+- `ShowSqlButton` must be a `<button>` element (not a `<div>`) and must be keyboard-accessible
+- Hex trace IDs must be converted to their decimal `UBIGINT` equivalent in the generated SQL (DuckDB's `trace_id` column stores the value as an integer)
+
+### Success Conditions
+1. **Test: `showSqlGenerators.spec.ts` — timelineFilterToSql with full filter** — Call `timelineFilterToSql({ from, to, topic: 'weapons.fire', publisherNode: 'node1' })`; assert result contains `topic = 'weapons.fire'` and `publisher_node = 'node1'`.
+2. **Test: `showSqlGenerators.spec.ts` — single-quote escaping in generated SQL** — Topic = `"O'Brien"`; assert result contains `'O''Brien'`.
+3. **Test: `showSqlGenerators.spec.ts` — causalTreeFilterToSql hex-to-decimal** — Call `causalTreeFilterToSql('DEADBEEF01234567')`; assert result contains the decimal equivalent of the hex value (not the hex string itself).
+4. **Test: `showSqlGenerators.spec.ts` — entityHistoryFilterToSql produces entity_id clause** — Call with `entityId = 'my-entity'` and a time range; assert result contains `entity_id = 'my-entity'` and both time-bound clauses.
+5. **Test: `ShowSqlButton.spec.ts` — click pushes correct route** — Mount with `sql="SELECT 1"` and `sessionId="abc"`; click; assert `router.push` called with `{ name: 'sql-console', params: { sessionId: 'abc' }, query: { sql: 'SELECT 1' } }`.
+6. **Test: `TimelineView.spec.ts` — ShowSqlButton present in toolbar** — Mount `TimelineView` with a mock session and filter; assert a `ShowSqlButton` element is present in the toolbar area.
+7. **E2E: `sql-console.spec.ts` — Show SQL from timeline pre-populates editor** — Navigate to `/v/timeline/test-session?topic=weapons.fire`; click "Show SQL"; assert URL changes to `/v/sql/test-session?sql=...`; assert editor content contains `weapons.fire`.
+
+---
+
+## TRC-P10-017 — Run-and-Pivot from SQL Results
+
+**Phase:** 10 — SQL Console, Saved Queries, Bundle Library  
+**Design reference:** [tracer_phase10_design.md §5.4](./tracer_phase10_design.md#54-sqlresulttable) — SqlResultTable pivot logic; [§1.3](./tracer_phase10_design.md#13-success-criteria) — success criterion #7; [§11](./tracer_phase10_design.md#11-definition-of-done-for-phase-10) — pivot checklist
+
+### Scope
+**In scope:**
+- `SqlResultTable.vue` detects "pivotable" columns: any column whose name (case-insensitive) is one of `event_id`, `entity_id`, `trace_id`, `publish_wallclock`
+- When at least one pivotable column exists, an extra `⛏` header column is appended; each data row in that column contains inline button(s) with destination-labelled text (`event →`, `entity →`, `trace →`, `time →`)
+- Pivot routing:
+  - `event_id` → `router.push({ name: 'timeline', params: { sessionId }, query: { select: String(value) } })`
+  - `entity_id` → `router.push({ name: 'entity-history', params: { entityId: String(value) }, query: { session: sessionId } })`
+  - `trace_id` → `router.push({ name: 'causal-by-trace', params: { traceId: String(value) } })`
+  - `publish_wallclock` → `router.push({ name: 'timeline', params: { sessionId }, query: { from: (t−2s).toISOString(), to: (t+2s).toISOString() } })`
+- If `publish_wallclock` value produces `NaN` from `new Date(String(value)).getTime()`, the `time →` button for that row is **disabled** with a `title` attribute explaining the problem
+- The pivot `⛏` column is omitted entirely when no result column is pivotable
+
+**Out of scope:**
+- Right-click context menu (inline buttons are sufficient for Phase 10)
+- Pivoting `publisher_node` or `subscriber_node` to a topology view
+- Multi-row bulk pivot
+
+### Constraints
+- Each pivot button must have an accessible `title` attribute naming the destination view
+- `sessionId` is passed to `SqlResultTable` as a prop (already required by TRC-P10-011); pivot routes that need it use this prop
+- The `⛏` column is always the last column; it does not participate in client-side sort
+
+### Success Conditions
+1. **Test: `SqlResultTable.spec.ts` — no pivot column for unrecognised columns** — Render with columns `['topic', 'count']`; assert no `⛏` column header present.
+2. **Test: `SqlResultTable.spec.ts` — pivot column added for event_id** — Render with columns `['event_id', 'topic']`; assert `⛏` column header is present and each data row contains a pivot button.
+3. **Test: `SqlResultTable.spec.ts` — event_id pivot calls correct route** — Click the `event →` button in row 0 (value `42`); assert `router.push` called with `{ name: 'timeline', query: { select: '42' } }`.
+4. **Test: `SqlResultTable.spec.ts` — entity_id pivot calls correct route** — Click `entity →`; assert `router.push` called with `{ name: 'entity-history', params: { entityId: '...' } }`.
+5. **Test: `SqlResultTable.spec.ts` — trace_id pivot calls correct route** — Click `trace →`; assert `router.push` called with `{ name: 'causal-by-trace', params: { traceId: '...' } }`.
+6. **Test: `SqlResultTable.spec.ts` — publish_wallclock pivot uses ±2-second window** — Row value `'2026-05-01T12:00:00.000Z'`; click `time →`; assert `router.push` called with `from = '2026-05-01T11:59:58.000Z'` and `to = '2026-05-01T12:00:02.000Z'`.
+7. **Test: `SqlResultTable.spec.ts` — invalid timestamp disables pivot button** — Row `publish_wallclock` value is `'not-a-date'`; assert the `time →` button for that row has the `disabled` attribute.
+8. **E2E: `sql-console.spec.ts` — pivot to entity history** — Execute `SELECT entity_id, topic FROM events LIMIT 1`; assert `⛏` column is visible; click `entity →`; assert the URL navigates to the entity-history view.
+
+---
+
+## TRC-P10-018 — Phase 10 Tests
+
+**Phase:** 10 — SQL Console, Saved Queries, Bundle Library  
+**Design reference:** [tracer_phase10_design.md §9](./tracer_phase10_design.md#9-test-plan-for-phase-10) — §9.1 Backend Unit, §9.2 Integration, §9.3 Frontend Unit, §9.4 E2E, §9.5 Security Tests; [§1.3](./tracer_phase10_design.md#13-success-criteria); [§11](./tracer_phase10_design.md#11-definition-of-done-for-phase-10)
+
+### Scope
+**In scope:**
+- **Backend unit tests** (`Tracer.Tests.Unit/WebApi/` and `Tracer.Tests.Unit/Storage/`):
+  - `SqlGuardrailsTests.cs` — all forbidden constructs rejected; all permitted constructs accepted; security edge cases: comment injection hiding DDL, mixed-case forbidden keywords (`InSeRt InTo`), multi-statement (`SELECT 1; SELECT 2`), quoted-identifier evasion (`"INSERT"`), WITH clause hiding DDL, `read_csv_auto`, `read_parquet` (per §9.1 and §9.5)
+  - `SqlExecutorServiceTests.cs` — happy path SELECT, parameter binding, default row-limit injected when LIMIT absent, explicit LIMIT not modified, timeout returns `Timeout` state, outer cancellation token respected, invalid DuckDB SQL returns `Failed`, memory limit applied via PRAGMA (per §9.1)
+  - `SavedQueryStoreTests.cs` — CRUD, built-in immutability (update/delete rejected at store layer), clone produces editable copy with new ID, run-count increment, last-run-at set on run (per §9.1)
+  - `SavedQueriesEndpointsTests.cs` — all 8 HTTP endpoints return correct status codes and response DTOs; built-in guard enforced at HTTP layer (per §9.1)
+  - `BundleLibraryEndpointsTests.cs` — library list, metadata update, record-opened, delete; import (valid zip accepted, malformed zip rejected) (per §9.1)
+  - `BundleExportImportTests.cs` — export produces a valid zip; import round-trips the bundle; zip-slip attempts (entries with `../` paths) rejected with HTTP 400 and no file written outside bundles root (per §10 risk mitigation)
+  - `ViewTemplateSqlTests.cs` — each supported view name (`timeline`, `causal-tree`, `entity-history`, `replication-latency`, `gap-detection`) produces a non-empty, read-only SQL string (passes `SqlGuardrails.Validate`); unsupported view name returns 404
+- **Backend integration tests** (`Tracer.Tests.Integration/`):
+  - `SqlConsoleRoundTripTests.cs` — start in-process server with a bundle seeded with a known event count; POST `/api/sql/execute` with `SELECT COUNT(*) FROM events`; assert `state = "Succeeded"` and row value equals the expected count; execute a parameterised query; execute a query that exceeds a 1-second timeout; execute invalid DuckDB SQL
+  - `SavedQuerySeederTests.cs` — fresh SQLite DB after startup: GET `/api/saved-queries?builtIn=true` returns ≥ 5 results all with `isBuiltIn: true`; start again with the same DB: count does not increase (no duplication)
+- **Frontend Vitest tests** (`tracer-viewer/tests/unit/`):
+  - `SqlConsoleView.spec.ts` — consolidates coverage from TRC-P10-011/012/014/016/017: editor renders, Cmd+Enter dispatches, `?sql=` pre-populates, all four error states shown, truncated banner, CSV export, history persistence, chart tab toggle, Save button opens dialog, picker loads query, pivot column present, Show SQL button navigates
+  - `SavedQueriesView.spec.ts` — consolidates coverage from TRC-P10-013/014: list renders, built-in badge, text filter, tag filter, star toggle, parameter dialog shown/cancelled/validated, clone reloads, Open in console disabled without session, Open in console pushes route
+  - `BundleLibraryView.spec.ts` — consolidates coverage from TRC-P10-015: cards render, filter by tag, show-archived toggle, sort by size, metadata save calls API, unlabeled placeholder, stale badge, delete confirm/cancel, import posts multipart
+- **E2E Playwright tests** (`tracer-viewer/tests/e2e/`):
+  - `sql-console.spec.ts` — open bundle; navigate to SQL console; execute `SELECT COUNT(*) FROM events`; verify result table visible with numeric value; attempt `DROP TABLE events`; verify guardrail error message; Show SQL from timeline pre-populates editor; save query; pivot from result row to entity-history view
+  - `bundle-library.spec.ts` — navigate to `/v/bundles`; add tag and filter by it; archive a bundle and verify it hides; enable Show archived and verify it reappears; edit label and verify card updates
+
+**Out of scope:**
+- Frontend snapshot / visual regression tests
+- Performance benchmarking (§9.6) — these are manual checks or separate scripts, not in the automated CI suite
+- Phase 1–9 tests (must continue to pass but are not authored in this task)
+
+### Constraints
+- `SqlGuardrailsTests` must use a parameterised test (xUnit `[Theory]` / `[InlineData]`) for the forbidden-keyword set so every variant is a distinct test case — no single test checking all variants at once
+- Integration tests use `Tracer.TestHarness` for in-process server setup; they must not rely on external processes or network connections
+- Playwright E2E tests must be idempotent (safe to re-run against the same database state); use unique labels/tags per run if necessary to avoid pollution
+- Frontend Vitest tests must mock all HTTP calls (`vi.fn()` or `msw` interceptors); no real backend required
+
+### Success Conditions
+1. **Test: `SqlGuardrailsTests.cs` — all forbidden keywords individually rejected** — `[Theory]` with `[InlineData]` rows for: `INSERT INTO t VALUES (1)`, `UPDATE t SET x=1`, `DELETE FROM t`, `CREATE TABLE t(x INT)`, `DROP TABLE t`, `ALTER TABLE t RENAME TO s`, `ATTACH 'file.db'`, `COPY (SELECT 1) TO 'out.csv'`, `PRAGMA threads=4`; each asserts `IsValid == false`.
+2. **Test: `SqlGuardrailsTests.cs` — permitted constructs accepted** — `[Theory]` rows for `SELECT * FROM events`, `WITH cte AS (SELECT 1) SELECT * FROM cte`, `EXPLAIN SELECT 1`, `DESCRIBE events`; each asserts `IsValid == true`.
+3. **Test: `SqlGuardrailsTests.cs` — comment injection rejected** — Input `/* */ DROP TABLE events`; after comment-stripping the leading keyword is `DROP`; assert `IsValid == false`.
+4. **Test: `SqlGuardrailsTests.cs` — multi-statement rejected** — Input `SELECT 1; SELECT 2`; assert `IsValid == false` and `RejectionReason` contains `"single statement"`.
+5. **Test: `SqlGuardrailsTests.cs` — mixed-case forbidden keyword rejected** — Input `InSeRt Into t VALUES (1)`; assert `IsValid == false`.
+6. **Test: `SqlExecutorServiceTests.cs` — timeout returns Timeout state** — Execute a query designed to run longer than a 1-second configured timeout (e.g., a cross-join generating ≥ 1M rows on fixture data); assert `State == SqlExecutionState.Timeout`.
+7. **Test: `SqlConsoleRoundTripTests.cs` — execute SELECT COUNT(*) returns expected count** — Setup: start in-process server with a bundle seeded with exactly 42 events; POST `/api/sql/execute` with `{ "sql": "SELECT COUNT(*) FROM events" }`; assert HTTP 200, `state = "Succeeded"`, `rows[0][0] == 42`.
+8. **Test: `SavedQuerySeederTests.cs` — built-ins present after first startup** — Fresh server start; GET `/api/saved-queries?builtIn=true`; assert `count >= 5` and every entry has `isBuiltIn: true`.
+9. **Test: `SavedQuerySeederTests.cs` — no duplication on second startup** — Start server a second time with the same SQLite DB; GET `/api/saved-queries?builtIn=true`; assert count equals the count from first startup.
+10. **Test: `BundleExportImportTests.cs` — zip-slip rejected** — Construct a zip archive containing an entry with path `../../evil.txt`; POST to `/api/bundles/import`; assert HTTP 400 response; assert no file exists outside the configured bundles root directory.
+11. **E2E: `sql-console.spec.ts` — full query round trip** — Start app with test bundle; navigate to `/v/sql/test-session`; execute `SELECT COUNT(*) FROM events`; assert `.sql-result-table` is visible and first data cell contains a number.
+12. **E2E: `bundle-library.spec.ts` — filter by tag then archive** — Navigate to `/v/bundles`; add tag `'e2e-test'` to first bundle via Edit; enable `'e2e-test'` filter; assert only 1 card visible; click Archive; assert that card disappears from the default (non-archived) list.
+
+<!-- PHASE 10 TASKS END -->
+
+<!-- PHASE 11 TASKS BEGIN -->
+
+# Phase 11 — Real Adapter Integration: DDS, Sync, Shared Memory, NAS
+
+---
+
+## TRC-P11-001 — `Tracer.Adapters.DDS` Assembly — DDS Diagnostic Data Source
+
+**Phase:** 11 — Real Adapter Integration  
+**Design reference:** [tracer_phase11_design.md §3](./tracer_phase11_design.md#3-the-dds-adapter)  
+**Architecture reference:** [tracer_architecture_v1.md §6](./tracer_architecture_v1.md#6-component-responsibilities) *(adapter layer contracts)*
+
+### Scope
+
+**In scope:**
+- New assembly `Tracer.Adapters.DDS` with all types listed in §2 project layout.
+- `DdsDiagnosticDataSource` implementing `IDiagnosticDataSource` (§3.3): bounded ingest `Channel<DiagnosticRecord>` with `DropOldest` back-pressure; one subscriber per configured topic; async-enumerable over the channel.
+- `DdsSampleTranslator` (§3.4): per-topic translation to `EventRecord` / `StateSampleRecord`; uses `DdsTopicRegistry` for kind-dispatch; stamps `receive_wallclock` at translation time; reads `SourceTimestamp` for `publish_wallclock`.
+- `DdsTraceContextExtractor` (§3.6): reflection-compiled `Expression`-based accessors for `trace_id`, `event_id`, `parent_event_id` fields; accessor cache keyed by sample type; returns `TraceContext.Empty` for non-Event topics.
+- `DdsTopicRegistry` (§3.5): dictionary-backed catalog of `DdsTopicMetadata`; populated from `DdsAdapterConfig.Topics` at startup.
+- `DdsSubscriberFactory` (§3.7): wraps the Cyclone DDS C# binding API (see [CycloneDDS.NET.README.md](./CycloneDDS.NET.README.md)) behind `IDdsSample`; returns an `IDisposable` subscriber handle per topic.
+- `IDdsSample` abstraction isolating Tracer.Core from Cyclone DDS types.
+- `DdsAdapterConfig` / `DdsTopicSubscription` / `CycloneDdsParticipantConfig` (§3.8).
+- `DdsTopicKind` enum (`Event`, `SlowState`, `FastState`).
+- Drop-count structured log warning when ingest channel is full (§3.3 `OnSampleReceived`).
+- The assembly loads **into the simulation process**, not the TracerAgent process (§3.1 architectural note).
+- Cyclone DDS C# bindings taken as a NuGet dependency (`CycloneDDS.NET`); not reimplemented here.
+
+**Out of scope:**
+- SharedMemory transport (TRC-P11-002).
+- Adapter selection / DI wiring (TRC-P11-005).
+- Any simulation-side changes; those are the integration project's responsibility (§1.2).
+- Reimplementing or forking the Cyclone DDS binding.
+
+### Constraints
+
+- `Tracer.Core` must not reference any Cyclone DDS types directly; only `Tracer.Adapters.DDS` references the binding.
+- Must never block a DDS callback thread (§3.3 — `DropOldest` not block on channel full).
+- Unit tests must not require a real DDS participant — mock `IDdsSample` implementations stand in.
+- Compiled expression accessors must be cached per sample type; not recompiled per sample.
+- `LangVersion`, nullable, warnings-as-errors apply per `Directory.Build.props`.
+
+### Success Conditions
+
+1. **Test: `DdsSampleTranslatorTests` — Event-kind translation** — Construct a mock `IDdsSample` with known `SourceTimestamp`, `SequenceNumber`, `traceId`, `eventId`, `parentEventId` fields and a registered Event-kind topic; call `Translate`; assert returned `EventRecord` has matching `TraceId`, `EventId`, `ParentEventId`, `PublishWallclock`, `ReceiveWallclock`, `SequenceNumber`, and `Topic`.
+2. **Test: `DdsSampleTranslatorTests` — SlowState-kind translation** — Mock `IDdsSample` for a SlowState topic; assert `StateSampleRecord` with `Kind = StateSampleKind.Slow` and no trace context fields set.
+3. **Test: `DdsSampleTranslatorTests` — FastState-kind translation** — Mock `IDdsSample` for a FastState topic with known typed values; assert `StateSampleRecord` with `Kind = StateSampleKind.Fast` and `TypedValues` populated.
+4. **Test: `DdsSampleTranslatorTests` — Unknown topic returns null** — Pass a topic name not in `DdsTopicRegistry`; assert `Translate` returns `null` and does not throw; assert a warning is logged.
+5. **Test: `DdsTraceContextExtractorTests` — camelCase field names resolved** — Sample type with properties `traceId`, `eventId`, `parentEventId`; assert `Extract` returns the correct `TraceContext` values.
+6. **Test: `DdsTraceContextExtractorTests` — PascalCase field names resolved** — Sample type with `TraceId`, `EventId`, `ParentEventId`; assert correct extraction.
+7. **Test: `DdsTraceContextExtractorTests` — Missing field throws on first use** — Sample type missing `traceId`/`TraceId`; assert `InvalidOperationException` is thrown with the type name in the message.
+8. **Test: `DdsTraceContextExtractorTests` — Accessor cache hit** — Call `Extract` twice with the same type; verify (via counter or mock) that `BuildAccessors` is called exactly once.
+9. **Test: `DdsDiagnosticDataSourceTests` — Drop-oldest on full channel** — Configure `IngestBufferSize = 5`; simulate 10 rapid `OnSampleReceived` calls via reflection or a test hook; assert that at most 5 records are yielded and at least one `LogWarning` is emitted mentioning the topic name.
+10. **Test: `DdsDiagnosticDataSourceTests` — CancellationToken stops enumeration** — Start `GenerateAsync` with a `CancellationToken`; cancel it; assert the `IAsyncEnumerable` completes without exception.
+
+---
+
+## TRC-P11-002 — `Tracer.Adapters.SharedMemory` Assembly — Ring Buffer IPC Transport
+
+**Phase:** 11 — Real Adapter Integration  
+**Design reference:** [tracer_phase11_design.md §4](./tracer_phase11_design.md#4-the-shared-memory-transport)  
+**Architecture reference:** [tracer_architecture_v1.md §6](./tracer_architecture_v1.md#6-component-responsibilities) *(IAgentTransport)*
+
+### Scope
+
+**In scope:**
+- New assembly `Tracer.Adapters.SharedMemory` — BCL only, no new NuGet dependencies.
+- `SharedMemoryRingBuffer` (§4.3): SPSC ring buffer over `MemoryMappedFile`; fixed-size header (4096 bytes) with magic, version, capacity, `write_offset`, `read_offset`, `producer_pid`, `consumer_pid`, `producer_heartbeat_ticks`, `consumer_heartbeat_ticks`, `dropped_count`; `Volatile.Read`/`Volatile.Write` for cross-process atomic access; wraparound-via-padding-marker discipline; `TryWrite` with drop-oldest when full; `TryRead` with wrap handling; `Create(name, capacity)` and `Open(name)` factory methods.
+- `SharedMemoryDiagnosticRecordCodec` (§4.4): source-generated `System.Text.Json` serializer (`DiagnosticRecordSerializerContext`); `SerializedRecord` wrapper carrying `Kind` discriminator; `Encode` and `Decode` methods.
+- `SharedMemoryWriter` — thin helper for the producer side; exposes `Write(DiagnosticRecord)` delegating to `SharedMemoryRingBuffer.TryWrite` + semaphore signal.
+- `SharedMemoryReader` — thin helper for the consumer side; exposes `ReadAvailable()` draining the buffer.
+- `SharedMemoryTransport` (§4.5): implements `IAgentTransport`; `CreateProducer` and `CreateConsumer` factory methods; `EnqueueAsync` (producer, non-blocking); `ConsumeAsync` (consumer, `IAsyncEnumerable`, 100 ms semaphore wait then drain); cancellation-aware; drop-count monitoring via `GetDroppedCount()`.
+- `SharedMemoryConfig`: `SharedMemoryName`, `SemaphoreName`, `CapacityBytes` (default 64 MB).
+- Drop telemetry: `GetDroppedCount()` read from header; consumer-side `MonitorTransportAsync`-compatible API (§4.6 pattern; actual periodic polling lives in TracerAgent, not in this assembly).
+
+**Out of scope:**
+- The periodic monitor loop in TracerAgent (TRC-P11-007).
+- Adapter selection / DI wiring (TRC-P11-005).
+- Cross-machine transport; this is single-machine only (§4.1 requirements table).
+
+### Constraints
+
+- No new NuGet packages — `System.IO.MemoryMappedFiles` and `System.Threading.Semaphore` are BCL.
+- `TryWrite` must never block; it advances the read pointer (drop-oldest) if needed.
+- `TryRead` must be callable from a tight consumer loop with no allocations beyond the returned byte array.
+- Tests that exercise cross-process behavior must use a subprocess (or in-process simulation with two `SharedMemoryRingBuffer` instances sharing the same named mapping in one process for unit coverage).
+
+### Success Conditions
+
+1. **Test: `SharedMemoryRingBufferTests` — sequential write/read** — Create buffer; write 3 known records; read them back in order; assert byte-for-byte equality.
+2. **Test: `SharedMemoryRingBufferTests` — wraparound** — Write records until the ring wraps (write_offset wraps past capacity); assert subsequent reads return all written records in order.
+3. **Test: `SharedMemoryRingBufferTests` — drop-oldest on fill** — Fill the ring to capacity then write one more record; assert `dropped_count` incremented; assert consumer reads the most-recent data (not the oldest).
+4. **Test: `SharedMemoryRingBufferTests` — padding-marker handling** — Write a record that would straddle the capacity boundary; assert producer inserts padding and starts at offset 0; consumer skips padding and reads correctly.
+5. **Test: `SharedMemoryTransportTests` — round-trip** — Create producer transport and consumer transport sharing the same named mapping in-process; enqueue 100 `DiagnosticRecord` instances; consume them; assert all arrive in order with matching field values.
+6. **Test: `SharedMemoryTransportTests` — CancellationToken stops ConsumeAsync** — Start consuming; cancel the token; assert `IAsyncEnumerable` terminates without exception within 200 ms.
+7. **Test: `SharedMemoryTransportTests` — producer does not block when consumer is slow** — Measure `EnqueueAsync` wall-time with a paused consumer; assert it completes in < 1 ms per call at all fill levels.
+8. **Test: `SharedMemoryDiagnosticRecordCodecTests` — EventRecord round-trip** — Encode an `EventRecord` with all fields set (including Unicode payload); decode; assert all fields equal.
+9. **Test: `SharedMemoryDiagnosticRecordCodecTests` — StateSampleRecord round-trip** — Same pattern for `StateSampleRecord`.
+10. **Test: `SharedMemoryDiagnosticRecordCodecTests` — source-gen path used** — Assert that `DiagnosticRecordSerializerContext.Default` is the context used; no reflection-fallback warnings in output.
+
+---
+
+## TRC-P11-003 — `Tracer.Adapters.Sync` Assembly — Telemetry Upload via Sync System
+
+**Phase:** 11 — Real Adapter Integration  
+**Design reference:** [tracer_phase11_design.md §5](./tracer_phase11_design.md#5-the-sync-adapter)  
+**Sync contract reference:** [sync_addendum_telemetry.md §A4](./sync_addendum_telemetry.md#a4-rest-api-additions) *(REST endpoints)*
+
+### Scope
+
+**In scope:**
+- New assembly `Tracer.Adapters.Sync`.
+- `SyncSystemUploadService` (§5.3) implementing `ITelemetryUploadService`: `SubmitAsync` calling `POST /api/telemetry` (per `sync_addendum_telemetry.md §A4.1`) with `nodeId`, `intervalTimestamp`, `intervalStartUtc`, `intervalEndUtc`, `files[]`; returns `UploadIntentId`; logs `Information` on success. `GetStatusAsync` calling `GET /api/telemetry/{nodeId}/{intervalTimestamp}` and mapping status. `WaitForCompletionAsync` polling with exponential backoff (start 2 s, cap 60 s) until `Completed` or `Failed`.
+- `SyncMasterRestClient` (§5.4): thin `HttpClient` wrapper; `RegisterUploadIntentAsync` (`POST /api/telemetry`); `GetIntentStatusAsync` (`GET /api/telemetry/{nodeId}/{intervalTimestamp}`); throws on non-success status codes.
+- `SyncAdapterConfig` (§5.5): `SyncMasterBaseUrl`, `RequestTimeout` (default 30 s), `RetryAttempts` (default 3).
+- Retry with backoff on transient HTTP failures (5xx, timeout); after `RetryAttempts` exhausted, log warning and return so the caller can decide (§5.6).
+- `SyncMasterRestClient` registered via `IHttpClientFactory` (named client) for proper socket lifecycle.
+
+**Out of scope:**
+- Implementing sync system server-side endpoints — those are the sync team's responsibility (§1.2, `sync_addendum_telemetry.md`).
+- Zip creation — the sync system's agent handles that via the `UploadTelemetry` SignalR command (`sync_addendum_telemetry.md §A5.1`).
+- Adapter selection / DI wiring (TRC-P11-005).
+
+### Constraints
+
+- `HttpClient` must be obtained via `IHttpClientFactory`; no `new HttpClient()` calls.
+- All REST requests include a `CancellationToken`; no fire-and-forget.
+- `WaitForCompletionAsync` must respect cancellation during the delay between polls.
+- Tests mock `HttpMessageHandler`; no real HTTP calls in unit tests.
+- Idempotency: if `POST /api/telemetry` returns an existing `intentId` for the same `(nodeId, intervalTimestamp)`, `SubmitAsync` must return it without error (per `sync_addendum_telemetry.md §A4.1` idempotency note).
+
+### Success Conditions
+
+1. **Test: `SyncSystemUploadServiceTests` — SubmitAsync sends correct body** — Mock handler captures the request body; call `SubmitAsync` with known `IntervalUploadRequest`; assert `POST /api/telemetry` was called with the correct `nodeId`, `intervalTimestamp`, and `files` array.
+2. **Test: `SyncSystemUploadServiceTests` — SubmitAsync returns intentId** — Mock handler returns `{ "intentId": "abc-123" }`; assert `SubmitAsync` returns `UploadIntentId("abc-123")`.
+3. **Test: `SyncSystemUploadServiceTests` — WaitForCompletionAsync polls until Completed** — Mock handler returns `"Pending"` twice then `"Complete"`; assert `WaitForCompletionAsync` returns `UploadResult { Status = Completed }`; assert `GetIntentStatus` was called exactly 3 times.
+4. **Test: `SyncSystemUploadServiceTests` — WaitForCompletionAsync surfaces Failed** — Mock handler returns `"Failed"` with `errorMessage`; assert result has `Status = Failed` and `ErrorMessage` set.
+5. **Test: `SyncSystemUploadServiceTests` — WaitForCompletionAsync respects cancellation** — Cancel the token during a poll delay; assert `OperationCanceledException` is thrown without further HTTP calls.
+6. **Test: `SyncSystemUploadServiceTests` — retry on 503** — Mock handler returns 503 twice then 201; assert `SubmitAsync` eventually succeeds and the handler was called 3 times.
+7. **Test: `SyncSystemUploadServiceTests` — exhausted retries logs warning** — Mock handler always returns 503; assert after `RetryAttempts` a `LogWarning` is emitted and the exception propagates.
+8. **Test: `SyncMasterRestClientTests` — non-success status code throws** — Mock returns 404; assert `HttpRequestException` propagates from `RegisterUploadIntentAsync`.
+
+---
+
+## TRC-P11-004 — `Tracer.Adapters.Nas` Assembly — NAS Storage Reader
+
+**Phase:** 11 — Real Adapter Integration  
+**Design reference:** [tracer_phase11_design.md §6](./tracer_phase11_design.md#6-the-nas-adapter)  
+**Sync contract reference:** [sync_addendum_telemetry.md §A3](./sync_addendum_telemetry.md#a3-nas-layout) *(NAS directory layout)*
+
+### Scope
+
+**In scope:**
+- New assembly `Tracer.Adapters.Nas` — BCL (`System.IO`) only; no new NuGet dependencies.
+- `NasStorageReader` (§6.3) implementing `ITelemetryStorageReader`: `ListIntervalsAsync` enumerating `{NasRoot}/telemetry/{nodeId}/{intervalTimestamp}.zip` entries (per `sync_addendum_telemetry.md §A3.1`); skips zip files not yet fully present; returns `NodeIntervalDescriptor` list. `StageAsync` returning the zip path directly (Windows SMB transparent via UNC) or copying to a temp directory if `PreferLocalStaging = true`; cleanup action on `StagedInterval.Dispose()`.
+- `SmbPathResolver`: maps `(nodeId, intervalTimestamp)` to UNC path `\\{NasRoot}\telemetry\{nodeId}\{intervalTimestamp}.zip`; validates path components to prevent directory traversal.
+- Interval completeness check: interval zip is considered ready when it exists and the zip contains the `_ready` sentinel entry (per `sync_addendum_telemetry.md §A3.3`). Incomplete intervals are logged and skipped.
+- `NasAdapterConfig` (§6.5): `NasRoot` (UNC path or local path), `PreferLocalStaging` (default `false`), `FileOperationTimeout` (default 30 s), `RetryOnTransientError` (default 3 attempts), `CircuitBreakerThreshold` (consecutive failures before tripping, default 5).
+- Transient SMB error retry (§8 hardening, TRC-P11-007 will add circuit breaker; placeholder retry loop here).
+
+**Out of scope:**
+- Provisioning, mounting, or replicating the NAS — operations concern (§1.2).
+- The aggregator's bundle-building logic — Phase 4 owns that (consumes `ITelemetryStorageReader`).
+- Adapter selection / DI wiring (TRC-P11-005).
+
+### Constraints
+
+- `NasRoot` may be a UNC path (`\\server\share`) or a local path for dev/test; both must work via `System.IO`.
+- `SmbPathResolver` must reject path components containing `..`, `/`, or null bytes (directory traversal prevention).
+- Tests run against a temp directory on the local filesystem simulating NAS layout; no real SMB required.
+- `StagedInterval` with `PreferLocalStaging = true` must delete the temp directory on `Dispose()` even if an exception occurs during use.
+
+### Success Conditions
+
+1. **Test: `NasStorageReaderTests` — ListIntervalsAsync discovers complete intervals** — Create temp dir with `telemetry/{nodeId}/{ts}.zip` containing a `_ready` entry; assert `ListIntervalsAsync` returns one descriptor with correct `NodeId` and `IntervalId`.
+2. **Test: `NasStorageReaderTests` — skips interval zip without _ready sentinel** — Same layout but zip missing `_ready` entry; assert `ListIntervalsAsync` returns empty list and logs a warning.
+3. **Test: `NasStorageReaderTests` — skips non-existent directory** — `NasRoot` points to a session that has no directory; assert `ListIntervalsAsync` returns empty without throwing.
+4. **Test: `NasStorageReaderTests` — StageAsync without local staging returns source path** — `PreferLocalStaging = false`; call `StageAsync`; assert `StagedInterval.LocalPath` equals the source zip path; assert `Dispose()` does not delete it.
+5. **Test: `NasStorageReaderTests` — StageAsync with local staging copies and cleans up** — `PreferLocalStaging = true`; call `StageAsync`; assert `StagedInterval.LocalPath` is different from source; assert file exists during use; assert temp dir is deleted on `Dispose()`.
+6. **Test: `SmbPathResolverTests` — valid path resolves correctly** — `NasRoot = "\\\\nas\\tracer"`, `nodeId = "blue-cmd-01"`, `intervalTimestamp = "20260519T140000Z"`; assert result equals `"\\\\nas\\tracer\\telemetry\\blue-cmd-01\\20260519T140000Z.zip"`.
+7. **Test: `SmbPathResolverTests` — directory traversal rejected** — `nodeId = "..\\evil"`; assert `ArgumentException` thrown.
+8. **Test: `NasStorageReaderTests` — multiple nodes discovered** — Three node subdirectories each with one interval zip with `_ready`; assert `ListIntervalsAsync` returns 3 descriptors.
+
+---
+
+## TRC-P11-005 — `Tracer.AdapterSelection` Assembly — Adapter Registry and DI
+
+**Phase:** 11 — Real Adapter Integration  
+**Design reference:** [tracer_phase11_design.md §7](./tracer_phase11_design.md#7-adapter-selection-configuration-driven-di)
+
+### Scope
+
+**In scope:**
+- New assembly `Tracer.AdapterSelection`.
+- `AdapterRegistry` (§7.2): reads `adapters:dataSource`, `adapters:transport`, `adapters:upload`, `adapters:storageReader`, `adapters:clock` from `IConfiguration`; dispatches to the correct registration path for each adapter slot; throws `InvalidOperationException` with a clear message for unknown values.
+- `AdapterRegistrationExtensions`: `AddTracerAdapters(this IServiceCollection, IConfiguration)` extension method that constructs and calls `AdapterRegistry.RegisterAdapters`.
+- Supported values per slot (§7.1):
+  - `dataSource`: `"mock"` → `MockDataSource`; `"dds"` → `DdsDiagnosticDataSource` (binds `DdsAdapterConfig` from `IConfiguration.GetSection("dds")`).
+  - `transport`: `"in-process"` → mock in-process channel transport; `"shared-memory"` → `SharedMemoryTransport` (binds `SharedMemoryConfig` from `"sharedMemory"` section).
+  - `upload`: `"local-file-system"` → mock local upload; `"sync"` → `SyncSystemUploadService` (binds `SyncAdapterConfig` from `"sync"` section; registers named `HttpClient`).
+  - `storageReader`: `"local-file-system"` → mock local reader; `"nas"` → `NasStorageReader` (binds `NasAdapterConfig` from `"nas"` section).
+  - `clock`: `"system"` → `SystemClock`; `"simulated"` → `SimulatedClock`.
+- Mixed configurations (e.g., `"dds"` data source + `"local-file-system"` upload) must work correctly.
+
+**Out of scope:**
+- Implementing any of the adapters themselves (covered by TRC-P11-001 through TRC-P11-004).
+- Host builder modifications in `Tracer.Agent` / `Tracer.Aggregator` (TRC-P11-006 covers configuration; the hosts call `AddTracerAdapters` which is part of this task).
+
+### Constraints
+
+- `Tracer.AdapterSelection` references all adapter assemblies (`Tracer.Adapters.Mock`, `Tracer.Adapters.DDS`, `Tracer.Adapters.SharedMemory`, `Tracer.Adapters.Sync`, `Tracer.Adapters.Nas`).
+- `Tracer.Core` is not modified; all wiring is in this assembly.
+- Default values when a key is absent: `dataSource` defaults to `"mock"`, others similarly default to mock/simulated equivalents — safe for a fresh `dotnet run` checkout.
+
+### Success Conditions
+
+1. **Test: `AdapterRegistryTests` — `dataSource: "mock"` registers MockDataSource** — Build `IServiceCollection`, call `AddTracerAdapters` with config `adapters:dataSource = "mock"`; resolve `IDiagnosticDataSource`; assert it is `MockDataSource`.
+2. **Test: `AdapterRegistryTests` — `dataSource: "dds"` registers DdsDiagnosticDataSource** — Config `adapters:dataSource = "dds"` with minimal `dds` section; resolve `IDiagnosticDataSource`; assert it is `DdsDiagnosticDataSource`.
+3. **Test: `AdapterRegistryTests` — `transport: "shared-memory"` registers SharedMemoryTransport** — Config `adapters:transport = "shared-memory"` with `sharedMemory` section; resolve `IAgentTransport`; assert it is `SharedMemoryTransport`.
+4. **Test: `AdapterRegistryTests` — `upload: "sync"` registers SyncSystemUploadService** — Config `adapters:upload = "sync"` with `sync` section; resolve `ITelemetryUploadService`; assert it is `SyncSystemUploadService`.
+5. **Test: `AdapterRegistryTests` — `storageReader: "nas"` registers NasStorageReader** — Config `adapters:storageReader = "nas"` with `nas` section; resolve `ITelemetryStorageReader`; assert it is `NasStorageReader`.
+6. **Test: `AdapterRegistryTests` — unknown value throws** — Config `adapters:dataSource = "foobar"`; assert `InvalidOperationException` is thrown with `"foobar"` in the message.
+7. **Test: `AdapterRegistryTests` — mixed config (dds + local-file-system upload)** — `dataSource = "dds"`, `upload = "local-file-system"`; resolve both interfaces; assert correct types; no registration errors.
+8. **Test: `AdapterRegistryTests` — default values (no adapters section)** — Empty config; call `AddTracerAdapters`; all interfaces resolve to their mock equivalents; no exception.
+9. **Test: Phase 1–10 integration suite still passes** — Run the existing `Tracer.Tests.Integration` suite with the default mock configuration; all tests pass.
+
+---
+
+## TRC-P11-006 — Configuration Additions — `appsettings.json` Adapter Sections
+
+**Phase:** 11 — Real Adapter Integration  
+**Design reference:** [tracer_phase11_design.md §7.1](./tracer_phase11_design.md#71-the-configuration-section) and [§7.4](./tracer_phase11_design.md#74-defaults-per-deployment)
+
+### Scope
+
+**In scope:**
+- `Tracer.Agent/appsettings.json`: add `adapters`, `dds`, `sharedMemory`, `sync` sections. Default `adapters` block uses all mock/simulated values so `dotnet run` on a clean checkout works.
+- `Tracer.Aggregator/appsettings.json` (and `Tracer.Aggregator.Cli`): add `adapters` and `nas` sections; default `storageReader` to `"local-file-system"`.
+- Per-environment override files added to `Tracer.Agent` and `Tracer.Aggregator`:
+  - `appsettings.Development.json` — mock adapters (same as defaults; explicit for clarity).
+  - `appsettings.IntegrationReal.json` — all real adapters; `dds`, `sharedMemory`, `sync`, `nas` sections contain placeholder values (filled by the integration-real test fixture).
+  - `appsettings.Production.json` — real adapters; settings documented with comments (actual values are environment-specific; shipped as templates).
+- `TracerAgentHostBuilder` and `AggregatorHostBuilder` (and `Tracer.Aggregator.Cli/Program.cs`) call `services.AddTracerAdapters(configuration)` during DI setup.
+- Schema documentation via XML doc comment on each config class (already required by `Directory.Build.props` analyzer settings).
+
+**Out of scope:**
+- Implementing the adapters themselves (TRC-P11-001 through TRC-P11-004).
+- Deployment automation or CI secrets management.
+- `Tracer.FakeNode` and `Tracer.Observer` configuration (observer is derived; FakeNode uses mock data directly).
+
+### Constraints
+
+- The JSON in `appsettings.json` must be valid and loadable via `Microsoft.Extensions.Configuration.Json`.
+- Default config must not reference any infrastructure (no UNC paths, no real URLs, no DDS domain IDs that conflict with customer environments).
+- The `appsettings.Production.json` template must include comments (using `//` style via JSON5-aware convention or a README note) documenting each required field.
+
+### Success Conditions
+
+1. **Test: Agent starts with default config** — `dotnet run --project Tracer.Agent` (or equivalent integration test startup) with only `appsettings.json` present; assert the agent starts without `InvalidOperationException` from adapter selection.
+2. **Test: Aggregator starts with default config** — Same for `Tracer.Aggregator.Cli`; assert clean startup.
+3. **Test: `IntegrationReal` environment resolves real adapters** — Set `DOTNET_ENVIRONMENT=IntegrationReal`; resolve `IDiagnosticDataSource`; assert it is `DdsDiagnosticDataSource` (type check only; no DDS participant started).
+4. **Test: All Phase 1–10 integration tests still pass** — Run `Tracer.Tests.Integration` with `DOTNET_ENVIRONMENT=Development`; assert all tests pass.
+5. **Test: Per-environment override merges correctly** — `appsettings.IntegrationReal.json` overrides `adapters:dataSource` to `"dds"`; assert that the merged config has `"dds"` not `"mock"`.
+
+---
+
+## TRC-P11-007 — Hardening — Resource Limits, Back-Pressure, and Error Recovery
+
+**Phase:** 11 — Real Adapter Integration  
+**Design reference:** [tracer_phase11_design.md §9](./tracer_phase11_design.md#9-hardening-items)
+
+### Scope
+
+**In scope:**
+- **DDS adapter hardening** (§9.1, §9.2): `IngestBufferSize` read from `DdsAdapterConfig`; enforce the `DropOldest` mode already in place; emit a single structured log event per drop-burst (not per-sample) to avoid log flooding.
+- **SharedMemory hardening** (§4.6, §9.1): `CapacityBytes` read from `SharedMemoryConfig`; `MonitorTransportAsync` periodic task in `TracerAgent` reading `GetDroppedCount()` every 5 s; emits `LogWarning` when `dropped_count` increases (pattern from §4.6 code snippet).
+- **Sync upload hardening** (§5.6, §9.3): backlog tracking — TracerAgent maintains a counter of intervals awaiting upload; logs `LogWarning` when backlog exceeds a configurable threshold (default 3); on graceful shutdown, waits up to a configurable `ShutdownUploadFlushTimeout` (default 60 s) for in-flight uploads to complete before exiting.
+- **NAS reader hardening** (§9.3): file operation timeout (configurable via `NasAdapterConfig.FileOperationTimeout`); retry on `IOException` with SMB error codes (up to `RetryOnTransientError` attempts, 2 s base delay); circuit breaker: after `CircuitBreakerThreshold` consecutive failures, `NasStorageReader` throws `CircuitBreakerOpenException` and logs `LogError`; circuit resets after a configurable `CircuitBreakerResetInterval` (default 60 s).
+- **`/api/health` additions** (§9.4): add `sharedMemoryDropped`, `ingestChannelDepth`, `intervalsAwaitingUpload`, `lastIntervalCompletedAtUtc` to the agent health response; `sseConnectionsActive` to the observer health response.
+- **Structured log schema discipline**: all adapter log events include `topicName`, `adapterId`, or equivalent correlation fields so operators can group by adapter in log aggregation.
+
+**Out of scope:**
+- Windows Job Object RSS limits (operations concern per §9.1); Tracer documents the recommended limits but does not set them.
+- Alerting integrations (§1.2).
+- Any new UI views.
+
+### Constraints
+
+- Hardening additions must not alter any existing interface contracts.
+- Circuit breaker state must be per-`NasStorageReader` instance; not a global static.
+- Monitoring loop in TracerAgent must not throw; swallow internal exceptions and log.
+- All new structured log events must use `LoggerMessage.Define` (or `[LoggerMessage]` source-gen) per Phase 1 coding standards.
+
+### Success Conditions
+
+1. **Test: `SharedMemoryMonitorTests` — dropped count increase logs warning** — Fake a `SharedMemoryTransport` whose `GetDroppedCount()` returns 0 then 5 on successive calls; run `MonitorTransportAsync` for two cycles; assert one `LogWarning` emitted with `NewDrops = 5`.
+2. **Test: `SharedMemoryMonitorTests` — no warning when count stable** — `GetDroppedCount()` always returns 0; run for 3 cycles; assert no warning.
+3. **Test: `SyncUploadHardeningTests` — backlog threshold warning** — Enqueue 4 intervals (threshold = 3); assert `LogWarning` referencing backlog count.
+4. **Test: `SyncUploadHardeningTests` — graceful shutdown waits for in-flight** — Signal shutdown while one upload is in-flight (mocked async); assert shutdown waits up to `ShutdownUploadFlushTimeout`; assert upload is awaited before process exits.
+5. **Test: `NasReaderHardeningTests` — transient IOException retried** — Mock `System.IO.File` access throws `IOException` twice then succeeds; assert the read succeeds on the third attempt.
+6. **Test: `NasReaderHardeningTests` — circuit breaker trips after threshold** — Mock always throws `IOException`; after `CircuitBreakerThreshold` calls, assert `CircuitBreakerOpenException` is thrown and `LogError` is emitted.
+7. **Test: `NasReaderHardeningTests` — circuit breaker resets after interval** — Trip the circuit breaker; advance `IClock` past `CircuitBreakerResetInterval`; assert next call attempts the real operation.
+8. **Test: `HealthEndpointTests` — new fields present in health response** — Start agent with mocked adapters; GET `/api/health`; assert response JSON contains `sharedMemoryDropped`, `ingestChannelDepth`, `intervalsAwaitingUpload`, `lastIntervalCompletedAtUtc`.
+
+---
+
+## TRC-P11-008 — Integration Test Infrastructure — `Tracer.Tests.Integration.Real`
+
+**Phase:** 11 — Real Adapter Integration  
+**Design reference:** [tracer_phase11_design.md §8](./tracer_phase11_design.md#8-the-integration-real-test-suite)
+
+### Scope
+
+**In scope:**
+- New test project `Tracer.Tests.Integration.Real.csproj` added to the solution.
+- `[RealIntegrationTest]` category attribute and `[SkipIfNoSimulationHarness]` custom skip attribute so tests are skipped (not failed) when the customer's simulation harness is unavailable.
+- `SimulationHarnessFixture`: starts/stops the customer's simulation harness process (executable path from environment variable `TRACER_HARNESS_PATH`); exposes `EmitKnownTraceAsync(traceId, depth)` to inject deterministic trace chains; exposes `EmitEventBurstAsync(count, ratePerSec)` for throughput tests.
+- `DdsRoundTripTests` (§8.2 — trace context): start harness; emit 1000 events with known `trace_id` chain; capture via DDS adapter; rotate interval; build bundle; assert all events present in bundle with correct `TraceId`, `EventId`, `ParentEventId`.
+- `SharedMemoryThroughputTests` (§8.2 — throughput): 5000 events/sec for 60 s; assert < 0.1% drop rate and agent CPU below 50%.
+- `SharedMemoryLossTests` (§8.2 — drop under stall): pause consumer; saturate ring; resume; assert `dropped_count` matches observed deficit; assert producer never blocked.
+- `SyncUploadTests` (§8.2 — upload happy path and retry): complete an interval; call `SubmitAsync`; poll until `Completed`; assert NAS zip exists and contains `_ready`.
+- `TraceContextPropagationTests` (§8.3): known parent-child-grandchild trace chain; assert Phase 6 causal tree endpoint returns the expected tree shape (see §8.3 code sample for assertion detail).
+- `EndToEndSessionTests` (§8.2 — full pipeline): 5-minute simulated session across multiple agent processes; assert bundle contains events from all agents; assert cross-node receive times present; assert Phase 9 Replication Latency view query returns non-trivial p99 values.
+- CI lane documentation: `README-integration-real.md` in the test project explaining how to run the suite, required environment variables, and the fact that failures block releases but not PR merges (§8.4).
+
+**Out of scope:**
+- Soak tests (TRC-P11-009).
+- Modifying the simulation harness or sync master — those belong to the respective teams.
+- Running these tests on every PR (they run nightly or on demand per §8.4).
+
+### Constraints
+
+- The test project must compile without the simulation harness being present.
+- All test methods that require external infrastructure must be decorated with `[SkipIfNoSimulationHarness]` (or equivalent) so `dotnet test` on a standard dev machine does not fail.
+- The existing `Tracer.Tests.Integration` test project is not modified.
+- `SimulationHarnessFixture` must implement `IAsyncLifetime` (xUnit pattern) or equivalent so setup/teardown is async.
+
+### Success Conditions
+
+1. **Test: `Tracer.Tests.Integration.Real` compiles on a machine without the simulation harness** — `dotnet build` succeeds; `dotnet test` shows all real-integration tests as skipped, not failed.
+2. **Test: `[SkipIfNoSimulationHarness]` skips when env var absent** — `TRACER_HARNESS_PATH` not set; assert all decorated tests show as `Skipped`.
+3. **Test: `DdsRoundTripTests.KnownTraceChainArrivesInBundle`** — (Integration-real lane) Requires harness: emit 1000-event chain; assert bundle events ≥ 1000; assert all have non-zero `TraceId`; assert `EventId` values match emitted values exactly.
+4. **Test: `TraceContextPropagationTests.ParentChildRelationshipsPreserved`** — (Integration-real lane) Emit depth-3 chain; assert Phase 6 causal tree API returns 3 nodes and 2 edges; assert root node `EventId` = 100 (hex `0x64`).
+5. **Test: `SharedMemoryThroughputTests.SustainedThroughput`** — (Integration-real lane) 5000 events/sec × 60 s; assert `dropped_count / total_published < 0.001`.
+6. **Test: `SyncUploadTests.HappyPathUploadCompletes`** — (Integration-real lane) NAS zip exists at expected path after `WaitForCompletionAsync` returns `Completed`.
+7. **Test: `EndToEndSessionTests.BundleContainsAllAgentData`** — (Integration-real lane) Bundle `events` count ≥ total events emitted across all agents; all agents' `nodeId` present in bundle metadata.
+
+---
+
+## TRC-P11-009 — Soak Test and Final Validation
+
+**Phase:** 11 — Real Adapter Integration  
+**Design reference:** [tracer_phase11_design.md §8.3](./tracer_phase11_design.md#83-soak-tests) and [§1.3](./tracer_phase11_design.md#13-success-criteria) (success criteria) and [§11](./tracer_phase11_design.md#11-phase-11-risks-and-mitigations) (risks)
+
+### Scope
+
+**In scope:**
+- `SoakTests.cs` in `Tracer.Tests.Integration.Real`: 48-hour continuous run test decorated with `[SoakTest]` category attribute (separate from `[RealIntegrationTest]` so the nightly CI lane can skip soak unless explicitly scheduled).
+- Soak run validates (§8.3, §1.3 criteria 8 and 10):
+  - No monotonic RSS growth in agent process over 48 h (sampled every 5 min; slope test via linear regression over the last 12 h of samples).
+  - No monotonic file-handle growth (sampled every 5 min; same slope test).
+  - SharedMemory `dropped_count` per-hour average stays bounded (does not grow run-over-run by more than 5%).
+  - Agent throughput (events/s) stable within 10% of the first-hour baseline for all subsequent hours.
+  - Agent crash-and-restart (induced mid-run at hour 24): restart completes within 30 s; new interval starts cleanly; no bundle corruption.
+  - Bundle build succeeds at any time during the run (triggered at hours 12, 24, 36, and at end of run).
+- **Handoff notes** (`docs/phase11-handoff-notes.md`): document what Tracer requires from the simulation team (trace context propagation discipline: `dds_write_ts()` called on every publish; all event IDL types carry `traceId`/`eventId`/`parentEventId`; DDS domain ID agreed before deployment) and from the sync team (Telemetry category REST endpoints match `sync_addendum_telemetry.md §A4` contract; `_ready` entry written last in each zip by the sync agent).
+- **Phase 11 completion checklist**: all 10 success criteria from [tracer_phase11_design.md §1.3](./tracer_phase11_design.md#13-success-criteria) verified and signed off; all Phase 1–10 tests still passing.
+
+**Out of scope:**
+- Operational deployment automation.
+- Alerting integration (§1.2).
+- Multi-NAS or multi-master topologies.
+
+### Constraints
+
+- `SoakTests.cs` must be runnable via `dotnet test --filter Category=SoakTest` in a dedicated environment; it must not run accidentally on a dev machine.
+- Resource measurements use .NET `Process.GetCurrentProcess()` or OS APIs; not platform-specific native calls (for portability).
+- The handoff notes document is in Markdown and committed to the `docs/` folder.
+
+### Success Conditions
+
+1. **Test: `SoakTests.cs` compiles and is correctly categorized** — `dotnet test --filter "Category!=SoakTest"` on the integration-real project runs without the soak test; `dotnet test --filter "Category=SoakTest"` shows it.
+2. **Soak run criterion — no RSS growth** — Linear regression slope of agent RSS samples over the final 12 h of the 48-h run is < 1 MB/h.
+3. **Soak run criterion — no file-handle growth** — Linear regression slope of agent file handles over final 12 h is < 1 handle/h.
+4. **Soak run criterion — drop rate stable** — Per-hour `dropped_count` delta does not exceed first-hour delta by more than 5%.
+5. **Soak run criterion — throughput stable** — Events/s in each hour is within ±10% of the first-hour baseline.
+6. **Soak run criterion — crash recovery** — After induced crash at hour 24, agent restarts within 30 s; subsequent intervals recorded cleanly; no bundle corruption in the post-crash bundle build.
+7. **Soak run criterion — bundle builds succeed** — All four mid-run bundle builds complete without error and produce valid bundles (bundle `Validate()` passes per Phase 5 contract).
+8. **Handoff notes completeness** — `docs/phase11-handoff-notes.md` exists and covers: simulation team requirements (trace context discipline, DDS timestamp, domain ID), sync team requirements (contract endpoint stability, `_ready` sentinel discipline).
+9. **All Phase 1–10 integration tests pass** — `dotnet test Tracer.Tests.Integration` with `DOTNET_ENVIRONMENT=Development` shows all previously-passing tests green.
+10. **Phase 11 success criteria signed off** — All 10 criteria from [tracer_phase11_design.md §1.3](./tracer_phase11_design.md#13-success-criteria) are verifiable by running the integration-real suite plus reviewing the soak results.
+
+<!-- PHASE 11 TASKS END -->
