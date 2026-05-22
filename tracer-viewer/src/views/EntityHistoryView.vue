@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { computed } from 'vue';
+import { useRouter } from 'vue-router';
 import { useEntityHistoryStore } from '@/stores/entityHistoryStore';
 import { useEntityHistoryQuery } from '@/composables/useEntityHistoryQuery';
 import { useEntityHistoryUrl } from '@/composables/useEntityHistoryUrl';
@@ -12,8 +14,39 @@ import LoadingSpinner from '@/components/LoadingSpinner.vue';
 import ErrorMessage from '@/components/ErrorMessage.vue';
 
 const store = useEntityHistoryStore();
+const router = useRouter();
 useEntityHistoryUrl(); // URL ↔ store sync
 useEntityHistoryQuery(); // drives fetches
+
+const selectedEvent = computed(() => {
+  if (!store.selectedEventId || !store.events) return null;
+  return store.events.events.find(e => e.eventId === store.selectedEventId) ?? null;
+});
+
+function pivotToTimeline() {
+  const ev = selectedEvent.value;
+  if (!ev || !store.sessionId) return;
+  const t = new Date(ev.occurredAtUtc).getTime();
+  void router.push({
+    name: 'timeline',
+    params: { sessionId: store.sessionId },
+    query: {
+      from: new Date(t - 2000).toISOString(),
+      to: new Date(t + 2000).toISOString(),
+      select: ev.eventId,
+    },
+  });
+}
+
+function pivotToCausalTree() {
+  const ev = selectedEvent.value;
+  if (!ev || !ev.traceId || ev.traceId === '0') return;
+  void router.push({ name: 'causal-by-event', params: { eventId: ev.eventId } });
+}
+
+const canPivotToCausal = computed(() =>
+  !!selectedEvent.value?.traceId && selectedEvent.value.traceId !== '0',
+);
 </script>
 
 <template>
@@ -47,6 +80,19 @@ useEntityHistoryQuery(); // drives fetches
         :selected-event-id="store.selectedEventId"
         @select="store.selectedEventId = $event"
       />
+      <div v-if="selectedEvent" class="entity-history-view__pivot-actions">
+        <button class="entity-history-view__pivot-btn" @click="pivotToTimeline">
+          Show in timeline
+        </button>
+        <button
+          class="entity-history-view__pivot-btn"
+          :disabled="!canPivotToCausal"
+          :class="{ 'entity-history-view__pivot-btn--disabled': !canPivotToCausal }"
+          @click="pivotToCausalTree"
+        >
+          Show causal tree
+        </button>
+      </div>
       <FastStateDrillDown
         :entity-id="store.entityId ?? ''"
         :session-id="store.sessionId ?? ''"

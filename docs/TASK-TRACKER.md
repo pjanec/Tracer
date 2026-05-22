@@ -172,8 +172,8 @@
 - [x] **TRC-P7-015** `useEntityHistoryQuery.ts` and `entityHistoryStore.ts` [details](./TASK-DETAIL.md#trc-p7-015--useentityhistoryqueryts-and-entityhistorystorets-fetch-orchestration)
 - [x] **TRC-P7-016** `useEntityHistoryUrl.ts` — URL State [details](./TASK-DETAIL.md#trc-p7-016--useentityhistoryurlts--url-state)
 - [x] **TRC-P7-017** `useFastStateChart.ts` — On-Demand Fast State [details](./TASK-DETAIL.md#trc-p7-017--usefaststatechartts--on-demand-fast-state)
-- [ ] **TRC-P7-018** Cross-View Navigation Pivots [details](./TASK-DETAIL.md#trc-p7-018--cross-view-navigation-pivots)
-- [ ] **TRC-P7-019** Entity Discovery in Session Browser [details](./TASK-DETAIL.md#trc-p7-019--entity-discovery-in-session-browser)
+- [x] **TRC-P7-018** Cross-View Navigation Pivots [details](./TASK-DETAIL.md#trc-p7-018--cross-view-navigation-pivots)
+- [x] **TRC-P7-019** Entity Discovery in Session Browser [details](./TASK-DETAIL.md#trc-p7-019--entity-discovery-in-session-browser)
 - [ ] **TRC-P7-020** Phase 7 Tests (Backend Unit, Integration, Frontend, E2E) [details](./TASK-DETAIL.md#trc-p7-020--phase-7-tests-backend-unit-integration-frontend-e2e)
 
 <!-- PHASE 7 TRACKER END -->

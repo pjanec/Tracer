@@ -62,6 +62,7 @@ const selectedNode = computed(() => {
         :session-id="store.tree?.sessionId ?? null"
         :show-causal-tree-pivot="false"
         :show-timeline-pivot="true"
+        :show-entity-history-pivot="true"
       />
     </div>
 

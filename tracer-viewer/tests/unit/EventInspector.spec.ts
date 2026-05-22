@@ -145,7 +145,9 @@ describe('EventInspector', () => {
     expect(causalBtn).toBeUndefined();
   });
 
-  it('eventInspector_showsEntityHistory_buttonPresentButDisabled', async () => {
+  it('eventInspector_showsEntityHistory_buttonAbsentByDefault', async () => {
+    // After TRC-P7-018: the stub disabled button is replaced by a conditional button.
+    // When showEntityHistoryPivot is false (default), no entity history button is rendered.
     const fakeEvent: EventDto = {
       eventId: 'AABBCCDD',
       traceId: 'TRACE-1',
@@ -160,10 +162,10 @@ describe('EventInspector', () => {
     store.selectedEventId = 'AABBCCDD';
     await flushPromises();
 
-    const btns = wrapper.findAll('.event-inspector__action--disabled');
-    const entityBtn = btns.find((b) => b.text().includes('entity'));
-    expect(entityBtn).toBeTruthy();
-    expect(entityBtn!.attributes('disabled')).toBeDefined();
+    // showEntityHistoryPivot defaults to false — button should be absent entirely
+    const allBtns = wrapper.findAll('.event-inspector__action');
+    const entityBtn = allBtns.find((b) => b.text().includes('entity history'));
+    expect(entityBtn).toBeUndefined();
   });
 
   it('eventInspector_copyEventId_writesToClipboard', async () => {
@@ -288,5 +290,52 @@ describe('EventInspector', () => {
     const allBtns = wrapper.findAll('.event-inspector__action');
     const timelineBtn = allBtns.find((b) => b.text().includes('timeline'));
     expect(timelineBtn).toBeUndefined();
+  });
+
+  // --- TRC-P7-018: entity history pivot tests ---
+
+  it('entityHistoryButton_VisibleWhenEntityIdPresent', async () => {
+    const node = makeCausalNode({ entityId: 'ent-1' });
+    const wrapper = await mountWithEvent(node, {
+      showEntityHistoryPivot: true,
+      sessionId: 'sess-abc',
+    });
+
+    const allBtns = wrapper.findAll('.event-inspector__action');
+    const entityBtn = allBtns.find((b) => b.text().includes('entity history'));
+    expect(entityBtn).toBeTruthy();
+    expect(entityBtn!.attributes('disabled')).toBeUndefined();
+  });
+
+  it('entityHistoryButton_AbsentWhenEntityIdNull', async () => {
+    const node = makeCausalNode({ entityId: null });
+    const wrapper = await mountWithEvent(node, {
+      showEntityHistoryPivot: true,
+      sessionId: 'sess-abc',
+    });
+
+    const allBtns = wrapper.findAll('.event-inspector__action');
+    const entityBtn = allBtns.find((b) => b.text().includes('entity history'));
+    expect(entityBtn).toBeUndefined();
+  });
+
+  it('pivotToEntityHistory_NavigatesToEntityHistoryView', async () => {
+    const node = makeCausalNode({ entityId: 'ent-42' });
+    const wrapper = await mountWithEvent(node, {
+      showEntityHistoryPivot: true,
+      sessionId: 'sess-xyz',
+    });
+
+    const allBtns = wrapper.findAll('.event-inspector__action');
+    const entityBtn = allBtns.find((b) => b.text().includes('entity history'));
+    expect(entityBtn).toBeTruthy();
+
+    await entityBtn!.trigger('click');
+
+    expect(mockRouterPush).toHaveBeenCalledWith({
+      name: 'entity-history',
+      params: { entityId: 'ent-42' },
+      query: { session: 'sess-xyz' },
+    });
   });
 });

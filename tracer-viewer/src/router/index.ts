@@ -44,6 +44,12 @@ const router = createRouter({
       name: 'entity-history',
       component: () => import('@/views/EntityHistoryView.vue'),
     },
+    {
+      path: '/v/entities/:sessionId',
+      name: 'entity-picker',
+      component: () => import('@/views/EntityPickerView.vue'),
+      props: true,
+    },
   ],
 });
 

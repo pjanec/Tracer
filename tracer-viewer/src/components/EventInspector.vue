@@ -7,7 +7,7 @@
       v-if="loading && !isPropMode"
       class="event-inspector__loading"
     >
-      Loading…
+      Loadingï¿½
     </div>
     <template v-else-if="displayEvent">
       <div class="event-inspector__header">
@@ -45,11 +45,11 @@
           Show in timeline
         </button>
         <button
-          class="event-inspector__action event-inspector__action--disabled"
-          disabled
+          v-if="showEntityHistoryButton"
+          class="event-inspector__action"
+          @click="pivotToEntityHistory"
         >
           Show entity history
-          <!-- TODO Phase 7: enable entity history navigation -->
         </button>
         <button
           class="event-inspector__action"
@@ -81,11 +81,13 @@ const props = withDefaults(defineProps<{
   sessionId?: string | null;
   showCausalTreePivot?: boolean;
   showTimelinePivot?: boolean;
+  showEntityHistoryPivot?: boolean;
 }>(), {
   event: null,
   sessionId: null,
   showCausalTreePivot: false,
   showTimelinePivot: false,
+  showEntityHistoryPivot: false,
 });
 
 const store  = useTimelineStore();
@@ -153,6 +155,20 @@ const showTimelineButton = computed(() =>
   props.showTimelinePivot && !!resolvedSessionId.value,
 );
 
+function getEntityId(event: unknown): string | null {
+  if (typeof event === 'object' && event !== null && 'entityId' in event) {
+    const v = (event as Record<string, unknown>)['entityId'];
+    return typeof v === 'string' && v ? v : null;
+  }
+  return null;
+}
+
+const showEntityHistoryButton = computed(() =>
+  props.showEntityHistoryPivot &&
+  !!getEntityId(displayEvent.value) &&
+  !!resolvedSessionId.value,
+);
+
 // Navigation handlers
 function pivotToCausalTree() {
   const eventId = isPropMode.value
@@ -174,6 +190,16 @@ function pivotToTimeline() {
       to:   new Date(t + 2000).toISOString(),
       select: props.event.eventId,
     },
+  });
+}
+
+function pivotToEntityHistory() {
+  const entityId = getEntityId(displayEvent.value);
+  if (!entityId || !resolvedSessionId.value) return;
+  void router.push({
+    name: 'entity-history',
+    params: { entityId },
+    query: { session: resolvedSessionId.value },
   });
 }
 

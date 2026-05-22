@@ -53,6 +53,13 @@ async function onBuildBundle() {
       <footer class="session-card__footer">
         <span>{{ session.eventCount.toLocaleString() }} events</span>
         <span>{{ session.participatingNodes.length }} node(s)</span>
+        <RouterLink
+          :to="{ name: 'entity-picker', params: { sessionId: session.sessionId } }"
+          class="session-card__entities-link"
+          @click.stop
+        >
+          Entities
+        </RouterLink>
       </footer>
     </template>
 
