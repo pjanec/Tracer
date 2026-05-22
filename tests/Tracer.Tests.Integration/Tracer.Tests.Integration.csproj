@@ -9,6 +9,7 @@
     <ProjectReference Include="..\..\src\Tracer.TestHarness\Tracer.TestHarness.csproj" />
     <ProjectReference Include="..\..\src\Tracer.Aggregator.Cli\Tracer.Aggregator.Cli.csproj" />
     <ProjectReference Include="..\..\src\Tracer.OfflineViewer\Tracer.OfflineViewer.csproj" />
+    <ProjectReference Include="..\..\src\Tracer.Storage.Parquet\Tracer.Storage.Parquet.csproj" />
   </ItemGroup>
 
   <ItemGroup>
