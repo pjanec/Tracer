@@ -159,6 +159,14 @@ public static class ObserverHostBuilder
         builder.Services.AddSingleton<EventAggregationService>();
         builder.Services.AddSingleton<TraceQueryService>();
 
+        // ── Entity history services (Phase 7) ─────────────────────────────────
+        builder.Services.AddSingleton<Tracer.Storage.Parquet.ParquetReader>();
+        builder.Services.AddSingleton<FastStateFileLocator>();
+        builder.Services.AddSingleton<EntityDiscoveryService>();
+        builder.Services.AddSingleton<EntityEventsService>();
+        builder.Services.AddSingleton<EntitySlowStateService>();
+        builder.Services.AddSingleton<EntityFastStateService>();
+
         // ── Live streaming ────────────────────────────────────────────────────
         builder.Services.AddSingleton<SseStreamingOptions>();
         builder.Services.AddSingleton<SseConnectionManager>();
@@ -225,6 +233,7 @@ public static class ObserverHostBuilder
         SseEndpoints.Map(app);
         BundleEndpoints.Map(app);
         TraceEndpoints.Map(app);
+        EntityEndpoints.Map(app);
 
         // ── SPA static files (if present) ─────────────────────────────────────
         var spaPath = Path.Combine(app.Environment.ContentRootPath, "wwwroot");

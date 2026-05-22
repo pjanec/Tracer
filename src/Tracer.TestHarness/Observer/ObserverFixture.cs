@@ -143,6 +143,14 @@ public sealed class ObserverFixture : IAsyncDisposable
         builder.Services.AddSingleton<EventAggregationService>();
         builder.Services.AddSingleton<TraceQueryService>();
 
+        // Entity history services (Phase 7)
+        builder.Services.AddSingleton<Tracer.Storage.Parquet.ParquetReader>();
+        builder.Services.AddSingleton<Tracer.WebApi.Queries.FastStateFileLocator>();
+        builder.Services.AddSingleton<Tracer.WebApi.Queries.EntityDiscoveryService>();
+        builder.Services.AddSingleton<Tracer.WebApi.Queries.EntityEventsService>();
+        builder.Services.AddSingleton<Tracer.WebApi.Queries.EntitySlowStateService>();
+        builder.Services.AddSingleton<Tracer.WebApi.Queries.EntityFastStateService>();
+
         // SSE services
         var streaming = sseOptions ?? new SseStreamingOptions();
         builder.Services.AddSingleton(streaming);
@@ -164,6 +172,7 @@ public sealed class ObserverFixture : IAsyncDisposable
         EventEndpoints.Map(app);
         SseEndpoints.Map(app);
         TraceEndpoints.Map(app);
+        Tracer.WebApi.Endpoints.EntityEndpoints.Map(app);
 
         configureExtraApp?.Invoke(app);
 
@@ -211,6 +220,14 @@ public sealed class ObserverFixture : IAsyncDisposable
             stateReporter.IncrementIngested();
         }
         await rotator.CurrentWriter!.FlushAsync(ct);
+    }
+
+    /// <summary>Push a slow-state record directly into the current interval's storage.</summary>
+    public async Task PushStateAsync(Tracer.Core.Records.StateSampleRecord record, CancellationToken ct = default)
+    {
+        var rotator = App.Services.GetRequiredService<Tracer.Agent.Lifecycle.IntervalRotator>();
+        await rotator.CurrentWriter!.AppendStateAsync(record, ct);
+        await rotator.CurrentWriter.FlushAsync(ct);
     }
 
     public async Task ForceRotationAsync(CancellationToken ct = default)

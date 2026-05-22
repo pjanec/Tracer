@@ -64,6 +64,17 @@ public static class OfflineViewerHostBuilder
         builder.Services.AddSingleton<EventAggregationService>();
         builder.Services.AddSingleton<TraceQueryService>();
 
+        // ── Entity history services (Phase 7) ─────────────────────────────────
+        builder.Services.AddSingleton<Tracer.Storage.Parquet.ParquetReader>();
+        builder.Services.AddSingleton<FastStateFileLocator>(sp =>
+            new FastStateFileLocator(
+                sp.GetRequiredService<BundleIntervalSetTracker>(),
+                () => sp.GetRequiredService<BundleOpenManager>().Current?.WorkingDirectory));
+        builder.Services.AddSingleton<EntityDiscoveryService>();
+        builder.Services.AddSingleton<EntityEventsService>();
+        builder.Services.AddSingleton<EntitySlowStateService>();
+        builder.Services.AddSingleton<EntityFastStateService>();
+
         // Observer state reporter — inert instance (no events in bundle mode)
         builder.Services.AddSingleton<ObserverStateReporter>(_ => new InertObserverStateReporter());
         builder.Services.AddSingleton<ILiveStatusProvider>(sp =>
@@ -97,6 +108,7 @@ public static class OfflineViewerHostBuilder
         SseEndpoints.Map(app);
         BundleOpenEndpoints.Map(app);
         TraceEndpoints.Map(app);
+        EntityEndpoints.Map(app);
 
         // SPA fallback
         app.MapFallbackToFile("index.html");

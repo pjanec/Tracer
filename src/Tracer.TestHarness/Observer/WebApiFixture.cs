@@ -65,6 +65,13 @@ public sealed class WebApiFixture : IAsyncDisposable
         builder.Services.AddSingleton<LiveEventBroadcaster>();
         builder.Services.AddHostedService(sp => sp.GetRequiredService<LiveEventBroadcaster>());
 
+        builder.Services.AddSingleton<Tracer.Storage.Parquet.ParquetReader>();
+        builder.Services.AddSingleton<Tracer.WebApi.Queries.FastStateFileLocator>();
+        builder.Services.AddSingleton<Tracer.WebApi.Queries.EntityDiscoveryService>();
+        builder.Services.AddSingleton<Tracer.WebApi.Queries.EntityEventsService>();
+        builder.Services.AddSingleton<Tracer.WebApi.Queries.EntitySlowStateService>();
+        builder.Services.AddSingleton<Tracer.WebApi.Queries.EntityFastStateService>();
+
         var app = builder.Build();
 
         app.UseExceptionHandler(eb =>
@@ -77,6 +84,7 @@ public sealed class WebApiFixture : IAsyncDisposable
         EventEndpoints.Map(app);
         SseEndpoints.Map(app);
         TraceEndpoints.Map(app);
+        Tracer.WebApi.Endpoints.EntityEndpoints.Map(app);
 
         await app.StartAsync(ct);
 
