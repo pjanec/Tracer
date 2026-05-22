@@ -254,14 +254,14 @@
 - [x] **TRC-P10-008** Bundle Import/Export Service — [details](./TASK-DETAIL.md#trc-p10-008--bundle-importexport-service)
 - [x] **TRC-P10-009** "Show SQL for This View" Backend Template Endpoint — [details](./TASK-DETAIL.md#trc-p10-009--show-sql-for-this-view-backend-template-endpoint)
 - [x] **TRC-P10-010** Phase 10 Wiring and DI — [details](./TASK-DETAIL.md#trc-p10-010--phase-10-wiring-and-di)
-- [ ] **TRC-P10-011** `SqlConsoleView.vue` — Editor and Result Table — [details](./TASK-DETAIL.md#trc-p10-011--sqlconsoleviewvue--editor-and-result-table)
-- [ ] **TRC-P10-012** SQL Console Chart View — [details](./TASK-DETAIL.md#trc-p10-012--sql-console-chart-view)
-- [ ] **TRC-P10-013** `SavedQueriesView.vue` — [details](./TASK-DETAIL.md#trc-p10-013--savedqueriesviewvue)
-- [ ] **TRC-P10-014** "Save Query" and "Open in SQL Console" Affordances — [details](./TASK-DETAIL.md#trc-p10-014--save-query-and-open-in-sql-console-affordances)
-- [ ] **TRC-P10-015** `BundleLibraryView.vue` — Full Bundle Library — [details](./TASK-DETAIL.md#trc-p10-015--bundlelibraryviewvue--full-bundle-library)
-- [ ] **TRC-P10-016** "Show SQL for This View" Affordance — [details](./TASK-DETAIL.md#trc-p10-016--show-sql-for-this-view-affordance)
-- [ ] **TRC-P10-017** Run-and-Pivot from SQL Results — [details](./TASK-DETAIL.md#trc-p10-017--run-and-pivot-from-sql-results)
-- [ ] **TRC-P10-018** Phase 10 Tests — [details](./TASK-DETAIL.md#trc-p10-018--phase-10-tests)
+- [x] **TRC-P10-011** `SqlConsoleView.vue` — Editor and Result Table — [details](./TASK-DETAIL.md#trc-p10-011--sqlconsoleviewvue--editor-and-result-table)
+- [x] **TRC-P10-012** SQL Console Chart View — [details](./TASK-DETAIL.md#trc-p10-012--sql-console-chart-view)
+- [x] **TRC-P10-013** `SavedQueriesView.vue` — [details](./TASK-DETAIL.md#trc-p10-013--savedqueriesviewvue)
+- [x] **TRC-P10-014** "Save Query" and "Open in SQL Console" Affordances — [details](./TASK-DETAIL.md#trc-p10-014--save-query-and-open-in-sql-console-affordances)
+- [x] **TRC-P10-015** `BundleLibraryView.vue` — Full Bundle Library — [details](./TASK-DETAIL.md#trc-p10-015--bundlelibraryviewvue--full-bundle-library)
+- [x] **TRC-P10-016** "Show SQL for This View" Affordance — [details](./TASK-DETAIL.md#trc-p10-016--show-sql-for-this-view-affordance)
+- [x] **TRC-P10-017** Run-and-Pivot from SQL Results — [details](./TASK-DETAIL.md#trc-p10-017--run-and-pivot-from-sql-results)
+- [x] **TRC-P10-018** Phase 10 Tests — [details](./TASK-DETAIL.md#trc-p10-018--phase-10-tests)
 
 <!-- PHASE 10 TRACKER END -->
 

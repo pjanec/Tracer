@@ -80,6 +80,22 @@ const router = createRouter({
       component: () => import('@/views/NetworkTopologyView.vue'),
       props: true,
     },
+    {
+      path: '/v/sql/:sessionId',
+      name: 'sql-console',
+      component: () => import('@/views/SqlConsoleView.vue'),
+      props: true,
+    },
+    {
+      path: '/saved-queries',
+      name: 'saved-queries',
+      component: () => import('@/views/SavedQueriesView.vue'),
+    },
+    {
+      path: '/bundles/library',
+      name: 'bundle-library',
+      component: () => import('@/views/BundleLibraryView.vue'),
+    },
   ],
 });
 

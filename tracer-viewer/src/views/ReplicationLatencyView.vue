@@ -1,6 +1,9 @@
 <template>
   <div class="replication-latency-view">
-    <h1 class="replication-latency-view__title">Replication latency</h1>
+    <div class="replication-latency-view__toolbar">
+      <h1 class="replication-latency-view__title">Replication latency</h1>
+      <ShowSqlButton v-if="currentSql" :sql="currentSql" :session-id="sessionId" />
+    </div>
 
     <BundleModeRequiredBanner v-if="bundleModeRequired" />
 
@@ -63,6 +66,8 @@ import { useLatencyDistribution } from '@/composables/useLatencyDistribution';
 import { useLatencyTimeSeries } from '@/composables/useLatencyTimeSeries';
 import { useLatencyOutliers } from '@/composables/useLatencyOutliers';
 import type { LatencyFilter } from '@/composables/useLatencyDistribution';
+import ShowSqlButton from '@/components/ShowSqlButton.vue';
+import { latencyFilterToSql } from '@/utils/showSqlGenerators';
 
 const props = defineProps<{ sessionId: string }>();
 
@@ -98,6 +103,12 @@ const budgetByTopic = computed(() => {
 
 const selectedBudget = computed(() =>
   selectedPair.value ? (budgetByTopic.value.get(selectedPair.value.topic) ?? null) : null,
+);
+
+const currentSql = computed(() =>
+  sessionFrom.value && sessionTo.value
+    ? latencyFilterToSql(sessionFrom.value, sessionTo.value, selectedPair.value?.topic)
+    : '',
 );
 
 function onSelectPair(pair: LatencyPairSummaryDto) {

@@ -12,6 +12,8 @@ import EntityEventStrip from '@/components/EntityEventStrip.vue';
 import FastStateDrillDown from '@/components/FastStateDrillDown.vue';
 import LoadingSpinner from '@/components/LoadingSpinner.vue';
 import ErrorMessage from '@/components/ErrorMessage.vue';
+import ShowSqlButton from '@/components/ShowSqlButton.vue';
+import { entityHistoryFilterToSql } from '@/utils/showSqlGenerators';
 
 const store = useEntityHistoryStore();
 const router = useRouter();
@@ -43,6 +45,15 @@ function pivotToCausalTree() {
   if (!ev || !ev.traceId || ev.traceId === '0') return;
   void router.push({ name: 'causal-by-event', params: { eventId: ev.eventId } });
 }
+
+const currentSql = computed(() => {
+  if (!store.entityId || !store.sessionId) return '';
+  return entityHistoryFilterToSql(
+    store.entityId,
+    store.timeRange.from.toISOString(),
+    store.timeRange.to.toISOString(),
+  );
+});
 
 const canPivotToCausal = computed(() =>
   !!selectedEvent.value?.traceId && selectedEvent.value.traceId !== '0',
@@ -92,6 +103,7 @@ const canPivotToCausal = computed(() =>
         >
           Show causal tree
         </button>
+        <ShowSqlButton v-if="currentSql && store.sessionId" :sql="currentSql" :session-id="store.sessionId" />
       </div>
       <FastStateDrillDown
         :entity-id="store.entityId ?? ''"

@@ -1,6 +1,9 @@
 <template>
   <div class="timeline-view">
-    <TimelineToolbar />
+    <div class="timeline-view__toolbar-row">
+      <TimelineToolbar />
+      <ShowSqlButton :sql="currentSql" :session-id="sessionId" />
+    </div>
     <div class="timeline-view__layout">
       <!-- FilterPanel placeholder (full wiring in TRC-P5-006) -->
       <div class="filter-panel-placeholder" />
@@ -16,12 +19,14 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useTimelineStore } from '@/stores/timelineStore';
 import { useTimelineUrl } from '@/composables/useTimelineUrl';
 import TimelineToolbar from '@/components/TimelineToolbar.vue';
 import TimelineCanvas  from '@/components/TimelineCanvas.vue';
 import TimelineAxis    from '@/components/TimelineAxis.vue';
+import ShowSqlButton from '@/components/ShowSqlButton.vue';
+import { timelineFilterToSql } from '@/utils/showSqlGenerators';
 
 const props = defineProps<{
   sessionId: string;
@@ -29,6 +34,16 @@ const props = defineProps<{
 
 const store = useTimelineStore();
 useTimelineUrl();
+
+const currentSql = computed(() =>
+  timelineFilterToSql({
+    from: store.viewport.from.toISOString(),
+    to: store.viewport.to.toISOString(),
+    topic: store.filter.topics?.[0],
+    publisherNode: store.filter.nodes?.[0],
+    entityId: store.filter.entityIds?.[0],
+  }),
+);
 
 onMounted(() => {
   store.setSession(props.sessionId);

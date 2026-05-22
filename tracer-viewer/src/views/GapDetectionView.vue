@@ -1,6 +1,9 @@
 <template>
   <div class="gap-detection-view">
-    <h1 class="gap-detection-view__title">Gap detection</h1>
+    <div class="gap-detection-view__toolbar">
+      <h1 class="gap-detection-view__title">Gap detection</h1>
+      <ShowSqlButton v-if="currentSql" :sql="currentSql" :session-id="sessionId" />
+    </div>
 
     <BundleModeRequiredBanner v-if="bundleModeRequired" />
 
@@ -40,12 +43,22 @@ import { api } from '@/api/tracerApiClient';
 import type { GapDto } from '@/api/tracerApiClient';
 import BundleModeRequiredBanner from '@/components/BundleModeRequiredBanner.vue';
 import GapList from '@/components/GapList.vue';
+import ShowSqlButton from '@/components/ShowSqlButton.vue';
+import { gapFilterToSql } from '@/utils/showSqlGenerators';
 
 const props = defineProps<{ sessionId: string }>();
 
 const loading = ref(false);
 const bundleModeRequired = ref(false);
 const gapResult = ref<{ gaps: GapDto[]; totalGaps: number } | null>(null);
+const sessionFrom = ref<string | null>(null);
+const sessionTo = ref<string | null>(null);
+
+const currentSql = computed(() =>
+  sessionFrom.value && sessionTo.value
+    ? gapFilterToSql(sessionFrom.value, sessionTo.value)
+    : '',
+);
 
 interface TupleSummary {
   topic: string;
@@ -81,6 +94,8 @@ onMounted(async () => {
     if (!session) return;
     const from = session.startUtc;
     const to = session.endUtc ?? new Date().toISOString();
+    sessionFrom.value = from;
+    sessionTo.value = to;
     gapResult.value = await api.getGaps({ from, to });
   } catch (e: unknown) {
     const status = (e as { status?: number }).status ?? 0;

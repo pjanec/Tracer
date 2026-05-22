@@ -3,6 +3,9 @@
 
 import type { EventListDto, EventAggregateDto } from '@/types/timeline';
 import type { TraceTreeDto } from '@/types/causalTree';
+import type { SqlExecuteRequestDto, SqlExecuteResultDto, SqlExplainRequestDto, SqlExplainResultDto, SqlSchemaDto, ViewSqlTemplateResultDto } from '@/types/sql';
+import type { SavedQueryDto, SavedQueryListDto, CreateSavedQueryDto, UpdateSavedQueryDto } from '@/types/savedQuery';
+import type { BundleLibraryListDto, UpdateBundleMetadataDto } from '@/types/bundle';
 
 export interface CurrentBundleDto {
   bundleId: string;
@@ -858,6 +861,152 @@ export class TracerApiClient {
     if (!res.ok) TracerApiClient.apiError('getLatencyBudgets', res.status);
     const data = await res.json() as { budgets: LatencyBudgetDto[] };
     return { budgets: data.budgets };
+  }
+
+  // ── Phase 10: SQL Console ──────────────────────────────────────────────────
+
+  async executeSql(req: SqlExecuteRequestDto, signal?: AbortSignal): Promise<SqlExecuteResultDto> {
+    const res = await fetch('/api/sql/execute', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(req),
+      signal,
+    });
+    if (!res.ok) throw new Error(`executeSql: ${res.status}`);
+    return res.json() as Promise<SqlExecuteResultDto>;
+  }
+
+  async getSqlSchema(signal?: AbortSignal): Promise<SqlSchemaDto> {
+    const res = await fetch('/api/sql/schema', { signal });
+    if (!res.ok) throw new Error(`getSqlSchema: ${res.status}`);
+    return res.json() as Promise<SqlSchemaDto>;
+  }
+
+  async explainSql(req: SqlExplainRequestDto, signal?: AbortSignal): Promise<SqlExplainResultDto> {
+    const res = await fetch('/api/sql/explain', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(req),
+      signal,
+    });
+    if (!res.ok) throw new Error(`explainSql: ${res.status}`);
+    return res.json() as Promise<SqlExplainResultDto>;
+  }
+
+  async getViewSqlTemplate(viewType: string, params: Record<string, string> = {}): Promise<ViewSqlTemplateResultDto> {
+    const qs = new URLSearchParams({ viewType, ...params });
+    const res = await fetch(`/api/sql/view-template?${qs}`);
+    if (!res.ok) throw new Error(`getViewSqlTemplate: ${res.status}`);
+    return res.json() as Promise<ViewSqlTemplateResultDto>;
+  }
+
+  // ── Phase 10: Saved Queries ────────────────────────────────────────────────
+
+  async listSavedQueries(opts?: {
+    tag?: string; author?: string; favorite?: boolean; builtIn?: boolean; signal?: AbortSignal;
+  }): Promise<SavedQueryDto[]> {
+    const qs = new URLSearchParams();
+    if (opts?.tag) qs.set('tag', opts.tag);
+    if (opts?.author) qs.set('author', opts.author);
+    if (opts?.favorite !== undefined) qs.set('favorite', String(opts.favorite));
+    if (opts?.builtIn !== undefined) qs.set('builtIn', String(opts.builtIn));
+    const res = await fetch(`/api/saved-queries?${qs}`, { signal: opts?.signal });
+    if (!res.ok) throw new Error(`listSavedQueries: ${res.status}`);
+    const data = await res.json() as SavedQueryListDto;
+    return data.queries;
+  }
+
+  async getSavedQuery(id: string): Promise<SavedQueryDto | null> {
+    const res = await fetch(`/api/saved-queries/${encodeURIComponent(id)}`);
+    if (res.status === 404) return null;
+    if (!res.ok) throw new Error(`getSavedQuery: ${res.status}`);
+    return res.json() as Promise<SavedQueryDto>;
+  }
+
+  async createSavedQuery(dto: CreateSavedQueryDto): Promise<SavedQueryDto> {
+    const res = await fetch('/api/saved-queries', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(dto),
+    });
+    if (!res.ok) throw new Error(`createSavedQuery: ${res.status}`);
+    return res.json() as Promise<SavedQueryDto>;
+  }
+
+  async updateSavedQuery(id: string, dto: UpdateSavedQueryDto): Promise<SavedQueryDto | null> {
+    const res = await fetch(`/api/saved-queries/${encodeURIComponent(id)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(dto),
+    });
+    if (res.status === 404 || res.status === 405) return null;
+    if (!res.ok) throw new Error(`updateSavedQuery: ${res.status}`);
+    return res.json() as Promise<SavedQueryDto>;
+  }
+
+  async deleteSavedQuery(id: string): Promise<void> {
+    const res = await fetch(`/api/saved-queries/${encodeURIComponent(id)}`, { method: 'DELETE' });
+    if (!res.ok && res.status !== 404) throw new Error(`deleteSavedQuery: ${res.status}`);
+  }
+
+  async toggleSavedQueryFavorite(id: string): Promise<SavedQueryDto | null> {
+    const res = await fetch(`/api/saved-queries/${encodeURIComponent(id)}/favorite`, { method: 'POST' });
+    if (res.status === 404) return null;
+    if (!res.ok) throw new Error(`toggleSavedQueryFavorite: ${res.status}`);
+    return res.json() as Promise<SavedQueryDto>;
+  }
+
+  async cloneSavedQuery(id: string, label: string): Promise<SavedQueryDto> {
+    const res = await fetch(`/api/saved-queries/${encodeURIComponent(id)}/clone`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ label }),
+    });
+    if (!res.ok) throw new Error(`cloneSavedQuery: ${res.status}`);
+    return res.json() as Promise<SavedQueryDto>;
+  }
+
+  async recordSavedQueryRun(id: string): Promise<void> {
+    const res = await fetch(`/api/saved-queries/${encodeURIComponent(id)}/run`, { method: 'POST' });
+    if (!res.ok) throw new Error(`recordSavedQueryRun: ${res.status}`);
+  }
+
+  // ── Phase 10: Bundle Library ───────────────────────────────────────────────
+
+  async listBundleLibrary(opts?: {
+    showArchived?: boolean; tag?: string; sortBy?: string; sortDesc?: boolean; signal?: AbortSignal;
+  }): Promise<BundleLibraryListDto> {
+    const qs = new URLSearchParams();
+    if (opts?.showArchived !== undefined) qs.set('showArchived', String(opts.showArchived));
+    if (opts?.tag) qs.set('tag', opts.tag);
+    if (opts?.sortBy) qs.set('sortBy', opts.sortBy);
+    if (opts?.sortDesc !== undefined) qs.set('sortDesc', String(opts.sortDesc));
+    const res = await fetch(`/api/bundles/library?${qs}`, { signal: opts?.signal });
+    if (!res.ok) throw new Error(`listBundleLibrary: ${res.status}`);
+    return res.json() as Promise<BundleLibraryListDto>;
+  }
+
+  async updateBundleMetadata(bundleId: string, dto: UpdateBundleMetadataDto): Promise<void> {
+    const res = await fetch(`/api/bundles/${encodeURIComponent(bundleId)}/metadata`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(dto),
+    });
+    if (!res.ok) throw new Error(`updateBundleMetadata: ${res.status}`);
+  }
+
+  async recordBundleOpened(bundleId: string): Promise<void> {
+    const res = await fetch(`/api/bundles/${encodeURIComponent(bundleId)}/opened`, { method: 'POST' });
+    if (!res.ok) throw new Error(`recordBundleOpened: ${res.status}`);
+  }
+
+  async deleteBundle(bundleId: string): Promise<void> {
+    const res = await fetch(`/api/bundles/${encodeURIComponent(bundleId)}`, { method: 'DELETE' });
+    if (!res.ok && res.status !== 404) throw new Error(`deleteBundle: ${res.status}`);
+  }
+
+  getBundleDownloadUrl(bundleId: string): string {
+    return `/api/bundles/${encodeURIComponent(bundleId)}/download`;
   }
 }
 

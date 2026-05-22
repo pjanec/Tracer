@@ -1,6 +1,9 @@
 <template>
   <div class="network-topology-view">
-    <h1 class="network-topology-view__title">Network topology</h1>
+    <div class="network-topology-view__toolbar">
+      <h1 class="network-topology-view__title">Network topology</h1>
+      <ShowSqlButton v-if="currentSql" :sql="currentSql" :session-id="sessionId" />
+    </div>
 
     <BundleModeRequiredBanner v-if="bundleModeRequired" />
 
@@ -48,6 +51,8 @@ import { api } from '@/api/tracerApiClient';
 import type { NetworkTopologyDto, NetworkTopologyEdgeDto } from '@/api/tracerApiClient';
 import BundleModeRequiredBanner from '@/components/BundleModeRequiredBanner.vue';
 import NetworkGraphCanvas from '@/components/NetworkGraphCanvas.vue';
+import ShowSqlButton from '@/components/ShowSqlButton.vue';
+import { topologyFilterToSql } from '@/utils/showSqlGenerators';
 
 const props = defineProps<{ sessionId: string }>();
 const router = useRouter();
@@ -56,6 +61,14 @@ const loading = ref(false);
 const bundleModeRequired = ref(false);
 const topology = ref<NetworkTopologyDto | null>(null);
 const selectedEdge = ref<{ from: string; to: string } | null>(null);
+const sessionFrom = ref<string | null>(null);
+const sessionTo = ref<string | null>(null);
+
+const currentSql = computed(() =>
+  sessionFrom.value && sessionTo.value
+    ? topologyFilterToSql(sessionFrom.value, sessionTo.value)
+    : '',
+);
 
 /** Edges collapsed to (publisher, subscriber) pairs with summed messageCount. */
 const canvasEdges = computed(() => {
@@ -107,6 +120,8 @@ onMounted(async () => {
     if (!session) return;
     const from = session.startUtc;
     const to = session.endUtc ?? new Date().toISOString();
+    sessionFrom.value = from;
+    sessionTo.value = to;
     topology.value = await api.getNetworkTopology({ from, to });
   } catch (e: unknown) {
     const status = (e as { status?: number }).status ?? 0;
