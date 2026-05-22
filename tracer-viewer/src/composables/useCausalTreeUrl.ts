@@ -65,7 +65,7 @@ export function useCausalTreeUrl() {
   // Watch for route navigation (back/forward, router.push)
   const stopRouteWatch = watch(
     () => ({ name: route.name, params: { ...route.params }, query: { ...route.query } }),
-    ({ name, params, query }) => applyRouteToStore(name, params, query),
+    ({ name, params, query }) => applyRouteToStore(name, params as Record<string, string | string[]>, query as Record<string, string | string[]>),
   );
 
   // --- Store → URL (debounced replace of ?select param) ---

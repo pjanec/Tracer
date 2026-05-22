@@ -1,10 +1,12 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { nextTick } from 'vue';
 import { flushPromises } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { useTimelineStore } from '../../src/stores/timelineStore';
+import { useAnnotationStore } from '../../src/stores/annotationStore';
 import type { EventDto } from '../../src/api/tracerApiClient';
 
-const mockGetEvent = vi.fn<(id: string) => Promise<EventDto | null>>();
+const mockGetEvent = vi.fn<[id: string], Promise<EventDto | null>>();
 const mockRouterPush = vi.fn();
 
 vi.mock('vue-router', () => ({
@@ -13,6 +15,14 @@ vi.mock('vue-router', () => ({
 
 vi.mock('@/api/tracerApiClient', () => ({
   api: { getEvent: mockGetEvent },
+}));
+
+vi.mock('@/composables/useResizeObserver', () => ({
+  useResizeObserver: vi.fn(),
+}));
+
+vi.mock('@/rendering/eventStripRenderer', () => ({
+  renderEventStrip: vi.fn().mockReturnValue([]),
 }));
 
 describe('EventInspector', () => {
@@ -337,5 +347,101 @@ describe('EventInspector', () => {
       params: { entityId: 'ent-42' },
       query: { session: 'sess-xyz' },
     });
+  });
+
+  // --- TRC-P8-011: AnnotationMarker integration tests ---
+
+  it('Inspector_AnnotationMarker_VisibleWhenAnnotationExists', async () => {
+    const node = makeCausalNode({ eventId: 'some-event-id' });
+    const wrapper = await mountWithEvent(node);
+
+    const annStore = useAnnotationStore();
+    annStore.upsert({
+      annotationId: 'ann-1',
+      sessionId: 'sess-1',
+      kind: 'Event',
+      eventId: 'some-event-id',
+      body: 'test annotation',
+      tags: [],
+      createdAtUtc: '2026-01-01T00:00:00Z',
+    });
+
+    await nextTick();
+    expect(wrapper.find('.annotation-marker').exists()).toBe(true);
+  });
+
+  it('Inspector_AnnotationMarker_HiddenWhenNoAnnotation', async () => {
+    const node = makeCausalNode({ eventId: 'no-annotation-event' });
+    const wrapper = await mountWithEvent(node);
+
+    await nextTick();
+    expect(wrapper.find('.annotation-marker').exists()).toBe(false);
+  });
+
+  it('EntityEventStrip_AnnotationMarker_Visible', async () => {
+    const pinia = createPinia();
+    setActivePinia(pinia);
+
+    const annStore = useAnnotationStore();
+    annStore.upsert({
+      annotationId: 'ann-strip-1',
+      sessionId: 'sess-1',
+      kind: 'Event',
+      eventId: 'evt-strip-1',
+      body: 'strip annotation',
+      tags: [],
+      createdAtUtc: '2026-01-01T00:00:00Z',
+    });
+
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => { cb(0); return 0; });
+    vi.stubGlobal('cancelAnimationFrame', vi.fn());
+
+    const { default: EntityEventStrip } = await import('../../src/components/EntityEventStrip.vue');
+    const { mount } = await import('@vue/test-utils');
+
+    const wrapper = mount(EntityEventStrip, {
+      global: { plugins: [pinia] },
+      props: {
+        events: {
+          entityId: 'ent-1',
+          events: [{
+            eventId: 'evt-strip-1',
+            traceId: '0000000000000000',
+            occurredAtUtc: '2026-01-01T10:00:00Z',
+            topic: 'test.topic',
+            publisherNode: 'node-1',
+          }],
+          truncated: false,
+        },
+        timeRange: {
+          from: new Date('2026-01-01T09:00:00Z'),
+          to: new Date('2026-01-01T11:00:00Z'),
+        },
+        selectedEventId: null,
+      },
+    });
+
+    await nextTick();
+    expect(wrapper.find('.annotation-marker').exists()).toBe(true);
+
+    vi.unstubAllGlobals();
+  });
+
+  // --- TRC-P8-012: AnnotationEditor integration tests ---
+
+  it('Inspector_ShowsAddNoteButton', async () => {
+    const node = makeCausalNode();
+    const wrapper = await mountWithEvent(node);
+    expect(wrapper.find('.event-inspector__add-note').exists()).toBe(true);
+  });
+
+  it('Inspector_OpenEditor_OnAddNote', async () => {
+    const node = makeCausalNode();
+    const wrapper = await mountWithEvent(node);
+
+    await wrapper.find('.event-inspector__add-note').trigger('click');
+    await nextTick();
+
+    expect(wrapper.find('.annotation-editor').exists()).toBe(true);
   });
 });

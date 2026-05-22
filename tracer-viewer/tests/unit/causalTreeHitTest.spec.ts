@@ -13,7 +13,7 @@ function makeSimpleTree(nodeIds: string[]): TraceTreeDto {
     publisherNode: 'node-a', topic: 'test',
   }));
   return {
-    traceId: 'trace-1', nodes, edges: [],
+    traceId: 'trace-1', sessionId: '', nodes, edges: [],
     rootEventIds: nodeIds, leafEventIds: nodeIds,
     summary: { traceId: 'trace-1', totalEvents: nodeIds.length, truncated: false, totalSpanMs: 0,
       participatingNodes: ['node-a'], rootCount: nodeIds.length, leafCount: nodeIds.length },

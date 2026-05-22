@@ -50,6 +50,18 @@ const router = createRouter({
       component: () => import('@/views/EntityPickerView.vue'),
       props: true,
     },
+    {
+      path: '/v/saved-views/:sessionId',
+      name: 'saved-views',
+      component: () => import('@/views/SavedViewsView.vue'),
+      props: true,
+    },
+    {
+      path: '/v/triggers/:sessionId',
+      name: 'triggers',
+      component: () => import('@/views/TriggerEvalView.vue'),
+      props: true,
+    },
   ],
 });
 

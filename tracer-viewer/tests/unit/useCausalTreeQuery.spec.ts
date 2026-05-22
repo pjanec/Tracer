@@ -19,6 +19,7 @@ import { useCausalTreeQuery } from '../../src/composables/useCausalTreeQuery';
 function makeMinimalTree(): TraceTreeDto {
   return {
     traceId: 'trace-1',
+    sessionId: '',
     nodes: [{ eventId: 'e1', traceId: 'trace-1', publishWallclock: '2026-01-01T10:00:00.000Z', publisherNode: 'n', topic: 't' }],
     edges: [],
     rootEventIds: ['e1'],

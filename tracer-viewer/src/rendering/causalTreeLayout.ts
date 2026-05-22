@@ -1,6 +1,6 @@
 // tracer-viewer/src/rendering/causalTreeLayout.ts
 
-import type { TraceTreeDto, TraceNodeDto, TraceEdgeDto } from '@/types/causalTree';
+import type { TraceTreeDto, TraceNodeDto } from '@/types/causalTree';
 
 export interface LaidOutNode {
   eventId: string;

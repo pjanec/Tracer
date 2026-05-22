@@ -33,6 +33,7 @@ function makeLinearChain(n: number): TraceTreeDto {
   }
   return {
     traceId: 'trace-1',
+    sessionId: '',
     nodes,
     edges,
     rootEventIds: ['node-0'],
@@ -70,6 +71,7 @@ describe('causalTreeLayout', () => {
     }
     const tree: TraceTreeDto = {
       traceId: 'trace-multi',
+      sessionId: '',
       nodes,
       edges,
       rootEventIds: ['root-0', 'root-1', 'root-2'],
@@ -97,6 +99,7 @@ describe('causalTreeLayout', () => {
     ];
     const tree: TraceTreeDto = {
       traceId: 'trace-conv',
+      sessionId: '',
       nodes,
       edges,
       rootEventIds: ['root-a', 'root-b'],
@@ -127,7 +130,7 @@ describe('causalTreeLayout', () => {
       edges.push(makeEdge(`root-${i}`, `child-${i}`));
     }
     const tree: TraceTreeDto = {
-      traceId: 'trace-x', nodes, edges,
+      traceId: 'trace-x', sessionId: '', nodes, edges,
       rootEventIds: ['root-0', 'root-1', 'root-2'],
       leafEventIds: ['child-0', 'child-1', 'child-2'],
       summary: { traceId: 'trace-x', totalEvents: 6, truncated: false, totalSpanMs: 0,
@@ -163,6 +166,7 @@ describe('causalTreeLayout', () => {
   it('layout_EmptyTree_ReturnsZeroSizedResult', () => {
     const tree: TraceTreeDto = {
       traceId: 'trace-empty',
+      sessionId: '',
       nodes: [],
       edges: [],
       rootEventIds: [],
@@ -200,6 +204,7 @@ describe('causalTreeLayout', () => {
     ];
     const tree: TraceTreeDto = {
       traceId: 'trace-cycle',
+      sessionId: '',
       nodes,
       edges,
       rootEventIds: ['cycle-a'],

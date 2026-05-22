@@ -1,13 +1,29 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import { useRouter } from 'vue-router';
 import type { SessionDto } from '@/api/tracerApiClient';
 import { api } from '@/api/tracerApiClient';
 import { formatTime } from '@/utils/time';
+import { usePersonaStore } from '@/stores/personaStore';
 
 const props = defineProps<{ session?: SessionDto; sessionId?: string }>();
 
 // Effective session ID — from explicit prop or from the full session object
 const effectiveSessionId = computed(() => props.sessionId ?? props.session?.sessionId ?? null);
+
+const router = useRouter();
+const personaStore = usePersonaStore();
+
+function onCardClick() {
+  const sessionId = effectiveSessionId.value;
+  if (!sessionId) return;
+  const persona = personaStore.current;
+  if (persona === 'engineer') {
+    void router.push({ name: 'timeline', params: { sessionId } });
+  } else {
+    void router.push({ name: 'scenario', params: { sessionId } });
+  }
+}
 
 // Build bundle state
 type BuildStatus = 'idle' | 'building' | 'done' | 'error';
@@ -31,7 +47,7 @@ async function onBuildBundle() {
 </script>
 
 <template>
-  <article class="session-card">
+  <article class="session-card" @click="onCardClick">
     <!-- Session info shown only when a full session object is provided -->
     <template v-if="session">
       <header class="session-card__header">

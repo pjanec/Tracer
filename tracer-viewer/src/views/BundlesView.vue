@@ -7,7 +7,7 @@
     <div v-else-if="store.error" class="bundles__error">{{ store.error }}</div>
 
     <template v-else>
-      <p v-if="!isLive.value" class="bundles__offline-hint">
+      <p v-if="!isLive" class="bundles__offline-hint">
         To open a different bundle, return to the Open Bundle screen.
       </p>
 
@@ -28,7 +28,7 @@
             </span>
           </div>
           <a
-            v-if="isLive.value"
+            v-if="isLive"
             :href="`/api/bundles/${bundle.bundleId}/download`"
             class="bundles__item-download"
           >

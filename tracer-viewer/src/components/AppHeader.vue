@@ -3,8 +3,13 @@
     <div class="app-header__brand">
       <span class="app-header__title">Tracer</span>
     </div>
+    <PersonaSwitcher class="app-header__persona" />
   </header>
 </template>
+
+<script setup lang="ts">
+import PersonaSwitcher from '@/components/PersonaSwitcher.vue';
+</script>
 
 <style>
 .app-header {
@@ -28,4 +33,9 @@
   color: var(--c-text);
   letter-spacing: 0.02em;
 }
+
+.app-header__persona {
+  margin-left: auto;
+}
 </style>
+

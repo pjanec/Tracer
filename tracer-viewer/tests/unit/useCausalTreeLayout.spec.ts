@@ -16,6 +16,7 @@ function makeTree(n: number): TraceTreeDto {
   }));
   return {
     traceId: 'trace-1',
+    sessionId: '',
     nodes,
     edges: [],
     rootEventIds: nodes.map(n => n.eventId),

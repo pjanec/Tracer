@@ -1,17 +1,17 @@
 ﻿import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { shallowRef } from 'vue';
 import { mount, flushPromises } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
-import { useBundleStore } from '../../src/stores/bundleStore';
 import type { BundleListEntryDto } from '../../src/stores/bundleStore';
 
 const mockListBundles = vi.fn().mockResolvedValue([]);
 
 vi.mock('@/composables/useBundleMode', () => ({
   useBundleMode: vi.fn(() => ({
-    isLive:     { value: true },
-    isBundle:   { value: false },
-    isNoBundle: { value: false },
-    mode:       { value: { kind: 'live' } },
+    isLive:     shallowRef(true),
+    isBundle:   shallowRef(false),
+    isNoBundle: shallowRef(false),
+    mode:       shallowRef({ kind: 'live' }),
     refresh:    vi.fn(),
   })),
 }));
@@ -88,10 +88,10 @@ describe('BundlesView', () => {
     // Re-mock useBundleMode to return isLive = false
     const { useBundleMode } = await import('@/composables/useBundleMode');
     (useBundleMode as ReturnType<typeof vi.fn>).mockReturnValue({
-      isLive:     { value: false },
-      isBundle:   { value: true },
-      isNoBundle: { value: false },
-      mode:       { value: { kind: 'bundle', bundleId: 'b1' } },
+      isLive:     shallowRef(false),
+      isBundle:   shallowRef(true),
+      isNoBundle: shallowRef(false),
+      mode:       shallowRef({ kind: 'bundle', bundleId: 'b1' }),
       refresh:    vi.fn(),
     });
 

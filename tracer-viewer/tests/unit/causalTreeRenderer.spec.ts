@@ -20,7 +20,7 @@ function makeCtxMock() {
     font: '',
     textAlign: '',
     textBaseline: '',
-    arc: vi.fn((x, y, radius) => {
+    arc: vi.fn((_x, _y, radius) => {
       arcCalls.push({ radius, fillStyle: currentFillStyle });
     }),
     fill: vi.fn(),
@@ -51,6 +51,7 @@ function makeTree(nodeOverrides: Partial<TraceNodeDto>[] = [], edges: TraceEdgeD
   const leafEventIds = nodes.filter(n => !edges.some(e => e.parentEventId === n.eventId)).map(n => n.eventId);
   return {
     traceId: 'trace-1',
+    sessionId: '',
     nodes,
     edges,
     rootEventIds,
@@ -198,6 +199,7 @@ describe('causalTreeRenderer', () => {
     }
     const tree: TraceTreeDto = {
       traceId: 'trace-perf', nodes, edges,
+      sessionId: '',
       rootEventIds: ['node-0'],
       leafEventIds: ['node-499'],
       summary: { traceId: 'trace-perf', totalEvents: 500, truncated: false, totalSpanMs: 0,

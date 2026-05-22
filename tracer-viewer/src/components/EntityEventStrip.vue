@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { ref, watchEffect, onUnmounted } from 'vue';
-import type { EntityEventsDto } from '@/api/tracerApiClient';
+import type { EntityEventsDto, AnnotationDto } from '@/api/tracerApiClient';
 import { renderEventStrip, type EventStripHitEntry } from '@/rendering/eventStripRenderer';
 import { useResizeObserver } from '@/composables/useResizeObserver';
+import AnnotationMarker from '@/components/AnnotationMarker.vue';
 
 const props = defineProps<{
   events: EntityEventsDto;
@@ -12,6 +13,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   select: [eventId: string | null];
+  'annotation-edit': [annotation: AnnotationDto];
 }>();
 
 const canvasRef = ref<HTMLCanvasElement | null>(null);
@@ -98,6 +100,14 @@ function onClick(e: MouseEvent) {
       </span>
     </div>
     <canvas ref="canvasRef" class="entity-event-strip__canvas" @click="onClick" />
+    <div class="entity-event-strip__annotation-overlay">
+      <AnnotationMarker
+        v-for="event in events.events"
+        :key="`ann-${event.eventId}`"
+        :event-id="event.eventId"
+        @edit="$emit('annotation-edit', $event)"
+      />
+    </div>
   </div>
 </template>
 

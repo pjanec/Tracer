@@ -1,0 +1,1 @@
+{"version":3,"file":"useApi-BFTB1oTG.js","sources":["../../../../tracer-viewer/src/api/useApi.ts"],"sourcesContent":["import { api } from './tracerApiClient';\r\nexport function useApi() { return api; }\r\n"],"names":["useApi","api"],"mappings":"kDACO,SAASA,GAAS,CAAE,OAAOC,CAAK"}

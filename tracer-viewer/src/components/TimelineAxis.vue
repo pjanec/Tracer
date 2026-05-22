@@ -20,7 +20,6 @@ const width = ref(800);
 
 // Resize observer to track actual width
 let ro: ResizeObserver | null = null;
-const axisEl = ref<SVGSVGElement | null>(null);
 
 onMounted(() => {
   if (typeof ResizeObserver !== 'undefined') {

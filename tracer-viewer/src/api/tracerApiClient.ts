@@ -181,6 +181,95 @@ export interface EntityFastStateDto {
   downsampled: boolean;
 }
 
+export interface AnnotationDto {
+  annotationId: string;
+  sessionId: string;
+  kind: string;          // "Event" | "Entity" | "Trace" | "TimePoint"
+  eventId?: string;
+  entityId?: string;
+  traceId?: string;
+  wallclockTimestamp?: string;  // ISO-8601 for TimePoint kind
+  body: string;
+  title?: string;
+  tags: string[];
+  author?: string;
+  createdAtUtc: string;
+  modifiedAtUtc?: string;
+}
+
+export interface CreateAnnotationDto {
+  sessionId: string;
+  kind: string;
+  eventId?: string;
+  entityId?: string;
+  traceId?: string;
+  wallclockTimestamp?: string;
+  body: string;
+  title?: string;
+  tags?: string[];
+  author?: string;
+}
+
+export interface UpdateAnnotationDto {
+  body?: string;
+  title?: string;
+  tags?: string[];
+}
+
+export interface AnnotationListDto {
+  annotations: AnnotationDto[];
+}
+
+export type SavedViewKind = 'SavedView' | 'Bookmark';
+
+export interface SavedViewDto {
+  savedViewId: string;
+  sessionId: string;
+  kind: SavedViewKind;
+  viewType: string;
+  url: string;
+  label: string;
+  description?: string;
+  persona: string;
+  author?: string;
+  createdAtUtc: string;
+  lastOpenedAtUtc?: string;
+  openCount: number;
+}
+
+export interface CreateSavedViewDto {
+  sessionId: string;
+  kind: SavedViewKind;
+  viewType: string;
+  url: string;
+  label: string;
+  description?: string;
+  persona: string;
+  author?: string;
+}
+
+export interface UpdateSavedViewDto {
+  label?: string;
+  description?: string;
+}
+
+export interface TriggerEvaluationDto {
+  eventId: string;
+  evaluatedAtUtc: string;
+  publisherNode: string;
+  traceId: string;
+  triggerId: string;
+  triggerLabel?: string;
+  inputs: string;
+  result: string;
+  nextEventId?: string;
+  reason?: string;
+}
+
+export interface TriggerEvaluationListDto {
+  evaluations: TriggerEvaluationDto[];
+}
+
 export class TracerApiClient {
   async listSessions(from?: string, to?: string): Promise<SessionDto[]> {
     const params = new URLSearchParams();
@@ -457,6 +546,108 @@ export class TracerApiClient {
     const res = await fetch(`/api/entities/${encodeURIComponent(entityId)}/fast-state/${encodeURIComponent(topic)}?${params}`, { signal: opts?.signal });
     if (!res.ok) throw new Error(`getEntityFastState: ${res.status}`);
     return res.json() as Promise<EntityFastStateDto>;
+  }
+  async listAnnotations(sessionId: string, opts?: { signal?: AbortSignal }): Promise<AnnotationDto[]> {
+    const params = new URLSearchParams({ sessionId });
+    const res = await fetch(`/api/annotations?${params}`, { signal: opts?.signal });
+    if (!res.ok) throw new Error(`listAnnotations: ${res.status}`);
+    const data = await res.json() as AnnotationListDto;
+    return data.annotations;
+  }
+
+  async getAnnotation(annotationId: string): Promise<AnnotationDto | null> {
+    const res = await fetch(`/api/annotations/${encodeURIComponent(annotationId)}`);
+    if (res.status === 404) return null;
+    if (!res.ok) throw new Error(`getAnnotation: ${res.status}`);
+    return res.json() as Promise<AnnotationDto>;
+  }
+
+  async createAnnotation(dto: CreateAnnotationDto): Promise<AnnotationDto> {
+    const res = await fetch('/api/annotations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(dto),
+    });
+    if (!res.ok) throw new Error(`createAnnotation: ${res.status}`);
+    return res.json() as Promise<AnnotationDto>;
+  }
+
+  async updateAnnotation(annotationId: string, dto: UpdateAnnotationDto): Promise<AnnotationDto | null> {
+    const res = await fetch(`/api/annotations/${encodeURIComponent(annotationId)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(dto),
+    });
+    if (res.status === 404) return null;
+    if (!res.ok) throw new Error(`updateAnnotation: ${res.status}`);
+    return res.json() as Promise<AnnotationDto>;
+  }
+
+  async deleteAnnotation(annotationId: string): Promise<void> {
+    const res = await fetch(`/api/annotations/${encodeURIComponent(annotationId)}`, {
+      method: 'DELETE',
+    });
+    if (!res.ok && res.status !== 404) throw new Error(`deleteAnnotation: ${res.status}`);
+  }
+
+  async listSavedViews(params: {
+    sessionId?: string;
+    kind?: SavedViewKind;
+    viewType?: string;
+    persona?: string;
+    orderBy?: string;
+    limit?: number;
+  }): Promise<SavedViewDto[]> {
+    const qs = new URLSearchParams();
+    if (params.sessionId) qs.set('sessionId', params.sessionId);
+    if (params.kind) qs.set('kind', params.kind);
+    if (params.viewType) qs.set('viewType', params.viewType);
+    if (params.persona) qs.set('persona', params.persona);
+    if (params.orderBy) qs.set('orderBy', params.orderBy);
+    if (params.limit != null) qs.set('limit', String(params.limit));
+    const res = await fetch(`/api/saved-views?${qs}`);
+    if (!res.ok) throw new Error(`listSavedViews: ${res.status}`);
+    return res.json() as Promise<SavedViewDto[]>;
+  }
+
+  async createSavedView(dto: CreateSavedViewDto): Promise<SavedViewDto> {
+    const res = await fetch('/api/saved-views', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(dto),
+    });
+    if (!res.ok) throw new Error(`createSavedView: ${res.status}`);
+    return res.json() as Promise<SavedViewDto>;
+  }
+
+  async deleteSavedView(savedViewId: string): Promise<void> {
+    const res = await fetch(`/api/saved-views/${encodeURIComponent(savedViewId)}`, { method: 'DELETE' });
+    if (!res.ok && res.status !== 404) throw new Error(`deleteSavedView: ${res.status}`);
+  }
+
+  async recordSavedViewOpened(savedViewId: string): Promise<void> {
+    const res = await fetch(`/api/saved-views/${encodeURIComponent(savedViewId)}/opened`, { method: 'POST' });
+    if (!res.ok) throw new Error(`recordSavedViewOpened: ${res.status}`);
+  }
+
+  async listTriggerEvaluations(params: {
+    sessionId: string;
+    from?: string;
+    to?: string;
+    triggerId?: string;
+    result?: string;
+    limit?: number;
+  }): Promise<TriggerEvaluationDto[]> {
+    const qs = new URLSearchParams({ sessionId: params.sessionId });
+    if (params.from) qs.set('from', params.from);
+    if (params.to) qs.set('to', params.to);
+    if (params.triggerId) qs.set('triggerId', params.triggerId);
+    if (params.result) qs.set('result', params.result);
+    if (params.limit != null) qs.set('limit', String(params.limit));
+    const res = await fetch(`/api/scenario/triggers?${qs}`);
+    if (!res.ok) throw new Error(`listTriggerEvaluations: ${res.status}`);
+    const data = await res.json() as TriggerEvaluationListDto;
+    return data.evaluations;
   }
 }
 

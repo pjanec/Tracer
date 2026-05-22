@@ -14,6 +14,7 @@ function makeTree(nodes: Partial<TraceNodeDto>[]): TraceTreeDto {
   }));
   return {
     traceId: 'trace-1',
+    sessionId: '',
     nodes: fullNodes,
     edges: [],
     rootEventIds: fullNodes.map(n => n.eventId),

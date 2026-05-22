@@ -63,7 +63,7 @@ function makeSample(overrides: Partial<SlowStateSampleDto> = {}): SlowStateSampl
 // ── Tests ────────────────────────────────────────────────────────────────────
 
 describe('slowStateChart', () => {
-  let getContextSpy: ReturnType<typeof vi.spyOn>;
+  let getContextSpy: { mockRestore(): void } | undefined;
 
   beforeEach(() => {
     const pinia = createPinia();

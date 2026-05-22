@@ -3,7 +3,7 @@ import { mount, flushPromises, RouterLinkStub } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import type { EntityListDto, EntitySummaryDto, SessionDto } from '../../src/api/tracerApiClient';
 
-const mockListEntities = vi.fn<() => Promise<EntityListDto>>();
+const mockListEntities = vi.fn<[], Promise<EntityListDto>>();
 const mockRouterPush = vi.fn();
 const mockBuildBundle = vi.fn();
 
@@ -40,16 +40,6 @@ describe('EntityPickerView', () => {
     mockRouterPush.mockReset();
     mockBuildBundle.mockReset();
   });
-
-  async function mountView(sessionId = 'sess-1') {
-    mockListEntities.mockResolvedValue(makeEntityList([]));
-    const { default: EntityPickerView } = await import('../../src/views/EntityPickerView.vue');
-    const wrapper = mount(EntityPickerView, {
-      props: { sessionId },
-    });
-    await flushPromises();
-    return wrapper;
-  }
 
   // SC-1: Loads and renders 3 entities
   it('loadsAndRenders_ThreeEntities', async () => {

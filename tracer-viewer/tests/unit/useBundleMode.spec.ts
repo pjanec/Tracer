@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { flushPromises } from '@vue/test-utils';
-import { createApp, ref } from 'vue';
+import { createApp } from 'vue';
 
 vi.mock('@/api/tracerApiClient', () => ({
   api: {

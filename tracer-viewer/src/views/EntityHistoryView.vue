@@ -71,7 +71,7 @@ const canPivotToCausal = computed(() =>
         :topic="topic"
         :samples="samples"
         :time-range="store.timeRange"
-        @select-event="store.selectedEventId = $event"
+        @select-event="store.selectedEventId = $event.traceId ?? null"
       />
       <EntityEventStrip
         v-if="store.events"

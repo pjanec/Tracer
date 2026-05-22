@@ -66,7 +66,7 @@ const BASE_TIME_RANGE = {
 // ── Tests ────────────────────────────────────────────────────────────────────
 
 describe('entityEventStrip', () => {
-  let getContextSpy: ReturnType<typeof vi.spyOn>;
+  let getContextSpy: { mockRestore(): void } | undefined;
 
   beforeEach(() => {
     setActivePinia(createPinia());

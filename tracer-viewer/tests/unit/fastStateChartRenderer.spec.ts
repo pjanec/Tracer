@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { renderFastStateChart, FAST_STATE_COLORS } from '../../src/rendering/fastStateChartRenderer';
 import type { FastStateRenderInput } from '../../src/rendering/fastStateChartRenderer';
 

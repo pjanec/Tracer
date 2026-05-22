@@ -1,0 +1,2 @@
+import{m as a,g as n,d as e,y as c,t as m}from"./vue-runtime-B3Tvhr7y.js";const _={class:"error-message",role:"alert"},i={class:"error-message__text"},y=a({__name:"ErrorMessage",props:{message:{}},emits:["retry"],setup(s,{emit:t}){const r=t;function o(){r("retry")}return(l,p)=>(m(),n("div",_,[e("p",i,c(s.message),1),e("button",{class:"error-message__retry",type:"button",onClick:o}," Retry ")]))}});export{y as _};
+//# sourceMappingURL=ErrorMessage.vue_vue_type_style_index_0_lang-BIedvcZX.js.map

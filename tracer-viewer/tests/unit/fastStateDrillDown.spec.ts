@@ -98,7 +98,7 @@ describe('fastStateDrillDown', () => {
     mockFastStateColumns.value = [];
 
     const { api } = await import('@/api/tracerApiClient');
-    mockApi = api as typeof mockApi;
+    mockApi = api as unknown as typeof mockApi;
     mockApi.getEntityFastStateSchema.mockResolvedValue(null);
     mockApi.getEntityFastState.mockResolvedValue(makeData());
   });

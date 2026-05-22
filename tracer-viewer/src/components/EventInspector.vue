@@ -13,6 +13,10 @@
       <div class="event-inspector__header">
         <span class="event-inspector__topic">{{ displayEvent.topic }}</span>
         <span class="event-inspector__node">{{ displayEvent.publisherNode }}</span>
+        <AnnotationMarker
+          :event-id="displayEvent.eventId"
+          @edit="onAnnotationEdit"
+        />
       </div>
 
       <pre class="event-inspector__payload">{{ prettyPayload }}</pre>
@@ -57,7 +61,18 @@
         >
           Copy event ID
         </button>
+        <button
+          class="event-inspector__add-note"
+          @click="openEditorNew"
+        >
+          Add note
+        </button>
       </div>
+
+      <AnnotationList
+        :annotations="eventAnnotations"
+        @edit="openEditorForAnnotation"
+      />
     </template>
     <div
       v-else
@@ -65,6 +80,13 @@
     >
       Event not found
     </div>
+    <AnnotationEditor
+      :visible="editorVisible"
+      :initial="editorAnnotation"
+      @save="onAnnotationSave"
+      @cancel="editorVisible = false"
+      @delete="onAnnotationDelete"
+    />
   </div>
 </template>
 
@@ -72,9 +94,14 @@
 import { ref, watch, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useTimelineStore } from '@/stores/timelineStore';
+import { useAnnotationStore } from '@/stores/annotationStore';
+import { useAnnotations } from '@/composables/useAnnotations';
 import { api } from '@/api/tracerApiClient';
-import type { EventDto as ApiEventDto } from '@/api/tracerApiClient';
+import type { EventDto as ApiEventDto, AnnotationDto } from '@/api/tracerApiClient';
 import type { TraceNodeDto } from '@/types/causalTree';
+import AnnotationMarker from '@/components/AnnotationMarker.vue';
+import AnnotationList from '@/components/AnnotationList.vue';
+import AnnotationEditor from '@/components/AnnotationEditor.vue';
 
 const props = withDefaults(defineProps<{
   event?: TraceNodeDto | null;
@@ -89,6 +116,10 @@ const props = withDefaults(defineProps<{
   showTimelinePivot: false,
   showEntityHistoryPivot: false,
 });
+
+const emit = defineEmits<{
+  'annotation-edit': [annotation: AnnotationDto];
+}>();
 
 const store  = useTimelineStore();
 const router = useRouter();
@@ -220,5 +251,45 @@ async function onCopyEventId() {
     : (fetchedEvent.value?.eventId ?? null);
   if (!eventId) return;
   await navigator.clipboard.writeText(eventId);
+}
+
+// Annotation integration
+const annotationStore = useAnnotationStore();
+const sessionIdRef = computed(() => props.sessionId ?? null);
+const { create, update, remove } = useAnnotations(sessionIdRef);
+
+const editorVisible = ref(false);
+const editorAnnotation = ref<AnnotationDto | null>(null);
+
+const eventAnnotations = computed(() =>
+  displayEvent.value ? annotationStore.byEventId(displayEvent.value.eventId) : [],
+);
+
+function openEditorNew() {
+  editorAnnotation.value = null;
+  editorVisible.value = true;
+}
+
+function openEditorForAnnotation(ann: AnnotationDto) {
+  editorAnnotation.value = ann;
+  editorVisible.value = true;
+}
+
+async function onAnnotationSave(payload: { body: string; title?: string; tags: string[] }) {
+  if (editorAnnotation.value) {
+    await update(editorAnnotation.value.annotationId, payload.body, payload.title, payload.tags);
+  } else if (displayEvent.value) {
+    await create(payload.body, 'Event', { eventId: displayEvent.value.eventId }, payload.title, payload.tags);
+  }
+  editorVisible.value = false;
+}
+
+async function onAnnotationDelete(annotationId: string) {
+  await remove(annotationId);
+  editorVisible.value = false;
+}
+
+function onAnnotationEdit(annotation: AnnotationDto) {
+  emit('annotation-edit', annotation);
 }
 </script>

@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
-import { defineComponent } from 'vue';
 import { mount } from '@vue/test-utils';
 import { useEntityHistoryStore } from '../../src/stores/entityHistoryStore';
 import type { EntitySummaryDto, EntityEventsDto, EntityEventDto } from '../../src/api/tracerApiClient';

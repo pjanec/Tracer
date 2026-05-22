@@ -24,8 +24,6 @@ const COLS = 64;
 const ROWS = 16;
 
 export class HitIndex {
-  private readonly canvasWidth: number;
-  private readonly canvasHeight: number;
   private readonly cellW: number;
   private readonly cellH: number;
 
@@ -34,8 +32,6 @@ export class HitIndex {
   private readonly bucketCells: BucketHitEntry[][];
 
   constructor(canvasWidth: number, canvasHeight: number) {
-    this.canvasWidth = canvasWidth;
-    this.canvasHeight = canvasHeight;
     this.cellW = canvasWidth / COLS;
     this.cellH = canvasHeight / ROWS;
     this.markerCells = Array.from({ length: COLS * ROWS }, () => []);
