@@ -35,6 +35,7 @@ public sealed class WebApiFixture : IAsyncDisposable
 
     public static async Task<WebApiFixture> CreateAsync(
         SseStreamingOptions? sseOptions = null,
+        Action<IServiceCollection>? configureExtraServices = null,
         CancellationToken ct = default)
     {
         var fixture = new WebApiFixture();
@@ -72,6 +73,20 @@ public sealed class WebApiFixture : IAsyncDisposable
         builder.Services.AddSingleton<Tracer.WebApi.Queries.EntitySlowStateService>();
         builder.Services.AddSingleton<Tracer.WebApi.Queries.EntityFastStateService>();
 
+        // Phase 9 services (live mode — no IBundleModeMarker registered)
+        builder.Services.AddSingleton<Tracer.WebApi.Queries.LatencyDistributionService>();
+        builder.Services.AddSingleton<Tracer.WebApi.Queries.LatencyTimeSeriesService>();
+        builder.Services.AddSingleton<Tracer.WebApi.Queries.LatencyOutlierService>();
+        builder.Services.AddSingleton<Tracer.WebApi.Queries.GapDetectionService>();
+        builder.Services.AddSingleton<Tracer.WebApi.Queries.NetworkTopologyService>();
+        builder.Services.AddSingleton<Tracer.WebApi.Queries.InMemoryBudgetRegistry>();
+        builder.Services.AddSingleton<Tracer.WebApi.Queries.BudgetService>(sp =>
+            new Tracer.WebApi.Queries.BudgetService(
+                getBundleWorkingDirectory: null,
+                registry: sp.GetRequiredService<Tracer.WebApi.Queries.InMemoryBudgetRegistry>()));
+
+        configureExtraServices?.Invoke(builder.Services);
+
         var app = builder.Build();
 
         app.UseExceptionHandler(eb =>
@@ -85,6 +100,9 @@ public sealed class WebApiFixture : IAsyncDisposable
         SseEndpoints.Map(app);
         TraceEndpoints.Map(app);
         Tracer.WebApi.Endpoints.EntityEndpoints.Map(app);
+        Tracer.WebApi.Endpoints.LatencyEndpoints.Map(app);
+        Tracer.WebApi.Endpoints.GapEndpoints.Map(app);
+        Tracer.WebApi.Endpoints.BudgetEndpoints.Map(app);
 
         await app.StartAsync(ct);
 

@@ -1,0 +1,16 @@
+d:\Work\Tracer\src\Tracer.Storage.Parquet\bin\Release\net8.0\Tracer.Storage.Parquet.deps.json
+d:\Work\Tracer\src\Tracer.Storage.Parquet\bin\Release\net8.0\Tracer.Storage.Parquet.dll
+d:\Work\Tracer\src\Tracer.Storage.Parquet\bin\Release\net8.0\Tracer.Storage.Parquet.pdb
+d:\Work\Tracer\src\Tracer.Storage.Parquet\bin\Release\net8.0\Tracer.Core.dll
+d:\Work\Tracer\src\Tracer.Storage.Parquet\bin\Release\net8.0\Tracer.Core.pdb
+d:\Work\Tracer\src\Tracer.Storage.Parquet\obj\Release\net8.0\Tracer.Storage.Parquet.csproj.AssemblyReference.cache
+d:\Work\Tracer\src\Tracer.Storage.Parquet\obj\Release\net8.0\Tracer.Storage.Parquet.GeneratedMSBuildEditorConfig.editorconfig
+d:\Work\Tracer\src\Tracer.Storage.Parquet\obj\Release\net8.0\Tracer.Storage.Parquet.AssemblyInfoInputs.cache
+d:\Work\Tracer\src\Tracer.Storage.Parquet\obj\Release\net8.0\Tracer.Storage.Parquet.AssemblyInfo.cs
+d:\Work\Tracer\src\Tracer.Storage.Parquet\obj\Release\net8.0\Tracer.Storage.Parquet.csproj.CoreCompileInputs.cache
+d:\Work\Tracer\src\Tracer.Storage.Parquet\obj\Release\net8.0\Tracer.Storage.Parquet.sourcelink.json
+d:\Work\Tracer\src\Tracer.Storage.Parquet\obj\Release\net8.0\Tracer.S.98B4743B.Up2Date
+d:\Work\Tracer\src\Tracer.Storage.Parquet\obj\Release\net8.0\Tracer.Storage.Parquet.dll
+d:\Work\Tracer\src\Tracer.Storage.Parquet\obj\Release\net8.0\refint\Tracer.Storage.Parquet.dll
+d:\Work\Tracer\src\Tracer.Storage.Parquet\obj\Release\net8.0\Tracer.Storage.Parquet.pdb
+d:\Work\Tracer\src\Tracer.Storage.Parquet\obj\Release\net8.0\ref\Tracer.Storage.Parquet.dll

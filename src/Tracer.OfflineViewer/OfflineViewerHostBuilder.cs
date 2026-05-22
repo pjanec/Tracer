@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Serilog;
 using Tracer.Observer.Lifecycle;
 using Tracer.OfflineViewer.Lifecycle;
@@ -14,6 +15,7 @@ using Tracer.WebApi.Lifecycle;
 using Tracer.WebApi.OpenApi;
 using Tracer.WebApi.Queries;
 using Tracer.WebApi.Streaming;
+using Tracer.WebApi.Util;
 
 namespace Tracer.OfflineViewer;
 
@@ -91,6 +93,22 @@ public static class OfflineViewerHostBuilder
         builder.Services.AddSingleton<ILifecycleTopicClassifier>(
             new ConfigurableLifecycleTopicClassifier(config.LifecycleClassification));
 
+        // ── Phase 9: Bundle mode marker ───────────────────────────────────────
+        builder.Services.AddSingleton<IBundleModeMarker>(_ => new BundleModeSentinel());
+
+        // ── Phase 9: Latency / Gap / Topology / Budget services ───────────────
+        builder.Services.AddSingleton<LatencyDistributionService>();
+        builder.Services.AddSingleton<LatencyTimeSeriesService>();
+        builder.Services.AddSingleton<LatencyOutlierService>();
+        builder.Services.AddSingleton<GapDetectionService>();
+        builder.Services.AddSingleton<NetworkTopologyService>();
+        builder.Services.AddSingleton<InMemoryBudgetRegistry>();
+        builder.Services.AddSingleton<BudgetService>(sp =>
+            new BudgetService(
+                getBundleWorkingDirectory: () => sp.GetRequiredService<BundleOpenManager>().Current?.WorkingDirectory,
+                registry: sp.GetRequiredService<InMemoryBudgetRegistry>(),
+                logger: sp.GetService<ILogger<BudgetService>>()));
+
         // Observer state reporter — inert instance (no events in bundle mode)
         builder.Services.AddSingleton<ObserverStateReporter>(_ => new InertObserverStateReporter());
         builder.Services.AddSingleton<ILiveStatusProvider>(sp =>
@@ -129,6 +147,11 @@ public static class OfflineViewerHostBuilder
         SavedViewEndpoints.Map(app);
         TriggerEvalEndpoints.Map(app);
         ConfigEndpoints.Map(app);
+
+        // Phase 9 endpoints
+        LatencyEndpoints.Map(app);
+        GapEndpoints.Map(app);
+        BudgetEndpoints.Map(app);
 
         // SPA fallback
         app.MapFallbackToFile("index.html");
@@ -174,4 +197,7 @@ public static class OfflineViewerHostBuilder
         throw new InvalidOperationException(
             $"No free port found in range {startPort}-{endPort}");
     }
+
+    /// <summary>Marker singleton registered only in bundle (OfflineViewer) mode.</summary>
+    private sealed class BundleModeSentinel : IBundleModeMarker { }
 }

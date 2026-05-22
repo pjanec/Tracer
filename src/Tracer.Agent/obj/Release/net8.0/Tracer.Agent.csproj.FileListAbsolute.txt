@@ -72,9 +72,10 @@ D:\Work\Tracer\src\Tracer.Agent\obj\Release\net8.0\Tracer.Agent.GeneratedMSBuild
 D:\Work\Tracer\src\Tracer.Agent\obj\Release\net8.0\Tracer.Agent.AssemblyInfoInputs.cache
 D:\Work\Tracer\src\Tracer.Agent\obj\Release\net8.0\Tracer.Agent.AssemblyInfo.cs
 D:\Work\Tracer\src\Tracer.Agent\obj\Release\net8.0\Tracer.Agent.csproj.CoreCompileInputs.cache
-D:\Work\Tracer\src\Tracer.Agent\obj\Release\net8.0\Tracer.Agent.csproj.CopyComplete
 D:\Work\Tracer\src\Tracer.Agent\obj\Release\net8.0\tracer-agent.dll
 D:\Work\Tracer\src\Tracer.Agent\obj\Release\net8.0\refint\tracer-agent.dll
 D:\Work\Tracer\src\Tracer.Agent\obj\Release\net8.0\tracer-agent.pdb
 D:\Work\Tracer\src\Tracer.Agent\obj\Release\net8.0\Tracer.Agent.genruntimeconfig.cache
 D:\Work\Tracer\src\Tracer.Agent\obj\Release\net8.0\ref\tracer-agent.dll
+d:\Work\Tracer\src\Tracer.Agent\obj\Release\net8.0\Tracer.Agent.sourcelink.json
+d:\Work\Tracer\src\Tracer.Agent\obj\Release\net8.0\Tracer.A.B2592C3B.Up2Date

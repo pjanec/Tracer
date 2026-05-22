@@ -10,7 +10,6 @@ D:\Work\Tracer\src\Tracer.Storage.DuckDB.MultiInterval\obj\Release\net8.0\Tracer
 D:\Work\Tracer\src\Tracer.Storage.DuckDB.MultiInterval\obj\Release\net8.0\Tracer.Storage.DuckDB.MultiInterval.AssemblyInfoInputs.cache
 D:\Work\Tracer\src\Tracer.Storage.DuckDB.MultiInterval\obj\Release\net8.0\Tracer.Storage.DuckDB.MultiInterval.AssemblyInfo.cs
 D:\Work\Tracer\src\Tracer.Storage.DuckDB.MultiInterval\obj\Release\net8.0\Tracer.Storage.DuckDB.MultiInterval.csproj.CoreCompileInputs.cache
-D:\Work\Tracer\src\Tracer.Storage.DuckDB.MultiInterval\obj\Release\net8.0\Tracer.Storage.DuckDB.MultiInterval.csproj.CopyComplete
 D:\Work\Tracer\src\Tracer.Storage.DuckDB.MultiInterval\obj\Release\net8.0\Tracer.Storage.DuckDB.MultiInterval.dll
 D:\Work\Tracer\src\Tracer.Storage.DuckDB.MultiInterval\obj\Release\net8.0\refint\Tracer.Storage.DuckDB.MultiInterval.dll
 D:\Work\Tracer\src\Tracer.Storage.DuckDB.MultiInterval\obj\Release\net8.0\Tracer.Storage.DuckDB.MultiInterval.pdb
@@ -22,3 +21,5 @@ D:\Work\Tracer\src\Tracer.Storage.DuckDB.MultiInterval\bin\Release\net8.0\tracer
 D:\Work\Tracer\src\Tracer.Storage.DuckDB.MultiInterval\bin\Release\net8.0\Tracer.Adapters.Mock.dll
 D:\Work\Tracer\src\Tracer.Storage.DuckDB.MultiInterval\bin\Release\net8.0\tracer-agent.pdb
 D:\Work\Tracer\src\Tracer.Storage.DuckDB.MultiInterval\bin\Release\net8.0\Tracer.Adapters.Mock.pdb
+d:\Work\Tracer\src\Tracer.Storage.DuckDB.MultiInterval\obj\Release\net8.0\Tracer.Storage.DuckDB.MultiInterval.sourcelink.json
+d:\Work\Tracer\src\Tracer.Storage.DuckDB.MultiInterval\obj\Release\net8.0\Tracer.S.FB571D2F.Up2Date

@@ -8,8 +8,9 @@ D:\Work\Tracer\src\Tracer.Adapters.Mock\obj\Release\net8.0\Tracer.Adapters.Mock.
 D:\Work\Tracer\src\Tracer.Adapters.Mock\obj\Release\net8.0\Tracer.Adapters.Mock.AssemblyInfoInputs.cache
 D:\Work\Tracer\src\Tracer.Adapters.Mock\obj\Release\net8.0\Tracer.Adapters.Mock.AssemblyInfo.cs
 D:\Work\Tracer\src\Tracer.Adapters.Mock\obj\Release\net8.0\Tracer.Adapters.Mock.csproj.CoreCompileInputs.cache
-D:\Work\Tracer\src\Tracer.Adapters.Mock\obj\Release\net8.0\Tracer.Adapters.Mock.csproj.CopyComplete
 D:\Work\Tracer\src\Tracer.Adapters.Mock\obj\Release\net8.0\Tracer.Adapters.Mock.dll
 D:\Work\Tracer\src\Tracer.Adapters.Mock\obj\Release\net8.0\refint\Tracer.Adapters.Mock.dll
 D:\Work\Tracer\src\Tracer.Adapters.Mock\obj\Release\net8.0\Tracer.Adapters.Mock.pdb
 D:\Work\Tracer\src\Tracer.Adapters.Mock\obj\Release\net8.0\ref\Tracer.Adapters.Mock.dll
+d:\Work\Tracer\src\Tracer.Adapters.Mock\obj\Release\net8.0\Tracer.Adapters.Mock.sourcelink.json
+d:\Work\Tracer\src\Tracer.Adapters.Mock\obj\Release\net8.0\Tracer.A.B57F36FF.Up2Date

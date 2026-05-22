@@ -40,7 +40,7 @@ public sealed class SseEndpointTests : IAsyncDisposable
     private async Task<WebApiFixture> CreateFixtureAsync(
         SseStreamingOptions? options = null, CancellationToken ct = default)
     {
-        _fixture = await WebApiFixture.CreateAsync(options, ct);
+        _fixture = await WebApiFixture.CreateAsync(options, ct: ct);
         return _fixture;
     }
 

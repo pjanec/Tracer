@@ -77,9 +77,10 @@ D:\Work\Tracer\src\Tracer.FakeNode\obj\Release\net8.0\Tracer.FakeNode.GeneratedM
 D:\Work\Tracer\src\Tracer.FakeNode\obj\Release\net8.0\Tracer.FakeNode.AssemblyInfoInputs.cache
 D:\Work\Tracer\src\Tracer.FakeNode\obj\Release\net8.0\Tracer.FakeNode.AssemblyInfo.cs
 D:\Work\Tracer\src\Tracer.FakeNode\obj\Release\net8.0\Tracer.FakeNode.csproj.CoreCompileInputs.cache
-D:\Work\Tracer\src\Tracer.FakeNode\obj\Release\net8.0\Tracer.FakeNode.csproj.CopyComplete
 D:\Work\Tracer\src\Tracer.FakeNode\obj\Release\net8.0\tracer-fakenode.dll
 D:\Work\Tracer\src\Tracer.FakeNode\obj\Release\net8.0\refint\tracer-fakenode.dll
 D:\Work\Tracer\src\Tracer.FakeNode\obj\Release\net8.0\tracer-fakenode.pdb
 D:\Work\Tracer\src\Tracer.FakeNode\obj\Release\net8.0\Tracer.FakeNode.genruntimeconfig.cache
 D:\Work\Tracer\src\Tracer.FakeNode\obj\Release\net8.0\ref\tracer-fakenode.dll
+d:\Work\Tracer\src\Tracer.FakeNode\obj\Release\net8.0\Tracer.FakeNode.sourcelink.json
+d:\Work\Tracer\src\Tracer.FakeNode\obj\Release\net8.0\Tracer.F.E87F7634.Up2Date

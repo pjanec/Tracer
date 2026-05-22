@@ -6,7 +6,10 @@
   "Tracer.Aggregator, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "D:\\Work\\Tracer\\src\\Tracer.Aggregator",
   "Tracer.Bundle, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "D:\\Work\\Tracer\\src\\Tracer.Bundle",
   "Tracer.Core, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "D:\\Work\\Tracer\\src\\Tracer.Core",
+  "Tracer.Storage.Annotations, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "D:\\Work\\Tracer\\src\\Tracer.Storage.Annotations",
   "Tracer.Storage.DuckDB, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "D:\\Work\\Tracer\\src\\Tracer.Storage.DuckDB",
   "Tracer.Storage.DuckDB.MultiInterval, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "D:\\Work\\Tracer\\src\\Tracer.Storage.DuckDB.MultiInterval",
+  "Tracer.Storage.Parquet, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "D:\\Work\\Tracer\\src\\Tracer.Storage.Parquet",
+  "Tracer.Storage.SavedViews, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "D:\\Work\\Tracer\\src\\Tracer.Storage.SavedViews",
   "Tracer.WebApi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "D:\\Work\\Tracer\\src\\Tracer.WebApi"
 }

@@ -76,6 +76,7 @@ internal static class EventsConsolidator
         await ExecAsync(output, "CREATE INDEX IF NOT EXISTS idx_events_entity ON events(entity_id);", ct);
         await ExecAsync(output, "CREATE INDEX IF NOT EXISTS idx_events_player ON events(owning_player_id);", ct);
         await ExecAsync(output, "CREATE INDEX IF NOT EXISTS idx_events_topic_time ON events(topic, publish_wallclock);", ct);
+        await ExecAsync(output, "CREATE INDEX IF NOT EXISTS idx_events_topic_pub_sub ON events (topic, publisher_node, subscriber_node);", ct);
 
         // 4. CHECKPOINT to flush WAL
         await ExecAsync(output, "CHECKPOINT;", ct);

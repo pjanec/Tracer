@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "dgSpecHash": "HZ4/Jm6/lRs=",
+  "success": true,
+  "projectFilePath": "D:\\Work\\Tracer\\src\\Tracer.Storage.Parquet\\Tracer.Storage.Parquet.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\pjane\\.nuget\\packages\\duckdb.net.bindings\\1.0.2\\duckdb.net.bindings.1.0.2.nupkg.sha512",
+    "C:\\Users\\pjane\\.nuget\\packages\\duckdb.net.bindings.full\\1.0.2\\duckdb.net.bindings.full.1.0.2.nupkg.sha512",
+    "C:\\Users\\pjane\\.nuget\\packages\\duckdb.net.data\\1.0.2\\duckdb.net.data.1.0.2.nupkg.sha512",
+    "C:\\Users\\pjane\\.nuget\\packages\\microsoft.extensions.dependencyinjection.abstractions\\8.0.0\\microsoft.extensions.dependencyinjection.abstractions.8.0.0.nupkg.sha512",
+    "C:\\Users\\pjane\\.nuget\\packages\\microsoft.extensions.logging.abstractions\\8.0.0\\microsoft.extensions.logging.abstractions.8.0.0.nupkg.sha512"
+  ],
+  "logs": []
+}

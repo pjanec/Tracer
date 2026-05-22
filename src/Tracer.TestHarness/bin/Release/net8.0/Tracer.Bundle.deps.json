@@ -210,7 +210,10 @@
       },
       "Tracer.Core/1.0.0": {
         "runtime": {
-          "Tracer.Core.dll": {}
+          "Tracer.Core.dll": {
+            "assemblyVersion": "1.0.0",
+            "fileVersion": "1.0.0.0"
+          }
         }
       }
     }

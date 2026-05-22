@@ -1,0 +1,16 @@
+D:\Work\Tracer\src\Tracer.Storage.Annotations\obj\Release\net8.0\Tracer.Storage.Annotations.csproj.AssemblyReference.cache
+D:\Work\Tracer\src\Tracer.Storage.Annotations\obj\Release\net8.0\Tracer.Storage.Annotations.GeneratedMSBuildEditorConfig.editorconfig
+D:\Work\Tracer\src\Tracer.Storage.Annotations\obj\Release\net8.0\Tracer.Storage.Annotations.AssemblyInfoInputs.cache
+D:\Work\Tracer\src\Tracer.Storage.Annotations\obj\Release\net8.0\Tracer.Storage.Annotations.AssemblyInfo.cs
+D:\Work\Tracer\src\Tracer.Storage.Annotations\obj\Release\net8.0\Tracer.Storage.Annotations.csproj.CoreCompileInputs.cache
+D:\Work\Tracer\src\Tracer.Storage.Annotations\obj\Release\net8.0\Tracer.Storage.Annotations.sourcelink.json
+D:\Work\Tracer\src\Tracer.Storage.Annotations\bin\Release\net8.0\Tracer.Storage.Annotations.deps.json
+D:\Work\Tracer\src\Tracer.Storage.Annotations\bin\Release\net8.0\Tracer.Storage.Annotations.dll
+D:\Work\Tracer\src\Tracer.Storage.Annotations\bin\Release\net8.0\Tracer.Storage.Annotations.pdb
+D:\Work\Tracer\src\Tracer.Storage.Annotations\bin\Release\net8.0\Tracer.Core.dll
+D:\Work\Tracer\src\Tracer.Storage.Annotations\bin\Release\net8.0\Tracer.Core.pdb
+D:\Work\Tracer\src\Tracer.Storage.Annotations\obj\Release\net8.0\Tracer.S.51338E92.Up2Date
+D:\Work\Tracer\src\Tracer.Storage.Annotations\obj\Release\net8.0\Tracer.Storage.Annotations.dll
+D:\Work\Tracer\src\Tracer.Storage.Annotations\obj\Release\net8.0\refint\Tracer.Storage.Annotations.dll
+D:\Work\Tracer\src\Tracer.Storage.Annotations\obj\Release\net8.0\Tracer.Storage.Annotations.pdb
+D:\Work\Tracer\src\Tracer.Storage.Annotations\obj\Release\net8.0\ref\Tracer.Storage.Annotations.dll

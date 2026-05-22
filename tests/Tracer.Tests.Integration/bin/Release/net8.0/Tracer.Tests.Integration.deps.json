@@ -38,8 +38,12 @@
         "dependencies": {
           "FluentAssertions": "6.12.0",
           "Microsoft.NET.Test.Sdk": "17.8.0",
+          "Tracer.Storage.Annotations": "1.0.0",
+          "Tracer.Storage.Parquet": "1.0.0",
+          "Tracer.Storage.SavedViews": "1.0.0",
           "Tracer.TestHarness": "1.0.0",
           "tracer-aggregate": "1.0.0",
+          "tracer-observer": "1.0.0",
           "tracer-viewer": "1.0.0",
           "xunit": "2.6.6",
           "xunit.runner.visualstudio": "2.5.6",
@@ -562,6 +566,26 @@
         },
         "compile": {
           "lib/netstandard2.0/Microsoft.Data.Analysis.dll": {}
+        }
+      },
+      "Microsoft.Data.Sqlite/8.0.0": {
+        "dependencies": {
+          "Microsoft.Data.Sqlite.Core": "8.0.0",
+          "SQLitePCLRaw.bundle_e_sqlite3": "2.1.6"
+        }
+      },
+      "Microsoft.Data.Sqlite.Core/8.0.0": {
+        "dependencies": {
+          "SQLitePCLRaw.core": "2.1.6"
+        },
+        "runtime": {
+          "lib/net8.0/Microsoft.Data.Sqlite.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.23.53103"
+          }
+        },
+        "compile": {
+          "lib/net8.0/Microsoft.Data.Sqlite.dll": {}
         }
       },
       "Microsoft.Extensions.ApiDescription.Server/6.0.3": {},
@@ -1472,6 +1496,153 @@
           "lib/net8.0/Snappier.dll": {}
         }
       },
+      "SQLitePCLRaw.bundle_e_sqlite3/2.1.6": {
+        "dependencies": {
+          "SQLitePCLRaw.lib.e_sqlite3": "2.1.6",
+          "SQLitePCLRaw.provider.e_sqlite3": "2.1.6"
+        },
+        "runtime": {
+          "lib/netstandard2.0/SQLitePCLRaw.batteries_v2.dll": {
+            "assemblyVersion": "2.1.6.2060",
+            "fileVersion": "2.1.6.2060"
+          }
+        },
+        "compile": {
+          "lib/netstandard2.0/SQLitePCLRaw.batteries_v2.dll": {}
+        }
+      },
+      "SQLitePCLRaw.core/2.1.6": {
+        "dependencies": {
+          "System.Memory": "4.5.5"
+        },
+        "runtime": {
+          "lib/netstandard2.0/SQLitePCLRaw.core.dll": {
+            "assemblyVersion": "2.1.6.2060",
+            "fileVersion": "2.1.6.2060"
+          }
+        },
+        "compile": {
+          "lib/netstandard2.0/SQLitePCLRaw.core.dll": {}
+        }
+      },
+      "SQLitePCLRaw.lib.e_sqlite3/2.1.6": {
+        "runtimeTargets": {
+          "runtimes/browser-wasm/nativeassets/net8.0/e_sqlite3.a": {
+            "rid": "browser-wasm",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/linux-arm/native/libe_sqlite3.so": {
+            "rid": "linux-arm",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/linux-arm64/native/libe_sqlite3.so": {
+            "rid": "linux-arm64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/linux-armel/native/libe_sqlite3.so": {
+            "rid": "linux-armel",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/linux-mips64/native/libe_sqlite3.so": {
+            "rid": "linux-mips64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/linux-musl-arm/native/libe_sqlite3.so": {
+            "rid": "linux-musl-arm",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/linux-musl-arm64/native/libe_sqlite3.so": {
+            "rid": "linux-musl-arm64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/linux-musl-x64/native/libe_sqlite3.so": {
+            "rid": "linux-musl-x64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/linux-ppc64le/native/libe_sqlite3.so": {
+            "rid": "linux-ppc64le",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/linux-s390x/native/libe_sqlite3.so": {
+            "rid": "linux-s390x",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/linux-x64/native/libe_sqlite3.so": {
+            "rid": "linux-x64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/linux-x86/native/libe_sqlite3.so": {
+            "rid": "linux-x86",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/maccatalyst-arm64/native/libe_sqlite3.dylib": {
+            "rid": "maccatalyst-arm64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/maccatalyst-x64/native/libe_sqlite3.dylib": {
+            "rid": "maccatalyst-x64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/osx-arm64/native/libe_sqlite3.dylib": {
+            "rid": "osx-arm64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/osx-x64/native/libe_sqlite3.dylib": {
+            "rid": "osx-x64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/win-arm/native/e_sqlite3.dll": {
+            "rid": "win-arm",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/win-arm64/native/e_sqlite3.dll": {
+            "rid": "win-arm64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/win-x64/native/e_sqlite3.dll": {
+            "rid": "win-x64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/win-x86/native/e_sqlite3.dll": {
+            "rid": "win-x86",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          }
+        }
+      },
+      "SQLitePCLRaw.provider.e_sqlite3/2.1.6": {
+        "dependencies": {
+          "SQLitePCLRaw.core": "2.1.6"
+        },
+        "runtime": {
+          "lib/net6.0/SQLitePCLRaw.provider.e_sqlite3.dll": {
+            "assemblyVersion": "2.1.6.2060",
+            "fileVersion": "2.1.6.2060"
+          }
+        },
+        "compile": {
+          "lib/net6.0/SQLitePCLRaw.provider.e_sqlite3.dll": {}
+        }
+      },
       "System.Buffers/4.5.1": {},
       "System.Collections/4.3.0": {
         "dependencies": {
@@ -1955,7 +2126,10 @@
           "Tracer.Storage.DuckDB": "1.0.0"
         },
         "runtime": {
-          "tracer-agent.dll": {}
+          "tracer-agent.dll": {
+            "assemblyVersion": "1.0.0",
+            "fileVersion": ""
+          }
         },
         "compile": {
           "tracer-agent.dll": {}
@@ -1970,7 +2144,10 @@
           "Tracer.Bundle": "1.0.0"
         },
         "runtime": {
-          "tracer-aggregate.dll": {}
+          "tracer-aggregate.dll": {
+            "assemblyVersion": "1.0.0",
+            "fileVersion": ""
+          }
         },
         "compile": {
           "tracer-aggregate.dll": {}
@@ -1992,7 +2169,10 @@
           "tracer-agent": "1.0.0"
         },
         "runtime": {
-          "tracer-fakenode.dll": {}
+          "tracer-fakenode.dll": {
+            "assemblyVersion": "1.0.0",
+            "fileVersion": ""
+          }
         },
         "compile": {
           "tracer-fakenode.dll": {}
@@ -2009,13 +2189,18 @@
           "Tracer.Aggregator": "1.0.0",
           "Tracer.Bundle": "1.0.0",
           "Tracer.Core": "1.0.0",
+          "Tracer.Storage.Annotations": "1.0.0",
           "Tracer.Storage.DuckDB": "1.0.0",
           "Tracer.Storage.DuckDB.MultiInterval": "1.0.0",
+          "Tracer.Storage.SavedViews": "1.0.0",
           "Tracer.WebApi": "1.0.0",
           "tracer-agent": "1.0.0"
         },
         "runtime": {
-          "tracer-observer.dll": {}
+          "tracer-observer.dll": {
+            "assemblyVersion": "1.0.0",
+            "fileVersion": ""
+          }
         },
         "compile": {
           "tracer-observer.dll": {}
@@ -2027,12 +2212,17 @@
           "Serilog.Formatting.Compact": "2.0.0",
           "Serilog.Sinks.File": "5.0.0",
           "Tracer.Bundle": "1.0.0",
+          "Tracer.Storage.Annotations": "1.0.0",
           "Tracer.Storage.DuckDB.MultiInterval": "1.0.0",
+          "Tracer.Storage.SavedViews": "1.0.0",
           "Tracer.WebApi": "1.0.0",
           "tracer-observer": "1.0.0"
         },
         "runtime": {
-          "tracer-viewer.dll": {}
+          "tracer-viewer.dll": {
+            "assemblyVersion": "1.0.0",
+            "fileVersion": ""
+          }
         },
         "compile": {
           "tracer-viewer.dll": {}
@@ -2044,7 +2234,10 @@
           "Tracer.Core": "1.0.0"
         },
         "runtime": {
-          "Tracer.Adapters.Mock.dll": {}
+          "Tracer.Adapters.Mock.dll": {
+            "assemblyVersion": "1.0.0",
+            "fileVersion": "1.0.0.0"
+          }
         },
         "compile": {
           "Tracer.Adapters.Mock.dll": {}
@@ -2059,11 +2252,15 @@
           "Tracer.Adapters.Mock": "1.0.0",
           "Tracer.Bundle": "1.0.0",
           "Tracer.Core": "1.0.0",
+          "Tracer.Storage.Annotations": "1.0.0",
           "Tracer.Storage.DuckDB": "1.0.0",
           "Tracer.Storage.DuckDB.MultiInterval": "1.0.0"
         },
         "runtime": {
-          "Tracer.Aggregator.dll": {}
+          "Tracer.Aggregator.dll": {
+            "assemblyVersion": "1.0.0",
+            "fileVersion": "1.0.0.0"
+          }
         },
         "compile": {
           "Tracer.Aggregator.dll": {}
@@ -2076,7 +2273,10 @@
           "Ulid": "1.3.4"
         },
         "runtime": {
-          "Tracer.Bundle.dll": {}
+          "Tracer.Bundle.dll": {
+            "assemblyVersion": "1.0.0",
+            "fileVersion": "1.0.0.0"
+          }
         },
         "compile": {
           "Tracer.Bundle.dll": {}
@@ -2084,10 +2284,30 @@
       },
       "Tracer.Core/1.0.0": {
         "runtime": {
-          "Tracer.Core.dll": {}
+          "Tracer.Core.dll": {
+            "assemblyVersion": "1.0.0",
+            "fileVersion": "1.0.0.0"
+          }
         },
         "compile": {
           "Tracer.Core.dll": {}
+        }
+      },
+      "Tracer.Storage.Annotations/1.0.0": {
+        "dependencies": {
+          "Microsoft.Data.Sqlite": "8.0.0",
+          "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
+          "Tracer.Core": "1.0.0",
+          "Ulid": "1.3.4"
+        },
+        "runtime": {
+          "Tracer.Storage.Annotations.dll": {
+            "assemblyVersion": "1.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        },
+        "compile": {
+          "Tracer.Storage.Annotations.dll": {}
         }
       },
       "Tracer.Storage.DuckDB/1.0.0": {
@@ -2099,7 +2319,10 @@
           "Tracer.Core": "1.0.0"
         },
         "runtime": {
-          "Tracer.Storage.DuckDB.dll": {}
+          "Tracer.Storage.DuckDB.dll": {
+            "assemblyVersion": "1.0.0",
+            "fileVersion": "1.0.0.0"
+          }
         },
         "compile": {
           "Tracer.Storage.DuckDB.dll": {}
@@ -2115,10 +2338,47 @@
           "tracer-agent": "1.0.0"
         },
         "runtime": {
-          "Tracer.Storage.DuckDB.MultiInterval.dll": {}
+          "Tracer.Storage.DuckDB.MultiInterval.dll": {
+            "assemblyVersion": "1.0.0",
+            "fileVersion": "1.0.0.0"
+          }
         },
         "compile": {
           "Tracer.Storage.DuckDB.MultiInterval.dll": {}
+        }
+      },
+      "Tracer.Storage.Parquet/1.0.0": {
+        "dependencies": {
+          "DuckDB.NET.Bindings.Full": "1.0.2",
+          "DuckDB.NET.Data": "1.0.2",
+          "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
+          "Tracer.Core": "1.0.0"
+        },
+        "runtime": {
+          "Tracer.Storage.Parquet.dll": {
+            "assemblyVersion": "1.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        },
+        "compile": {
+          "Tracer.Storage.Parquet.dll": {}
+        }
+      },
+      "Tracer.Storage.SavedViews/1.0.0": {
+        "dependencies": {
+          "Microsoft.Data.Sqlite": "8.0.0",
+          "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
+          "Tracer.Core": "1.0.0",
+          "Ulid": "1.3.4"
+        },
+        "runtime": {
+          "Tracer.Storage.SavedViews.dll": {
+            "assemblyVersion": "1.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        },
+        "compile": {
+          "Tracer.Storage.SavedViews.dll": {}
         }
       },
       "Tracer.TestHarness/1.0.0": {
@@ -2139,7 +2399,10 @@
           "tracer-observer": "1.0.0"
         },
         "runtime": {
-          "Tracer.TestHarness.dll": {}
+          "Tracer.TestHarness.dll": {
+            "assemblyVersion": "1.0.0",
+            "fileVersion": "1.0.0.0"
+          }
         },
         "compile": {
           "Tracer.TestHarness.dll": {}
@@ -2153,11 +2416,17 @@
           "Tracer.Aggregator": "1.0.0",
           "Tracer.Bundle": "1.0.0",
           "Tracer.Core": "1.0.0",
+          "Tracer.Storage.Annotations": "1.0.0",
           "Tracer.Storage.DuckDB": "1.0.0",
-          "Tracer.Storage.DuckDB.MultiInterval": "1.0.0"
+          "Tracer.Storage.DuckDB.MultiInterval": "1.0.0",
+          "Tracer.Storage.Parquet": "1.0.0",
+          "Tracer.Storage.SavedViews": "1.0.0"
         },
         "runtime": {
-          "Tracer.WebApi.dll": {}
+          "Tracer.WebApi.dll": {
+            "assemblyVersion": "1.0.0",
+            "fileVersion": "1.0.0.0"
+          }
         },
         "compile": {
           "Tracer.WebApi.dll": {}
@@ -4116,6 +4385,20 @@
       "path": "microsoft.data.analysis/0.21.1",
       "hashPath": "microsoft.data.analysis.0.21.1.nupkg.sha512"
     },
+    "Microsoft.Data.Sqlite/8.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-H+iC5IvkCCKSNHXzL3JARvDn7VpkvuJM91KVB89sKjeTF/KX/BocNNh93ZJtX5MCQKb/z4yVKgkU2sVIq+xKfg==",
+      "path": "microsoft.data.sqlite/8.0.0",
+      "hashPath": "microsoft.data.sqlite.8.0.0.nupkg.sha512"
+    },
+    "Microsoft.Data.Sqlite.Core/8.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-pujbzfszX7jAl7oTbHhqx7pxd9jibeyHHl8zy1gd55XMaKWjDtc5XhhNYwQnrwWYCInNdVoArbaaAvLgW7TwuA==",
+      "path": "microsoft.data.sqlite.core/8.0.0",
+      "hashPath": "microsoft.data.sqlite.core.8.0.0.nupkg.sha512"
+    },
     "Microsoft.Extensions.ApiDescription.Server/6.0.3": {
       "type": "package",
       "serviceable": true,
@@ -4578,6 +4861,34 @@
       "path": "snappier/1.1.6",
       "hashPath": "snappier.1.1.6.nupkg.sha512"
     },
+    "SQLitePCLRaw.bundle_e_sqlite3/2.1.6": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-BmAf6XWt4TqtowmiWe4/5rRot6GerAeklmOPfviOvwLoF5WwgxcJHAxZtySuyW9r9w+HLILnm8VfJFLCUJYW8A==",
+      "path": "sqlitepclraw.bundle_e_sqlite3/2.1.6",
+      "hashPath": "sqlitepclraw.bundle_e_sqlite3.2.1.6.nupkg.sha512"
+    },
+    "SQLitePCLRaw.core/2.1.6": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-wO6v9GeMx9CUngAet8hbO7xdm+M42p1XeJq47ogyRoYSvNSp0NGLI+MgC0bhrMk9C17MTVFlLiN6ylyExLCc5w==",
+      "path": "sqlitepclraw.core/2.1.6",
+      "hashPath": "sqlitepclraw.core.2.1.6.nupkg.sha512"
+    },
+    "SQLitePCLRaw.lib.e_sqlite3/2.1.6": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-2ObJJLkIUIxRpOUlZNGuD4rICpBnrBR5anjyfUFQep4hMOIeqW+XGQYzrNmHSVz5xSWZ3klSbh7sFR6UyDj68Q==",
+      "path": "sqlitepclraw.lib.e_sqlite3/2.1.6",
+      "hashPath": "sqlitepclraw.lib.e_sqlite3.2.1.6.nupkg.sha512"
+    },
+    "SQLitePCLRaw.provider.e_sqlite3/2.1.6": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-PQ2Oq3yepLY4P7ll145P3xtx2bX8xF4PzaKPRpw9jZlKvfe4LE/saAV82inND9usn1XRpmxXk7Lal3MTI+6CNg==",
+      "path": "sqlitepclraw.provider.e_sqlite3/2.1.6",
+      "hashPath": "sqlitepclraw.provider.e_sqlite3.2.1.6.nupkg.sha512"
+    },
     "System.Buffers/4.5.1": {
       "type": "package",
       "serviceable": true,
@@ -4987,12 +5298,27 @@
       "serviceable": false,
       "sha512": ""
     },
+    "Tracer.Storage.Annotations/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
     "Tracer.Storage.DuckDB/1.0.0": {
       "type": "project",
       "serviceable": false,
       "sha512": ""
     },
     "Tracer.Storage.DuckDB.MultiInterval/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Tracer.Storage.Parquet/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Tracer.Storage.SavedViews/1.0.0": {
       "type": "project",
       "serviceable": false,
       "sha512": ""

@@ -1,12 +1,72 @@
 {
   "Files": [
     {
-      "Id": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\LoadingSpinner-BPR9tGHi.js",
-      "PackagePath": "staticwebassets\\assets\\LoadingSpinner-BPR9tGHi.js"
+      "Id": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\BundlesView-ChyyS0Yk.js",
+      "PackagePath": "staticwebassets\\assets\\BundlesView-ChyyS0Yk.js"
     },
     {
-      "Id": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\LoadingSpinner-BPR9tGHi.js.map",
-      "PackagePath": "staticwebassets\\assets\\LoadingSpinner-BPR9tGHi.js.map"
+      "Id": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\BundlesView-ChyyS0Yk.js.map",
+      "PackagePath": "staticwebassets\\assets\\BundlesView-ChyyS0Yk.js.map"
+    },
+    {
+      "Id": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\BundlesView-Dd1_6j0m.css",
+      "PackagePath": "staticwebassets\\assets\\BundlesView-Dd1_6j0m.css"
+    },
+    {
+      "Id": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\CausalTreeView-DLfRFXbP.css",
+      "PackagePath": "staticwebassets\\assets\\CausalTreeView-DLfRFXbP.css"
+    },
+    {
+      "Id": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\CausalTreeView-Dt8c6UcK.js",
+      "PackagePath": "staticwebassets\\assets\\CausalTreeView-Dt8c6UcK.js"
+    },
+    {
+      "Id": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\CausalTreeView-Dt8c6UcK.js.map",
+      "PackagePath": "staticwebassets\\assets\\CausalTreeView-Dt8c6UcK.js.map"
+    },
+    {
+      "Id": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\EntityHistoryView-BQTlBUEq.js",
+      "PackagePath": "staticwebassets\\assets\\EntityHistoryView-BQTlBUEq.js"
+    },
+    {
+      "Id": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\EntityHistoryView-BQTlBUEq.js.map",
+      "PackagePath": "staticwebassets\\assets\\EntityHistoryView-BQTlBUEq.js.map"
+    },
+    {
+      "Id": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\EntityHistoryView-Clu1_ke5.css",
+      "PackagePath": "staticwebassets\\assets\\EntityHistoryView-Clu1_ke5.css"
+    },
+    {
+      "Id": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\EntityPickerView-CJq2lZ19.css",
+      "PackagePath": "staticwebassets\\assets\\EntityPickerView-CJq2lZ19.css"
+    },
+    {
+      "Id": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\EntityPickerView-DfkxoVxz.js",
+      "PackagePath": "staticwebassets\\assets\\EntityPickerView-DfkxoVxz.js"
+    },
+    {
+      "Id": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\EntityPickerView-DfkxoVxz.js.map",
+      "PackagePath": "staticwebassets\\assets\\EntityPickerView-DfkxoVxz.js.map"
+    },
+    {
+      "Id": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\ErrorMessage-CQusyf1Z.css",
+      "PackagePath": "staticwebassets\\assets\\ErrorMessage-CQusyf1Z.css"
+    },
+    {
+      "Id": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\ErrorMessage.vue_vue_type_style_index_0_lang-BIedvcZX.js",
+      "PackagePath": "staticwebassets\\assets\\ErrorMessage.vue_vue_type_style_index_0_lang-BIedvcZX.js"
+    },
+    {
+      "Id": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\ErrorMessage.vue_vue_type_style_index_0_lang-BIedvcZX.js.map",
+      "PackagePath": "staticwebassets\\assets\\ErrorMessage.vue_vue_type_style_index_0_lang-BIedvcZX.js.map"
+    },
+    {
+      "Id": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\LoadingSpinner-BY40F6kP.js",
+      "PackagePath": "staticwebassets\\assets\\LoadingSpinner-BY40F6kP.js"
+    },
+    {
+      "Id": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\LoadingSpinner-BY40F6kP.js.map",
+      "PackagePath": "staticwebassets\\assets\\LoadingSpinner-BY40F6kP.js.map"
     },
     {
       "Id": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\LoadingSpinner-CzQ9zhca.css",
@@ -17,44 +77,104 @@
       "PackagePath": "staticwebassets\\assets\\ScenarioView-70C7qU4Q.css"
     },
     {
-      "Id": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\ScenarioView-DcyPpHv8.js",
-      "PackagePath": "staticwebassets\\assets\\ScenarioView-DcyPpHv8.js"
+      "Id": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\ScenarioView-CeObNJWQ.js",
+      "PackagePath": "staticwebassets\\assets\\ScenarioView-CeObNJWQ.js"
     },
     {
-      "Id": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\ScenarioView-DcyPpHv8.js.map",
-      "PackagePath": "staticwebassets\\assets\\ScenarioView-DcyPpHv8.js.map"
+      "Id": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\ScenarioView-CeObNJWQ.js.map",
+      "PackagePath": "staticwebassets\\assets\\ScenarioView-CeObNJWQ.js.map"
     },
     {
-      "Id": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\SessionBrowserView-Co7M4bA9.js",
-      "PackagePath": "staticwebassets\\assets\\SessionBrowserView-Co7M4bA9.js"
+      "Id": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\SessionBrowserView-Bn13Hrlu.css",
+      "PackagePath": "staticwebassets\\assets\\SessionBrowserView-Bn13Hrlu.css"
     },
     {
-      "Id": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\SessionBrowserView-Co7M4bA9.js.map",
-      "PackagePath": "staticwebassets\\assets\\SessionBrowserView-Co7M4bA9.js.map"
+      "Id": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\SessionBrowserView-WWazBy1x.js",
+      "PackagePath": "staticwebassets\\assets\\SessionBrowserView-WWazBy1x.js"
     },
     {
-      "Id": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\SessionBrowserView-RvEcbfDI.css",
-      "PackagePath": "staticwebassets\\assets\\SessionBrowserView-RvEcbfDI.css"
+      "Id": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\SessionBrowserView-WWazBy1x.js.map",
+      "PackagePath": "staticwebassets\\assets\\SessionBrowserView-WWazBy1x.js.map"
     },
     {
-      "Id": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\index-Les8dNUs.css",
-      "PackagePath": "staticwebassets\\assets\\index-Les8dNUs.css"
+      "Id": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\TimelineView-CMBtg4_R.css",
+      "PackagePath": "staticwebassets\\assets\\TimelineView-CMBtg4_R.css"
     },
     {
-      "Id": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\index-pcT6bHt2.js",
-      "PackagePath": "staticwebassets\\assets\\index-pcT6bHt2.js"
+      "Id": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\TimelineView-nbJG9i-o.js",
+      "PackagePath": "staticwebassets\\assets\\TimelineView-nbJG9i-o.js"
     },
     {
-      "Id": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\index-pcT6bHt2.js.map",
-      "PackagePath": "staticwebassets\\assets\\index-pcT6bHt2.js.map"
+      "Id": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\TimelineView-nbJG9i-o.js.map",
+      "PackagePath": "staticwebassets\\assets\\TimelineView-nbJG9i-o.js.map"
     },
     {
-      "Id": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\vue-runtime-BqPyvGr3.js",
-      "PackagePath": "staticwebassets\\assets\\vue-runtime-BqPyvGr3.js"
+      "Id": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\_plugin-vue_export-helper-DlAUqK2U.js",
+      "PackagePath": "staticwebassets\\assets\\_plugin-vue_export-helper-DlAUqK2U.js"
     },
     {
-      "Id": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\vue-runtime-BqPyvGr3.js.map",
-      "PackagePath": "staticwebassets\\assets\\vue-runtime-BqPyvGr3.js.map"
+      "Id": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\_plugin-vue_export-helper-DlAUqK2U.js.map",
+      "PackagePath": "staticwebassets\\assets\\_plugin-vue_export-helper-DlAUqK2U.js.map"
+    },
+    {
+      "Id": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\index-BduxHjqi.css",
+      "PackagePath": "staticwebassets\\assets\\index-BduxHjqi.css"
+    },
+    {
+      "Id": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\index-Ck-CfqGb.js",
+      "PackagePath": "staticwebassets\\assets\\index-Ck-CfqGb.js"
+    },
+    {
+      "Id": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\index-Ck-CfqGb.js.map",
+      "PackagePath": "staticwebassets\\assets\\index-Ck-CfqGb.js.map"
+    },
+    {
+      "Id": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\time-BqkxbEYI.js",
+      "PackagePath": "staticwebassets\\assets\\time-BqkxbEYI.js"
+    },
+    {
+      "Id": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\time-BqkxbEYI.js.map",
+      "PackagePath": "staticwebassets\\assets\\time-BqkxbEYI.js.map"
+    },
+    {
+      "Id": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\timelineStore-BTOUNSv2.js",
+      "PackagePath": "staticwebassets\\assets\\timelineStore-BTOUNSv2.js"
+    },
+    {
+      "Id": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\timelineStore-BTOUNSv2.js.map",
+      "PackagePath": "staticwebassets\\assets\\timelineStore-BTOUNSv2.js.map"
+    },
+    {
+      "Id": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\tracerApiClient-BjJsyB4E.js",
+      "PackagePath": "staticwebassets\\assets\\tracerApiClient-BjJsyB4E.js"
+    },
+    {
+      "Id": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\tracerApiClient-BjJsyB4E.js.map",
+      "PackagePath": "staticwebassets\\assets\\tracerApiClient-BjJsyB4E.js.map"
+    },
+    {
+      "Id": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\useApi-BFTB1oTG.js",
+      "PackagePath": "staticwebassets\\assets\\useApi-BFTB1oTG.js"
+    },
+    {
+      "Id": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\useApi-BFTB1oTG.js.map",
+      "PackagePath": "staticwebassets\\assets\\useApi-BFTB1oTG.js.map"
+    },
+    {
+      "Id": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\useResizeObserver-U4fAnjoW.js",
+      "PackagePath": "staticwebassets\\assets\\useResizeObserver-U4fAnjoW.js"
+    },
+    {
+      "Id": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\useResizeObserver-U4fAnjoW.js.map",
+      "PackagePath": "staticwebassets\\assets\\useResizeObserver-U4fAnjoW.js.map"
+    },
+    {
+      "Id": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\vue-runtime-B3Tvhr7y.js",
+      "PackagePath": "staticwebassets\\assets\\vue-runtime-B3Tvhr7y.js"
+    },
+    {
+      "Id": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\assets\\vue-runtime-B3Tvhr7y.js.map",
+      "PackagePath": "staticwebassets\\assets\\vue-runtime-B3Tvhr7y.js.map"
     },
     {
       "Id": "D:\\Work\\Tracer\\src\\Tracer.Observer\\wwwroot\\index.html",

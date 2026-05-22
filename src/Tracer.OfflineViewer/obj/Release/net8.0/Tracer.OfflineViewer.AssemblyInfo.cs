@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("tracer-viewer")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+981a74d41f72009fd012456d0de1616d29815738")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+cfb5c935aed2e61e7c1176817e8d6f24b1871e58")]
 [assembly: System.Reflection.AssemblyProductAttribute("tracer-viewer")]
 [assembly: System.Reflection.AssemblyTitleAttribute("tracer-viewer")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

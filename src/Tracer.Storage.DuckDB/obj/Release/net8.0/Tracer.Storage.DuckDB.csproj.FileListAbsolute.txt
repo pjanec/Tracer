@@ -8,8 +8,9 @@ D:\Work\Tracer\src\Tracer.Storage.DuckDB\bin\Release\net8.0\Tracer.Storage.DuckD
 D:\Work\Tracer\src\Tracer.Storage.DuckDB\bin\Release\net8.0\Tracer.Storage.DuckDB.pdb
 D:\Work\Tracer\src\Tracer.Storage.DuckDB\bin\Release\net8.0\Tracer.Core.dll
 D:\Work\Tracer\src\Tracer.Storage.DuckDB\bin\Release\net8.0\Tracer.Core.pdb
-D:\Work\Tracer\src\Tracer.Storage.DuckDB\obj\Release\net8.0\Tracer.Storage.DuckDB.csproj.CopyComplete
 D:\Work\Tracer\src\Tracer.Storage.DuckDB\obj\Release\net8.0\Tracer.Storage.DuckDB.dll
 D:\Work\Tracer\src\Tracer.Storage.DuckDB\obj\Release\net8.0\refint\Tracer.Storage.DuckDB.dll
 D:\Work\Tracer\src\Tracer.Storage.DuckDB\obj\Release\net8.0\Tracer.Storage.DuckDB.pdb
 D:\Work\Tracer\src\Tracer.Storage.DuckDB\obj\Release\net8.0\ref\Tracer.Storage.DuckDB.dll
+d:\Work\Tracer\src\Tracer.Storage.DuckDB\obj\Release\net8.0\Tracer.Storage.DuckDB.sourcelink.json
+d:\Work\Tracer\src\Tracer.Storage.DuckDB\obj\Release\net8.0\Tracer.S.178094F4.Up2Date

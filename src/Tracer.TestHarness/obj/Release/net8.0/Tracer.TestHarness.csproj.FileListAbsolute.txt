@@ -12,7 +12,6 @@ D:\Work\Tracer\src\Tracer.TestHarness\obj\Release\net8.0\Tracer.TestHarness.Gene
 D:\Work\Tracer\src\Tracer.TestHarness\obj\Release\net8.0\Tracer.TestHarness.AssemblyInfoInputs.cache
 D:\Work\Tracer\src\Tracer.TestHarness\obj\Release\net8.0\Tracer.TestHarness.AssemblyInfo.cs
 D:\Work\Tracer\src\Tracer.TestHarness\obj\Release\net8.0\Tracer.TestHarness.csproj.CoreCompileInputs.cache
-D:\Work\Tracer\src\Tracer.TestHarness\obj\Release\net8.0\Tracer.TestHarness.csproj.CopyComplete
 D:\Work\Tracer\src\Tracer.TestHarness\obj\Release\net8.0\Tracer.TestHarness.dll
 D:\Work\Tracer\src\Tracer.TestHarness\obj\Release\net8.0\refint\Tracer.TestHarness.dll
 D:\Work\Tracer\src\Tracer.TestHarness\obj\Release\net8.0\Tracer.TestHarness.pdb
@@ -344,3 +343,11 @@ D:\Work\Tracer\src\Tracer.TestHarness\bin\Release\net8.0\Tracer.Storage.DuckDB.M
 D:\Work\Tracer\src\Tracer.TestHarness\bin\Release\net8.0\Tracer.Aggregator.pdb
 D:\Work\Tracer\src\Tracer.TestHarness\bin\Release\net8.0\Tracer.Bundle.pdb
 D:\Work\Tracer\src\Tracer.TestHarness\bin\Release\net8.0\Tracer.Storage.DuckDB.MultiInterval.pdb
+d:\Work\Tracer\src\Tracer.TestHarness\obj\Release\net8.0\Tracer.TestHarness.sourcelink.json
+d:\Work\Tracer\src\Tracer.TestHarness\obj\Release\net8.0\Tracer.T.BB1E783E.Up2Date
+d:\Work\Tracer\src\Tracer.TestHarness\bin\Release\net8.0\Tracer.Storage.Parquet.dll
+d:\Work\Tracer\src\Tracer.TestHarness\bin\Release\net8.0\Tracer.Storage.Parquet.pdb
+d:\Work\Tracer\src\Tracer.TestHarness\bin\Release\net8.0\Tracer.Storage.Annotations.dll
+d:\Work\Tracer\src\Tracer.TestHarness\bin\Release\net8.0\Tracer.Storage.SavedViews.dll
+d:\Work\Tracer\src\Tracer.TestHarness\bin\Release\net8.0\Tracer.Storage.Annotations.pdb
+d:\Work\Tracer\src\Tracer.TestHarness\bin\Release\net8.0\Tracer.Storage.SavedViews.pdb

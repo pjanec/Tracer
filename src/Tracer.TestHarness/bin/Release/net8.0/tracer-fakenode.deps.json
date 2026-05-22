@@ -701,7 +701,10 @@
           "Tracer.Storage.DuckDB": "1.0.0"
         },
         "runtime": {
-          "tracer-agent.dll": {}
+          "tracer-agent.dll": {
+            "assemblyVersion": "1.0.0",
+            "fileVersion": ""
+          }
         }
       },
       "Tracer.Adapters.Mock/1.0.0": {
@@ -710,12 +713,18 @@
           "Tracer.Core": "1.0.0"
         },
         "runtime": {
-          "Tracer.Adapters.Mock.dll": {}
+          "Tracer.Adapters.Mock.dll": {
+            "assemblyVersion": "1.0.0",
+            "fileVersion": "1.0.0.0"
+          }
         }
       },
       "Tracer.Core/1.0.0": {
         "runtime": {
-          "Tracer.Core.dll": {}
+          "Tracer.Core.dll": {
+            "assemblyVersion": "1.0.0",
+            "fileVersion": "1.0.0.0"
+          }
         }
       },
       "Tracer.Storage.DuckDB/1.0.0": {
@@ -727,7 +736,10 @@
           "Tracer.Core": "1.0.0"
         },
         "runtime": {
-          "Tracer.Storage.DuckDB.dll": {}
+          "Tracer.Storage.DuckDB.dll": {
+            "assemblyVersion": "1.0.0",
+            "fileVersion": "1.0.0.0"
+          }
         }
       },
       "tracer-agent.Reference/1.0.0.0": {

@@ -10,7 +10,7 @@
         "projectUniqueName": "D:\\Work\\Tracer\\src\\Tracer.Adapters.Mock\\Tracer.Adapters.Mock.csproj",
         "projectName": "Tracer.Adapters.Mock",
         "projectPath": "D:\\Work\\Tracer\\src\\Tracer.Adapters.Mock\\Tracer.Adapters.Mock.csproj",
-        "packagesPath": "C:\\Users\\petr.janecek\\.nuget\\packages\\",
+        "packagesPath": "C:\\Users\\pjane\\.nuget\\packages\\",
         "outputPath": "D:\\Work\\Tracer\\src\\Tracer.Adapters.Mock\\obj\\",
         "projectStyle": "PackageReference",
         "centralPackageVersionsManagementEnabled": true,
@@ -19,7 +19,7 @@
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\petr.janecek\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\pjane\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -28,6 +28,7 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "C:\\Program Files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -45,6 +46,11 @@
           "warnAsError": [
             "NU1605"
           ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
         }
       },
       "frameworks": {
@@ -58,34 +64,35 @@
             }
           },
           "centralPackageVersions": {
-            "DuckDB.NET.Bindings.Full": "[1.0.2, )",
-            "DuckDB.NET.Data": "[1.0.2, )",
-            "FluentAssertions": "[6.12.0, )",
-            "Microsoft.AspNetCore.Mvc.Testing": "[8.0.0, )",
-            "Microsoft.AspNetCore.OpenApi": "[8.0.0, )",
-            "Microsoft.Extensions.Configuration": "[8.0.0, )",
-            "Microsoft.Extensions.Configuration.Json": "[8.0.0, )",
-            "Microsoft.Extensions.Hosting": "[8.0.0, )",
-            "Microsoft.Extensions.Hosting.WindowsServices": "[8.0.0, )",
-            "Microsoft.Extensions.Logging.Abstractions": "[8.0.0, )",
-            "Microsoft.Extensions.Options": "[8.0.0, )",
-            "Microsoft.Extensions.Options.DataAnnotations": "[8.0.0, )",
-            "Microsoft.Extensions.Time.Testing": "[8.0.0, )",
-            "Microsoft.NET.Test.Sdk": "[17.8.0, )",
-            "NSwag.AspNetCore": "[14.0.7, )",
-            "NSwag.MSBuild": "[14.0.7, )",
-            "Parquet.Net": "[4.24.0, )",
-            "Serilog": "[3.1.1, )",
-            "Serilog.AspNetCore": "[8.0.2, )",
-            "Serilog.Extensions.Hosting": "[8.0.0, )",
-            "Serilog.Formatting.Compact": "[2.0.0, )",
-            "Serilog.Sinks.Console": "[5.0.1, )",
-            "Serilog.Sinks.File": "[5.0.0, )",
-            "System.CommandLine": "[2.0.0-beta4.22272.1, )",
-            "System.IO.Compression.ZipFile": "[4.3.0, )",
-            "Ulid": "[1.3.4, )",
-            "xunit": "[2.6.6, )",
-            "xunit.runner.visualstudio": "[2.5.6, )"
+            "DuckDB.NET.Bindings.Full": "1.0.2",
+            "DuckDB.NET.Data": "1.0.2",
+            "FluentAssertions": "6.12.0",
+            "Microsoft.AspNetCore.Mvc.Testing": "8.0.0",
+            "Microsoft.AspNetCore.OpenApi": "8.0.0",
+            "Microsoft.Data.Sqlite": "8.0.0",
+            "Microsoft.Extensions.Configuration": "8.0.0",
+            "Microsoft.Extensions.Configuration.Json": "8.0.0",
+            "Microsoft.Extensions.Hosting": "8.0.0",
+            "Microsoft.Extensions.Hosting.WindowsServices": "8.0.0",
+            "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
+            "Microsoft.Extensions.Options": "8.0.0",
+            "Microsoft.Extensions.Options.DataAnnotations": "8.0.0",
+            "Microsoft.Extensions.Time.Testing": "8.0.0",
+            "Microsoft.NET.Test.Sdk": "17.8.0",
+            "NSwag.AspNetCore": "14.0.7",
+            "NSwag.MSBuild": "14.0.7",
+            "Parquet.Net": "4.24.0",
+            "Serilog": "3.1.1",
+            "Serilog.AspNetCore": "8.0.2",
+            "Serilog.Extensions.Hosting": "8.0.0",
+            "Serilog.Formatting.Compact": "2.0.0",
+            "Serilog.Sinks.Console": "5.0.1",
+            "Serilog.Sinks.File": "5.0.0",
+            "System.CommandLine": "2.0.0-beta4.22272.1",
+            "System.IO.Compression.ZipFile": "4.3.0",
+            "Ulid": "1.3.4",
+            "xunit": "2.6.6",
+            "xunit.runner.visualstudio": "2.5.6"
           },
           "imports": [
             "net461",
@@ -103,7 +110,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.127/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.408/PortableRuntimeIdentifierGraph.json"
         }
       }
     },
@@ -113,7 +120,7 @@
         "projectUniqueName": "D:\\Work\\Tracer\\src\\Tracer.Agent\\Tracer.Agent.csproj",
         "projectName": "tracer-agent",
         "projectPath": "D:\\Work\\Tracer\\src\\Tracer.Agent\\Tracer.Agent.csproj",
-        "packagesPath": "C:\\Users\\petr.janecek\\.nuget\\packages\\",
+        "packagesPath": "C:\\Users\\pjane\\.nuget\\packages\\",
         "outputPath": "D:\\Work\\Tracer\\src\\Tracer.Agent\\obj\\",
         "projectStyle": "PackageReference",
         "centralPackageVersionsManagementEnabled": true,
@@ -122,7 +129,7 @@
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\petr.janecek\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\pjane\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -131,6 +138,7 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "C:\\Program Files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -154,6 +162,11 @@
           "warnAsError": [
             "NU1605"
           ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
         }
       },
       "frameworks": {
@@ -217,34 +230,35 @@
             }
           },
           "centralPackageVersions": {
-            "DuckDB.NET.Bindings.Full": "[1.0.2, )",
-            "DuckDB.NET.Data": "[1.0.2, )",
-            "FluentAssertions": "[6.12.0, )",
-            "Microsoft.AspNetCore.Mvc.Testing": "[8.0.0, )",
-            "Microsoft.AspNetCore.OpenApi": "[8.0.0, )",
-            "Microsoft.Extensions.Configuration": "[8.0.0, )",
-            "Microsoft.Extensions.Configuration.Json": "[8.0.0, )",
-            "Microsoft.Extensions.Hosting": "[8.0.0, )",
-            "Microsoft.Extensions.Hosting.WindowsServices": "[8.0.0, )",
-            "Microsoft.Extensions.Logging.Abstractions": "[8.0.0, )",
-            "Microsoft.Extensions.Options": "[8.0.0, )",
-            "Microsoft.Extensions.Options.DataAnnotations": "[8.0.0, )",
-            "Microsoft.Extensions.Time.Testing": "[8.0.0, )",
-            "Microsoft.NET.Test.Sdk": "[17.8.0, )",
-            "NSwag.AspNetCore": "[14.0.7, )",
-            "NSwag.MSBuild": "[14.0.7, )",
-            "Parquet.Net": "[4.24.0, )",
-            "Serilog": "[3.1.1, )",
-            "Serilog.AspNetCore": "[8.0.2, )",
-            "Serilog.Extensions.Hosting": "[8.0.0, )",
-            "Serilog.Formatting.Compact": "[2.0.0, )",
-            "Serilog.Sinks.Console": "[5.0.1, )",
-            "Serilog.Sinks.File": "[5.0.0, )",
-            "System.CommandLine": "[2.0.0-beta4.22272.1, )",
-            "System.IO.Compression.ZipFile": "[4.3.0, )",
-            "Ulid": "[1.3.4, )",
-            "xunit": "[2.6.6, )",
-            "xunit.runner.visualstudio": "[2.5.6, )"
+            "DuckDB.NET.Bindings.Full": "1.0.2",
+            "DuckDB.NET.Data": "1.0.2",
+            "FluentAssertions": "6.12.0",
+            "Microsoft.AspNetCore.Mvc.Testing": "8.0.0",
+            "Microsoft.AspNetCore.OpenApi": "8.0.0",
+            "Microsoft.Data.Sqlite": "8.0.0",
+            "Microsoft.Extensions.Configuration": "8.0.0",
+            "Microsoft.Extensions.Configuration.Json": "8.0.0",
+            "Microsoft.Extensions.Hosting": "8.0.0",
+            "Microsoft.Extensions.Hosting.WindowsServices": "8.0.0",
+            "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
+            "Microsoft.Extensions.Options": "8.0.0",
+            "Microsoft.Extensions.Options.DataAnnotations": "8.0.0",
+            "Microsoft.Extensions.Time.Testing": "8.0.0",
+            "Microsoft.NET.Test.Sdk": "17.8.0",
+            "NSwag.AspNetCore": "14.0.7",
+            "NSwag.MSBuild": "14.0.7",
+            "Parquet.Net": "4.24.0",
+            "Serilog": "3.1.1",
+            "Serilog.AspNetCore": "8.0.2",
+            "Serilog.Extensions.Hosting": "8.0.0",
+            "Serilog.Formatting.Compact": "2.0.0",
+            "Serilog.Sinks.Console": "5.0.1",
+            "Serilog.Sinks.File": "5.0.0",
+            "System.CommandLine": "2.0.0-beta4.22272.1",
+            "System.IO.Compression.ZipFile": "4.3.0",
+            "Ulid": "1.3.4",
+            "xunit": "2.6.6",
+            "xunit.runner.visualstudio": "2.5.6"
           },
           "imports": [
             "net461",
@@ -262,7 +276,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.127/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.408/PortableRuntimeIdentifierGraph.json"
         }
       }
     },
@@ -272,7 +286,7 @@
         "projectUniqueName": "D:\\Work\\Tracer\\src\\Tracer.Aggregator.Cli\\Tracer.Aggregator.Cli.csproj",
         "projectName": "tracer-aggregate",
         "projectPath": "D:\\Work\\Tracer\\src\\Tracer.Aggregator.Cli\\Tracer.Aggregator.Cli.csproj",
-        "packagesPath": "C:\\Users\\petr.janecek\\.nuget\\packages\\",
+        "packagesPath": "C:\\Users\\pjane\\.nuget\\packages\\",
         "outputPath": "D:\\Work\\Tracer\\src\\Tracer.Aggregator.Cli\\obj\\",
         "projectStyle": "PackageReference",
         "centralPackageVersionsManagementEnabled": true,
@@ -281,7 +295,7 @@
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\petr.janecek\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\pjane\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -290,6 +304,7 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "C:\\Program Files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -313,6 +328,11 @@
           "warnAsError": [
             "NU1605"
           ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
         }
       },
       "frameworks": {
@@ -331,34 +351,35 @@
             }
           },
           "centralPackageVersions": {
-            "DuckDB.NET.Bindings.Full": "[1.0.2, )",
-            "DuckDB.NET.Data": "[1.0.2, )",
-            "FluentAssertions": "[6.12.0, )",
-            "Microsoft.AspNetCore.Mvc.Testing": "[8.0.0, )",
-            "Microsoft.AspNetCore.OpenApi": "[8.0.0, )",
-            "Microsoft.Extensions.Configuration": "[8.0.0, )",
-            "Microsoft.Extensions.Configuration.Json": "[8.0.0, )",
-            "Microsoft.Extensions.Hosting": "[8.0.0, )",
-            "Microsoft.Extensions.Hosting.WindowsServices": "[8.0.0, )",
-            "Microsoft.Extensions.Logging.Abstractions": "[8.0.0, )",
-            "Microsoft.Extensions.Options": "[8.0.0, )",
-            "Microsoft.Extensions.Options.DataAnnotations": "[8.0.0, )",
-            "Microsoft.Extensions.Time.Testing": "[8.0.0, )",
-            "Microsoft.NET.Test.Sdk": "[17.8.0, )",
-            "NSwag.AspNetCore": "[14.0.7, )",
-            "NSwag.MSBuild": "[14.0.7, )",
-            "Parquet.Net": "[4.24.0, )",
-            "Serilog": "[3.1.1, )",
-            "Serilog.AspNetCore": "[8.0.2, )",
-            "Serilog.Extensions.Hosting": "[8.0.0, )",
-            "Serilog.Formatting.Compact": "[2.0.0, )",
-            "Serilog.Sinks.Console": "[5.0.1, )",
-            "Serilog.Sinks.File": "[5.0.0, )",
-            "System.CommandLine": "[2.0.0-beta4.22272.1, )",
-            "System.IO.Compression.ZipFile": "[4.3.0, )",
-            "Ulid": "[1.3.4, )",
-            "xunit": "[2.6.6, )",
-            "xunit.runner.visualstudio": "[2.5.6, )"
+            "DuckDB.NET.Bindings.Full": "1.0.2",
+            "DuckDB.NET.Data": "1.0.2",
+            "FluentAssertions": "6.12.0",
+            "Microsoft.AspNetCore.Mvc.Testing": "8.0.0",
+            "Microsoft.AspNetCore.OpenApi": "8.0.0",
+            "Microsoft.Data.Sqlite": "8.0.0",
+            "Microsoft.Extensions.Configuration": "8.0.0",
+            "Microsoft.Extensions.Configuration.Json": "8.0.0",
+            "Microsoft.Extensions.Hosting": "8.0.0",
+            "Microsoft.Extensions.Hosting.WindowsServices": "8.0.0",
+            "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
+            "Microsoft.Extensions.Options": "8.0.0",
+            "Microsoft.Extensions.Options.DataAnnotations": "8.0.0",
+            "Microsoft.Extensions.Time.Testing": "8.0.0",
+            "Microsoft.NET.Test.Sdk": "17.8.0",
+            "NSwag.AspNetCore": "14.0.7",
+            "NSwag.MSBuild": "14.0.7",
+            "Parquet.Net": "4.24.0",
+            "Serilog": "3.1.1",
+            "Serilog.AspNetCore": "8.0.2",
+            "Serilog.Extensions.Hosting": "8.0.0",
+            "Serilog.Formatting.Compact": "2.0.0",
+            "Serilog.Sinks.Console": "5.0.1",
+            "Serilog.Sinks.File": "5.0.0",
+            "System.CommandLine": "2.0.0-beta4.22272.1",
+            "System.IO.Compression.ZipFile": "4.3.0",
+            "Ulid": "1.3.4",
+            "xunit": "2.6.6",
+            "xunit.runner.visualstudio": "2.5.6"
           },
           "imports": [
             "net461",
@@ -376,7 +397,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.127/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.408/PortableRuntimeIdentifierGraph.json"
         }
       }
     },
@@ -386,7 +407,7 @@
         "projectUniqueName": "D:\\Work\\Tracer\\src\\Tracer.Aggregator\\Tracer.Aggregator.csproj",
         "projectName": "Tracer.Aggregator",
         "projectPath": "D:\\Work\\Tracer\\src\\Tracer.Aggregator\\Tracer.Aggregator.csproj",
-        "packagesPath": "C:\\Users\\petr.janecek\\.nuget\\packages\\",
+        "packagesPath": "C:\\Users\\pjane\\.nuget\\packages\\",
         "outputPath": "D:\\Work\\Tracer\\src\\Tracer.Aggregator\\obj\\",
         "projectStyle": "PackageReference",
         "centralPackageVersionsManagementEnabled": true,
@@ -395,7 +416,7 @@
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\petr.janecek\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\pjane\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -404,6 +425,7 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "C:\\Program Files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -419,6 +441,9 @@
               "D:\\Work\\Tracer\\src\\Tracer.Core\\Tracer.Core.csproj": {
                 "projectPath": "D:\\Work\\Tracer\\src\\Tracer.Core\\Tracer.Core.csproj"
               },
+              "D:\\Work\\Tracer\\src\\Tracer.Storage.Annotations\\Tracer.Storage.Annotations.csproj": {
+                "projectPath": "D:\\Work\\Tracer\\src\\Tracer.Storage.Annotations\\Tracer.Storage.Annotations.csproj"
+              },
               "D:\\Work\\Tracer\\src\\Tracer.Storage.DuckDB.MultiInterval\\Tracer.Storage.DuckDB.MultiInterval.csproj": {
                 "projectPath": "D:\\Work\\Tracer\\src\\Tracer.Storage.DuckDB.MultiInterval\\Tracer.Storage.DuckDB.MultiInterval.csproj"
               },
@@ -433,6 +458,11 @@
           "warnAsError": [
             "NU1605"
           ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
         }
       },
       "frameworks": {
@@ -461,34 +491,35 @@
             }
           },
           "centralPackageVersions": {
-            "DuckDB.NET.Bindings.Full": "[1.0.2, )",
-            "DuckDB.NET.Data": "[1.0.2, )",
-            "FluentAssertions": "[6.12.0, )",
-            "Microsoft.AspNetCore.Mvc.Testing": "[8.0.0, )",
-            "Microsoft.AspNetCore.OpenApi": "[8.0.0, )",
-            "Microsoft.Extensions.Configuration": "[8.0.0, )",
-            "Microsoft.Extensions.Configuration.Json": "[8.0.0, )",
-            "Microsoft.Extensions.Hosting": "[8.0.0, )",
-            "Microsoft.Extensions.Hosting.WindowsServices": "[8.0.0, )",
-            "Microsoft.Extensions.Logging.Abstractions": "[8.0.0, )",
-            "Microsoft.Extensions.Options": "[8.0.0, )",
-            "Microsoft.Extensions.Options.DataAnnotations": "[8.0.0, )",
-            "Microsoft.Extensions.Time.Testing": "[8.0.0, )",
-            "Microsoft.NET.Test.Sdk": "[17.8.0, )",
-            "NSwag.AspNetCore": "[14.0.7, )",
-            "NSwag.MSBuild": "[14.0.7, )",
-            "Parquet.Net": "[4.24.0, )",
-            "Serilog": "[3.1.1, )",
-            "Serilog.AspNetCore": "[8.0.2, )",
-            "Serilog.Extensions.Hosting": "[8.0.0, )",
-            "Serilog.Formatting.Compact": "[2.0.0, )",
-            "Serilog.Sinks.Console": "[5.0.1, )",
-            "Serilog.Sinks.File": "[5.0.0, )",
-            "System.CommandLine": "[2.0.0-beta4.22272.1, )",
-            "System.IO.Compression.ZipFile": "[4.3.0, )",
-            "Ulid": "[1.3.4, )",
-            "xunit": "[2.6.6, )",
-            "xunit.runner.visualstudio": "[2.5.6, )"
+            "DuckDB.NET.Bindings.Full": "1.0.2",
+            "DuckDB.NET.Data": "1.0.2",
+            "FluentAssertions": "6.12.0",
+            "Microsoft.AspNetCore.Mvc.Testing": "8.0.0",
+            "Microsoft.AspNetCore.OpenApi": "8.0.0",
+            "Microsoft.Data.Sqlite": "8.0.0",
+            "Microsoft.Extensions.Configuration": "8.0.0",
+            "Microsoft.Extensions.Configuration.Json": "8.0.0",
+            "Microsoft.Extensions.Hosting": "8.0.0",
+            "Microsoft.Extensions.Hosting.WindowsServices": "8.0.0",
+            "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
+            "Microsoft.Extensions.Options": "8.0.0",
+            "Microsoft.Extensions.Options.DataAnnotations": "8.0.0",
+            "Microsoft.Extensions.Time.Testing": "8.0.0",
+            "Microsoft.NET.Test.Sdk": "17.8.0",
+            "NSwag.AspNetCore": "14.0.7",
+            "NSwag.MSBuild": "14.0.7",
+            "Parquet.Net": "4.24.0",
+            "Serilog": "3.1.1",
+            "Serilog.AspNetCore": "8.0.2",
+            "Serilog.Extensions.Hosting": "8.0.0",
+            "Serilog.Formatting.Compact": "2.0.0",
+            "Serilog.Sinks.Console": "5.0.1",
+            "Serilog.Sinks.File": "5.0.0",
+            "System.CommandLine": "2.0.0-beta4.22272.1",
+            "System.IO.Compression.ZipFile": "4.3.0",
+            "Ulid": "1.3.4",
+            "xunit": "2.6.6",
+            "xunit.runner.visualstudio": "2.5.6"
           },
           "imports": [
             "net461",
@@ -506,7 +537,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.127/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.408/PortableRuntimeIdentifierGraph.json"
         }
       }
     },
@@ -516,7 +547,7 @@
         "projectUniqueName": "D:\\Work\\Tracer\\src\\Tracer.Bundle\\Tracer.Bundle.csproj",
         "projectName": "Tracer.Bundle",
         "projectPath": "D:\\Work\\Tracer\\src\\Tracer.Bundle\\Tracer.Bundle.csproj",
-        "packagesPath": "C:\\Users\\petr.janecek\\.nuget\\packages\\",
+        "packagesPath": "C:\\Users\\pjane\\.nuget\\packages\\",
         "outputPath": "D:\\Work\\Tracer\\src\\Tracer.Bundle\\obj\\",
         "projectStyle": "PackageReference",
         "centralPackageVersionsManagementEnabled": true,
@@ -525,7 +556,7 @@
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\petr.janecek\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\pjane\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -534,6 +565,7 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "C:\\Program Files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -551,6 +583,11 @@
           "warnAsError": [
             "NU1605"
           ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
         }
       },
       "frameworks": {
@@ -569,34 +606,35 @@
             }
           },
           "centralPackageVersions": {
-            "DuckDB.NET.Bindings.Full": "[1.0.2, )",
-            "DuckDB.NET.Data": "[1.0.2, )",
-            "FluentAssertions": "[6.12.0, )",
-            "Microsoft.AspNetCore.Mvc.Testing": "[8.0.0, )",
-            "Microsoft.AspNetCore.OpenApi": "[8.0.0, )",
-            "Microsoft.Extensions.Configuration": "[8.0.0, )",
-            "Microsoft.Extensions.Configuration.Json": "[8.0.0, )",
-            "Microsoft.Extensions.Hosting": "[8.0.0, )",
-            "Microsoft.Extensions.Hosting.WindowsServices": "[8.0.0, )",
-            "Microsoft.Extensions.Logging.Abstractions": "[8.0.0, )",
-            "Microsoft.Extensions.Options": "[8.0.0, )",
-            "Microsoft.Extensions.Options.DataAnnotations": "[8.0.0, )",
-            "Microsoft.Extensions.Time.Testing": "[8.0.0, )",
-            "Microsoft.NET.Test.Sdk": "[17.8.0, )",
-            "NSwag.AspNetCore": "[14.0.7, )",
-            "NSwag.MSBuild": "[14.0.7, )",
-            "Parquet.Net": "[4.24.0, )",
-            "Serilog": "[3.1.1, )",
-            "Serilog.AspNetCore": "[8.0.2, )",
-            "Serilog.Extensions.Hosting": "[8.0.0, )",
-            "Serilog.Formatting.Compact": "[2.0.0, )",
-            "Serilog.Sinks.Console": "[5.0.1, )",
-            "Serilog.Sinks.File": "[5.0.0, )",
-            "System.CommandLine": "[2.0.0-beta4.22272.1, )",
-            "System.IO.Compression.ZipFile": "[4.3.0, )",
-            "Ulid": "[1.3.4, )",
-            "xunit": "[2.6.6, )",
-            "xunit.runner.visualstudio": "[2.5.6, )"
+            "DuckDB.NET.Bindings.Full": "1.0.2",
+            "DuckDB.NET.Data": "1.0.2",
+            "FluentAssertions": "6.12.0",
+            "Microsoft.AspNetCore.Mvc.Testing": "8.0.0",
+            "Microsoft.AspNetCore.OpenApi": "8.0.0",
+            "Microsoft.Data.Sqlite": "8.0.0",
+            "Microsoft.Extensions.Configuration": "8.0.0",
+            "Microsoft.Extensions.Configuration.Json": "8.0.0",
+            "Microsoft.Extensions.Hosting": "8.0.0",
+            "Microsoft.Extensions.Hosting.WindowsServices": "8.0.0",
+            "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
+            "Microsoft.Extensions.Options": "8.0.0",
+            "Microsoft.Extensions.Options.DataAnnotations": "8.0.0",
+            "Microsoft.Extensions.Time.Testing": "8.0.0",
+            "Microsoft.NET.Test.Sdk": "17.8.0",
+            "NSwag.AspNetCore": "14.0.7",
+            "NSwag.MSBuild": "14.0.7",
+            "Parquet.Net": "4.24.0",
+            "Serilog": "3.1.1",
+            "Serilog.AspNetCore": "8.0.2",
+            "Serilog.Extensions.Hosting": "8.0.0",
+            "Serilog.Formatting.Compact": "2.0.0",
+            "Serilog.Sinks.Console": "5.0.1",
+            "Serilog.Sinks.File": "5.0.0",
+            "System.CommandLine": "2.0.0-beta4.22272.1",
+            "System.IO.Compression.ZipFile": "4.3.0",
+            "Ulid": "1.3.4",
+            "xunit": "2.6.6",
+            "xunit.runner.visualstudio": "2.5.6"
           },
           "imports": [
             "net461",
@@ -614,7 +652,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.127/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.408/PortableRuntimeIdentifierGraph.json"
         }
       }
     },
@@ -624,7 +662,7 @@
         "projectUniqueName": "D:\\Work\\Tracer\\src\\Tracer.Core\\Tracer.Core.csproj",
         "projectName": "Tracer.Core",
         "projectPath": "D:\\Work\\Tracer\\src\\Tracer.Core\\Tracer.Core.csproj",
-        "packagesPath": "C:\\Users\\petr.janecek\\.nuget\\packages\\",
+        "packagesPath": "C:\\Users\\pjane\\.nuget\\packages\\",
         "outputPath": "D:\\Work\\Tracer\\src\\Tracer.Core\\obj\\",
         "projectStyle": "PackageReference",
         "centralPackageVersionsManagementEnabled": true,
@@ -633,7 +671,7 @@
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\petr.janecek\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\pjane\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -642,6 +680,7 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "C:\\Program Files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -655,40 +694,46 @@
           "warnAsError": [
             "NU1605"
           ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
         }
       },
       "frameworks": {
         "net8.0": {
           "targetAlias": "net8.0",
           "centralPackageVersions": {
-            "DuckDB.NET.Bindings.Full": "[1.0.2, )",
-            "DuckDB.NET.Data": "[1.0.2, )",
-            "FluentAssertions": "[6.12.0, )",
-            "Microsoft.AspNetCore.Mvc.Testing": "[8.0.0, )",
-            "Microsoft.AspNetCore.OpenApi": "[8.0.0, )",
-            "Microsoft.Extensions.Configuration": "[8.0.0, )",
-            "Microsoft.Extensions.Configuration.Json": "[8.0.0, )",
-            "Microsoft.Extensions.Hosting": "[8.0.0, )",
-            "Microsoft.Extensions.Hosting.WindowsServices": "[8.0.0, )",
-            "Microsoft.Extensions.Logging.Abstractions": "[8.0.0, )",
-            "Microsoft.Extensions.Options": "[8.0.0, )",
-            "Microsoft.Extensions.Options.DataAnnotations": "[8.0.0, )",
-            "Microsoft.Extensions.Time.Testing": "[8.0.0, )",
-            "Microsoft.NET.Test.Sdk": "[17.8.0, )",
-            "NSwag.AspNetCore": "[14.0.7, )",
-            "NSwag.MSBuild": "[14.0.7, )",
-            "Parquet.Net": "[4.24.0, )",
-            "Serilog": "[3.1.1, )",
-            "Serilog.AspNetCore": "[8.0.2, )",
-            "Serilog.Extensions.Hosting": "[8.0.0, )",
-            "Serilog.Formatting.Compact": "[2.0.0, )",
-            "Serilog.Sinks.Console": "[5.0.1, )",
-            "Serilog.Sinks.File": "[5.0.0, )",
-            "System.CommandLine": "[2.0.0-beta4.22272.1, )",
-            "System.IO.Compression.ZipFile": "[4.3.0, )",
-            "Ulid": "[1.3.4, )",
-            "xunit": "[2.6.6, )",
-            "xunit.runner.visualstudio": "[2.5.6, )"
+            "DuckDB.NET.Bindings.Full": "1.0.2",
+            "DuckDB.NET.Data": "1.0.2",
+            "FluentAssertions": "6.12.0",
+            "Microsoft.AspNetCore.Mvc.Testing": "8.0.0",
+            "Microsoft.AspNetCore.OpenApi": "8.0.0",
+            "Microsoft.Data.Sqlite": "8.0.0",
+            "Microsoft.Extensions.Configuration": "8.0.0",
+            "Microsoft.Extensions.Configuration.Json": "8.0.0",
+            "Microsoft.Extensions.Hosting": "8.0.0",
+            "Microsoft.Extensions.Hosting.WindowsServices": "8.0.0",
+            "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
+            "Microsoft.Extensions.Options": "8.0.0",
+            "Microsoft.Extensions.Options.DataAnnotations": "8.0.0",
+            "Microsoft.Extensions.Time.Testing": "8.0.0",
+            "Microsoft.NET.Test.Sdk": "17.8.0",
+            "NSwag.AspNetCore": "14.0.7",
+            "NSwag.MSBuild": "14.0.7",
+            "Parquet.Net": "4.24.0",
+            "Serilog": "3.1.1",
+            "Serilog.AspNetCore": "8.0.2",
+            "Serilog.Extensions.Hosting": "8.0.0",
+            "Serilog.Formatting.Compact": "2.0.0",
+            "Serilog.Sinks.Console": "5.0.1",
+            "Serilog.Sinks.File": "5.0.0",
+            "System.CommandLine": "2.0.0-beta4.22272.1",
+            "System.IO.Compression.ZipFile": "4.3.0",
+            "Ulid": "1.3.4",
+            "xunit": "2.6.6",
+            "xunit.runner.visualstudio": "2.5.6"
           },
           "imports": [
             "net461",
@@ -706,7 +751,127 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.127/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.408/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "D:\\Work\\Tracer\\src\\Tracer.Storage.Annotations\\Tracer.Storage.Annotations.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "D:\\Work\\Tracer\\src\\Tracer.Storage.Annotations\\Tracer.Storage.Annotations.csproj",
+        "projectName": "Tracer.Storage.Annotations",
+        "projectPath": "D:\\Work\\Tracer\\src\\Tracer.Storage.Annotations\\Tracer.Storage.Annotations.csproj",
+        "packagesPath": "C:\\Users\\pjane\\.nuget\\packages\\",
+        "outputPath": "D:\\Work\\Tracer\\src\\Tracer.Storage.Annotations\\obj\\",
+        "projectStyle": "PackageReference",
+        "centralPackageVersionsManagementEnabled": true,
+        "CentralPackageTransitivePinningEnabled": true,
+        "fallbackFolders": [
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
+        "configFilePaths": [
+          "C:\\Users\\pjane\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "net8.0"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "C:\\Program Files\\dotnet\\library-packs": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net8.0": {
+            "targetAlias": "net8.0",
+            "projectReferences": {
+              "D:\\Work\\Tracer\\src\\Tracer.Core\\Tracer.Core.csproj": {
+                "projectPath": "D:\\Work\\Tracer\\src\\Tracer.Core\\Tracer.Core.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "allWarningsAsErrors": true,
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        }
+      },
+      "frameworks": {
+        "net8.0": {
+          "targetAlias": "net8.0",
+          "dependencies": {
+            "Microsoft.Data.Sqlite": {
+              "target": "Package",
+              "version": "[8.0.0, )",
+              "versionCentrallyManaged": true
+            },
+            "Microsoft.Extensions.Logging.Abstractions": {
+              "target": "Package",
+              "version": "[8.0.0, )",
+              "versionCentrallyManaged": true
+            },
+            "Ulid": {
+              "target": "Package",
+              "version": "[1.3.4, )",
+              "versionCentrallyManaged": true
+            }
+          },
+          "centralPackageVersions": {
+            "DuckDB.NET.Bindings.Full": "1.0.2",
+            "DuckDB.NET.Data": "1.0.2",
+            "FluentAssertions": "6.12.0",
+            "Microsoft.AspNetCore.Mvc.Testing": "8.0.0",
+            "Microsoft.AspNetCore.OpenApi": "8.0.0",
+            "Microsoft.Data.Sqlite": "8.0.0",
+            "Microsoft.Extensions.Configuration": "8.0.0",
+            "Microsoft.Extensions.Configuration.Json": "8.0.0",
+            "Microsoft.Extensions.Hosting": "8.0.0",
+            "Microsoft.Extensions.Hosting.WindowsServices": "8.0.0",
+            "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
+            "Microsoft.Extensions.Options": "8.0.0",
+            "Microsoft.Extensions.Options.DataAnnotations": "8.0.0",
+            "Microsoft.Extensions.Time.Testing": "8.0.0",
+            "Microsoft.NET.Test.Sdk": "17.8.0",
+            "NSwag.AspNetCore": "14.0.7",
+            "NSwag.MSBuild": "14.0.7",
+            "Parquet.Net": "4.24.0",
+            "Serilog": "3.1.1",
+            "Serilog.AspNetCore": "8.0.2",
+            "Serilog.Extensions.Hosting": "8.0.0",
+            "Serilog.Formatting.Compact": "2.0.0",
+            "Serilog.Sinks.Console": "5.0.1",
+            "Serilog.Sinks.File": "5.0.0",
+            "System.CommandLine": "2.0.0-beta4.22272.1",
+            "System.IO.Compression.ZipFile": "4.3.0",
+            "Ulid": "1.3.4",
+            "xunit": "2.6.6",
+            "xunit.runner.visualstudio": "2.5.6"
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.408/PortableRuntimeIdentifierGraph.json"
         }
       }
     },
@@ -716,7 +881,7 @@
         "projectUniqueName": "D:\\Work\\Tracer\\src\\Tracer.Storage.DuckDB.MultiInterval\\Tracer.Storage.DuckDB.MultiInterval.csproj",
         "projectName": "Tracer.Storage.DuckDB.MultiInterval",
         "projectPath": "D:\\Work\\Tracer\\src\\Tracer.Storage.DuckDB.MultiInterval\\Tracer.Storage.DuckDB.MultiInterval.csproj",
-        "packagesPath": "C:\\Users\\petr.janecek\\.nuget\\packages\\",
+        "packagesPath": "C:\\Users\\pjane\\.nuget\\packages\\",
         "outputPath": "D:\\Work\\Tracer\\src\\Tracer.Storage.DuckDB.MultiInterval\\obj\\",
         "projectStyle": "PackageReference",
         "centralPackageVersionsManagementEnabled": true,
@@ -725,7 +890,7 @@
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\petr.janecek\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\pjane\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -734,6 +899,7 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "C:\\Program Files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -757,6 +923,11 @@
           "warnAsError": [
             "NU1605"
           ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
         }
       },
       "frameworks": {
@@ -780,34 +951,35 @@
             }
           },
           "centralPackageVersions": {
-            "DuckDB.NET.Bindings.Full": "[1.0.2, )",
-            "DuckDB.NET.Data": "[1.0.2, )",
-            "FluentAssertions": "[6.12.0, )",
-            "Microsoft.AspNetCore.Mvc.Testing": "[8.0.0, )",
-            "Microsoft.AspNetCore.OpenApi": "[8.0.0, )",
-            "Microsoft.Extensions.Configuration": "[8.0.0, )",
-            "Microsoft.Extensions.Configuration.Json": "[8.0.0, )",
-            "Microsoft.Extensions.Hosting": "[8.0.0, )",
-            "Microsoft.Extensions.Hosting.WindowsServices": "[8.0.0, )",
-            "Microsoft.Extensions.Logging.Abstractions": "[8.0.0, )",
-            "Microsoft.Extensions.Options": "[8.0.0, )",
-            "Microsoft.Extensions.Options.DataAnnotations": "[8.0.0, )",
-            "Microsoft.Extensions.Time.Testing": "[8.0.0, )",
-            "Microsoft.NET.Test.Sdk": "[17.8.0, )",
-            "NSwag.AspNetCore": "[14.0.7, )",
-            "NSwag.MSBuild": "[14.0.7, )",
-            "Parquet.Net": "[4.24.0, )",
-            "Serilog": "[3.1.1, )",
-            "Serilog.AspNetCore": "[8.0.2, )",
-            "Serilog.Extensions.Hosting": "[8.0.0, )",
-            "Serilog.Formatting.Compact": "[2.0.0, )",
-            "Serilog.Sinks.Console": "[5.0.1, )",
-            "Serilog.Sinks.File": "[5.0.0, )",
-            "System.CommandLine": "[2.0.0-beta4.22272.1, )",
-            "System.IO.Compression.ZipFile": "[4.3.0, )",
-            "Ulid": "[1.3.4, )",
-            "xunit": "[2.6.6, )",
-            "xunit.runner.visualstudio": "[2.5.6, )"
+            "DuckDB.NET.Bindings.Full": "1.0.2",
+            "DuckDB.NET.Data": "1.0.2",
+            "FluentAssertions": "6.12.0",
+            "Microsoft.AspNetCore.Mvc.Testing": "8.0.0",
+            "Microsoft.AspNetCore.OpenApi": "8.0.0",
+            "Microsoft.Data.Sqlite": "8.0.0",
+            "Microsoft.Extensions.Configuration": "8.0.0",
+            "Microsoft.Extensions.Configuration.Json": "8.0.0",
+            "Microsoft.Extensions.Hosting": "8.0.0",
+            "Microsoft.Extensions.Hosting.WindowsServices": "8.0.0",
+            "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
+            "Microsoft.Extensions.Options": "8.0.0",
+            "Microsoft.Extensions.Options.DataAnnotations": "8.0.0",
+            "Microsoft.Extensions.Time.Testing": "8.0.0",
+            "Microsoft.NET.Test.Sdk": "17.8.0",
+            "NSwag.AspNetCore": "14.0.7",
+            "NSwag.MSBuild": "14.0.7",
+            "Parquet.Net": "4.24.0",
+            "Serilog": "3.1.1",
+            "Serilog.AspNetCore": "8.0.2",
+            "Serilog.Extensions.Hosting": "8.0.0",
+            "Serilog.Formatting.Compact": "2.0.0",
+            "Serilog.Sinks.Console": "5.0.1",
+            "Serilog.Sinks.File": "5.0.0",
+            "System.CommandLine": "2.0.0-beta4.22272.1",
+            "System.IO.Compression.ZipFile": "4.3.0",
+            "Ulid": "1.3.4",
+            "xunit": "2.6.6",
+            "xunit.runner.visualstudio": "2.5.6"
           },
           "imports": [
             "net461",
@@ -825,7 +997,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.127/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.408/PortableRuntimeIdentifierGraph.json"
         }
       }
     },
@@ -835,7 +1007,7 @@
         "projectUniqueName": "D:\\Work\\Tracer\\src\\Tracer.Storage.DuckDB\\Tracer.Storage.DuckDB.csproj",
         "projectName": "Tracer.Storage.DuckDB",
         "projectPath": "D:\\Work\\Tracer\\src\\Tracer.Storage.DuckDB\\Tracer.Storage.DuckDB.csproj",
-        "packagesPath": "C:\\Users\\petr.janecek\\.nuget\\packages\\",
+        "packagesPath": "C:\\Users\\pjane\\.nuget\\packages\\",
         "outputPath": "D:\\Work\\Tracer\\src\\Tracer.Storage.DuckDB\\obj\\",
         "projectStyle": "PackageReference",
         "centralPackageVersionsManagementEnabled": true,
@@ -844,7 +1016,7 @@
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\petr.janecek\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\pjane\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -853,6 +1025,7 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "C:\\Program Files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -870,6 +1043,11 @@
           "warnAsError": [
             "NU1605"
           ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
         }
       },
       "frameworks": {
@@ -898,34 +1076,35 @@
             }
           },
           "centralPackageVersions": {
-            "DuckDB.NET.Bindings.Full": "[1.0.2, )",
-            "DuckDB.NET.Data": "[1.0.2, )",
-            "FluentAssertions": "[6.12.0, )",
-            "Microsoft.AspNetCore.Mvc.Testing": "[8.0.0, )",
-            "Microsoft.AspNetCore.OpenApi": "[8.0.0, )",
-            "Microsoft.Extensions.Configuration": "[8.0.0, )",
-            "Microsoft.Extensions.Configuration.Json": "[8.0.0, )",
-            "Microsoft.Extensions.Hosting": "[8.0.0, )",
-            "Microsoft.Extensions.Hosting.WindowsServices": "[8.0.0, )",
-            "Microsoft.Extensions.Logging.Abstractions": "[8.0.0, )",
-            "Microsoft.Extensions.Options": "[8.0.0, )",
-            "Microsoft.Extensions.Options.DataAnnotations": "[8.0.0, )",
-            "Microsoft.Extensions.Time.Testing": "[8.0.0, )",
-            "Microsoft.NET.Test.Sdk": "[17.8.0, )",
-            "NSwag.AspNetCore": "[14.0.7, )",
-            "NSwag.MSBuild": "[14.0.7, )",
-            "Parquet.Net": "[4.24.0, )",
-            "Serilog": "[3.1.1, )",
-            "Serilog.AspNetCore": "[8.0.2, )",
-            "Serilog.Extensions.Hosting": "[8.0.0, )",
-            "Serilog.Formatting.Compact": "[2.0.0, )",
-            "Serilog.Sinks.Console": "[5.0.1, )",
-            "Serilog.Sinks.File": "[5.0.0, )",
-            "System.CommandLine": "[2.0.0-beta4.22272.1, )",
-            "System.IO.Compression.ZipFile": "[4.3.0, )",
-            "Ulid": "[1.3.4, )",
-            "xunit": "[2.6.6, )",
-            "xunit.runner.visualstudio": "[2.5.6, )"
+            "DuckDB.NET.Bindings.Full": "1.0.2",
+            "DuckDB.NET.Data": "1.0.2",
+            "FluentAssertions": "6.12.0",
+            "Microsoft.AspNetCore.Mvc.Testing": "8.0.0",
+            "Microsoft.AspNetCore.OpenApi": "8.0.0",
+            "Microsoft.Data.Sqlite": "8.0.0",
+            "Microsoft.Extensions.Configuration": "8.0.0",
+            "Microsoft.Extensions.Configuration.Json": "8.0.0",
+            "Microsoft.Extensions.Hosting": "8.0.0",
+            "Microsoft.Extensions.Hosting.WindowsServices": "8.0.0",
+            "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
+            "Microsoft.Extensions.Options": "8.0.0",
+            "Microsoft.Extensions.Options.DataAnnotations": "8.0.0",
+            "Microsoft.Extensions.Time.Testing": "8.0.0",
+            "Microsoft.NET.Test.Sdk": "17.8.0",
+            "NSwag.AspNetCore": "14.0.7",
+            "NSwag.MSBuild": "14.0.7",
+            "Parquet.Net": "4.24.0",
+            "Serilog": "3.1.1",
+            "Serilog.AspNetCore": "8.0.2",
+            "Serilog.Extensions.Hosting": "8.0.0",
+            "Serilog.Formatting.Compact": "2.0.0",
+            "Serilog.Sinks.Console": "5.0.1",
+            "Serilog.Sinks.File": "5.0.0",
+            "System.CommandLine": "2.0.0-beta4.22272.1",
+            "System.IO.Compression.ZipFile": "4.3.0",
+            "Ulid": "1.3.4",
+            "xunit": "2.6.6",
+            "xunit.runner.visualstudio": "2.5.6"
           },
           "imports": [
             "net461",
@@ -943,7 +1122,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.127/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.408/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

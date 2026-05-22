@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Serilog;
 using Tracer.Adapters.Mock.Storage;
@@ -28,6 +29,7 @@ using Tracer.WebApi.Queries;
 using Tracer.Storage.Annotations;
 using Tracer.Storage.SavedViews;
 using Tracer.WebApi.Streaming;
+using Tracer.WebApi.Util;
 
 namespace Tracer.Observer;
 
@@ -202,6 +204,19 @@ public static class ObserverHostBuilder
             new ConfigurableLifecycleTopicClassifier(
                 sp.GetRequiredService<LifecycleClassificationConfig>()));
 
+        // ── Phase 9: Latency / Gap / Topology / Budget services (live mode) ───
+        builder.Services.AddSingleton<LatencyDistributionService>();
+        builder.Services.AddSingleton<LatencyTimeSeriesService>();
+        builder.Services.AddSingleton<LatencyOutlierService>();
+        builder.Services.AddSingleton<GapDetectionService>();
+        builder.Services.AddSingleton<NetworkTopologyService>();
+        builder.Services.AddSingleton<InMemoryBudgetRegistry>();
+        builder.Services.AddSingleton<BudgetService>(sp =>
+            new BudgetService(
+                getBundleWorkingDirectory: null,
+                registry: sp.GetRequiredService<InMemoryBudgetRegistry>(),
+                logger: sp.GetService<ILogger<BudgetService>>()));
+
         // ── Live streaming ────────────────────────────────────────────────────
         builder.Services.AddSingleton<SseStreamingOptions>();
         builder.Services.AddSingleton<SseConnectionManager>();
@@ -274,6 +289,11 @@ public static class ObserverHostBuilder
         SavedViewEndpoints.Map(app);
         TriggerEvalEndpoints.Map(app);
         ConfigEndpoints.Map(app);
+
+        // Phase 9 endpoints
+        LatencyEndpoints.Map(app);
+        GapEndpoints.Map(app);
+        BudgetEndpoints.Map(app);
 
         // ── SPA static files (if present) ─────────────────────────────────────
         var spaPath = Path.Combine(app.Environment.ContentRootPath, "wwwroot");
