@@ -201,7 +201,7 @@ public sealed class LatencyOutlierService(LiveMultiIntervalReader reader, Budget
               AND publish_wallclock < $to
               AND publisher_node != subscriber_node
               AND topic = $topic
-              AND (EXTRACT(EPOCH FROM (receive_wallclock - publish_wallclock)) * 1000.0) > $threshold
+              AND (EXTRACT(EPOCH FROM (receive_wallclock - publish_wallclock)) * 1000.0) >= $threshold
             ORDER BY latency_ms DESC
             LIMIT $limit
             """);

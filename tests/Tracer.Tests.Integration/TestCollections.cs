@@ -22,3 +22,12 @@ public sealed class SavedViewsRoundTripCollection { }
 
 [CollectionDefinition("TriggerEvalIntegration")]
 public sealed class TriggerEvalIntegrationCollection { }
+
+[CollectionDefinition("LatencyAnalysisIntegration")]
+public sealed class LatencyAnalysisIntegrationCollection { }
+
+[CollectionDefinition("GapDetectionIntegration")]
+public sealed class GapDetectionIntegrationCollection { }
+
+[CollectionDefinition("TopologyIntegration")]
+public sealed class TopologyIntegrationCollection { }

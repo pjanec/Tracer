@@ -270,6 +270,112 @@ export interface TriggerEvaluationListDto {
   evaluations: TriggerEvaluationDto[];
 }
 
+// ── Phase 9: Latency DTOs ─────────────────────────────────────────────────────
+
+export interface HistogramBucketDto {
+  index: number;
+  lowMs: number;
+  highMs: number;
+  count: number;
+}
+
+export interface LatencyDistributionDto {
+  sampleCount: number;
+  p50Ms: number;
+  p90Ms: number;
+  p99Ms: number;
+  p999Ms: number;
+  maxMs: number;
+  minMs: number;
+  meanMs: number;
+  stddevMs: number;
+  buckets: HistogramBucketDto[];
+}
+
+export interface LatencyPairSummaryDto {
+  topic: string;
+  publisherNode: string;
+  subscriberNode: string;
+  sampleCount: number;
+  p50Ms: number;
+  p99Ms: number;
+  maxMs: number;
+}
+
+export interface LatencyTimeSeriesPointDto {
+  bucketStartUtc: string;
+  p50Ms: number;
+  p99Ms: number;
+  sampleCount: number;
+}
+
+export interface LatencyTimeSeriesDto {
+  bucketSize: string;
+  points: LatencyTimeSeriesPointDto[];
+}
+
+export interface LatencyOutlierDto {
+  eventId: string;
+  topic: string;
+  publisherNode: string;
+  subscriberNode: string;
+  publishWallclockUtc: string;
+  receiveWallclockUtc: string;
+  latencyMs: number;
+  thresholdMs: number;
+  budgetSource: string; // "budget" | "top-0.1%"
+}
+
+export interface LatencyOutlierListDto {
+  outliers: LatencyOutlierDto[];
+  budgetsUsed: LatencyBudgetDto[];
+}
+
+// ── Phase 9: Gap DTOs ────────────────────────────────────────────────────────
+
+export interface GapDto {
+  topic: string;
+  publisherNode: string;
+  subscriberNode: string;
+  previousSequence: number;
+  resumedAtSequence: number;
+  missingCount: number;
+  resumedAtWallclockUtc: string;
+}
+
+export interface GapResultDto {
+  gaps: GapDto[];
+  totalGaps: number;
+}
+
+// ── Phase 9: Network Topology DTOs ──────────────────────────────────────────
+
+export interface NetworkTopologyEdgeDto {
+  topic: string;
+  publisherNode: string;
+  subscriberNode: string;
+  messageCount: number;
+  firstSeenUtc: string;
+  lastSeenUtc: string;
+}
+
+export interface NetworkTopologyDto {
+  nodes: string[];
+  edges: NetworkTopologyEdgeDto[];
+}
+
+// ── Phase 9: Budget DTOs ─────────────────────────────────────────────────────
+
+export interface LatencyBudgetDto {
+  topic: string;
+  p99BudgetMs?: number;
+  absoluteMaxMs?: number;
+}
+
+export interface LatencyBudgetListDto {
+  budgets: LatencyBudgetDto[];
+}
+
 export class TracerApiClient {
   async listSessions(from?: string, to?: string): Promise<SessionDto[]> {
     const params = new URLSearchParams();
@@ -648,6 +754,110 @@ export class TracerApiClient {
     if (!res.ok) throw new Error(`listTriggerEvaluations: ${res.status}`);
     const data = await res.json() as TriggerEvaluationListDto;
     return data.evaluations;
+  }
+
+  // ── Phase 9: Latency / Gap / Topology / Budget API ────────────────────────
+
+  private static apiError(method: string, status: number): never {
+    const err = new Error(`${method}: ${status}`) as Error & { status: number };
+    err.status = status;
+    throw err;
+  }
+
+  async getLatencyDistribution(
+    params: {
+      from: string; to: string;
+      topic?: string; publisherNode?: string; subscriberNode?: string;
+      excludeSelf?: boolean;
+    },
+    signal?: AbortSignal,
+  ): Promise<LatencyDistributionDto> {
+    const qs = new URLSearchParams({ from: params.from, to: params.to });
+    if (params.topic) qs.set('topic', params.topic);
+    if (params.publisherNode) qs.set('publisherNode', params.publisherNode);
+    if (params.subscriberNode) qs.set('subscriberNode', params.subscriberNode);
+    if (params.excludeSelf !== undefined) qs.set('excludeSelf', String(params.excludeSelf));
+    const res = await fetch(`/api/latency/distribution?${qs}`, { signal });
+    if (!res.ok) TracerApiClient.apiError('getLatencyDistribution', res.status);
+    return res.json() as Promise<LatencyDistributionDto>;
+  }
+
+  async getLatencyPairs(
+    params: { from: string; to: string; minSamples?: number; limit?: number },
+    signal?: AbortSignal,
+  ): Promise<LatencyPairSummaryDto[]> {
+    const qs = new URLSearchParams({ from: params.from, to: params.to });
+    if (params.minSamples != null) qs.set('minSamples', String(params.minSamples));
+    if (params.limit != null) qs.set('limit', String(params.limit));
+    const res = await fetch(`/api/latency/pairs?${qs}`, { signal });
+    if (!res.ok) TracerApiClient.apiError('getLatencyPairs', res.status);
+    return res.json() as Promise<LatencyPairSummaryDto[]>;
+  }
+
+  async getLatencyTimeSeries(
+    params: {
+      from: string; to: string;
+      topic?: string; publisherNode?: string; subscriberNode?: string;
+    },
+    signal?: AbortSignal,
+  ): Promise<LatencyTimeSeriesDto> {
+    const qs = new URLSearchParams({ from: params.from, to: params.to });
+    if (params.topic) qs.set('topic', params.topic);
+    if (params.publisherNode) qs.set('publisherNode', params.publisherNode);
+    if (params.subscriberNode) qs.set('subscriberNode', params.subscriberNode);
+    const res = await fetch(`/api/latency/timeseries?${qs}`, { signal });
+    if (!res.ok) TracerApiClient.apiError('getLatencyTimeSeries', res.status);
+    return res.json() as Promise<LatencyTimeSeriesDto>;
+  }
+
+  async getLatencyOutliers(
+    params: {
+      from: string; to: string;
+      topic?: string; publisherNode?: string; subscriberNode?: string;
+    },
+    signal?: AbortSignal,
+  ): Promise<LatencyOutlierListDto> {
+    const qs = new URLSearchParams({ from: params.from, to: params.to });
+    if (params.topic) qs.set('topic', params.topic);
+    if (params.publisherNode) qs.set('publisherNode', params.publisherNode);
+    if (params.subscriberNode) qs.set('subscriberNode', params.subscriberNode);
+    const res = await fetch(`/api/latency/outliers?${qs}`, { signal });
+    if (!res.ok) TracerApiClient.apiError('getLatencyOutliers', res.status);
+    return res.json() as Promise<LatencyOutlierListDto>;
+  }
+
+  async getGaps(
+    params: {
+      from: string; to: string;
+      topic?: string; publisherNode?: string; subscriberNode?: string;
+    },
+    signal?: AbortSignal,
+  ): Promise<GapResultDto> {
+    const qs = new URLSearchParams({ from: params.from, to: params.to });
+    if (params.topic) qs.set('topic', params.topic);
+    if (params.publisherNode) qs.set('publisherNode', params.publisherNode);
+    if (params.subscriberNode) qs.set('subscriberNode', params.subscriberNode);
+    const res = await fetch(`/api/gaps?${qs}`, { signal });
+    if (!res.ok) TracerApiClient.apiError('getGaps', res.status);
+    return res.json() as Promise<GapResultDto>;
+  }
+
+  async getNetworkTopology(
+    params: { from: string; to: string },
+    signal?: AbortSignal,
+  ): Promise<NetworkTopologyDto> {
+    const qs = new URLSearchParams({ from: params.from, to: params.to });
+    const res = await fetch(`/api/topology/network?${qs}`, { signal });
+    if (!res.ok) TracerApiClient.apiError('getNetworkTopology', res.status);
+    return res.json() as Promise<NetworkTopologyDto>;
+  }
+
+  async getLatencyBudgets(sessionId: string, signal?: AbortSignal): Promise<LatencyBudgetListDto> {
+    const qs = new URLSearchParams({ sessionId });
+    const res = await fetch(`/api/scenario/budgets?${qs}`, { signal });
+    if (!res.ok) TracerApiClient.apiError('getLatencyBudgets', res.status);
+    const data = await res.json() as { budgets: LatencyBudgetDto[] };
+    return { budgets: data.budgets };
   }
 }
 

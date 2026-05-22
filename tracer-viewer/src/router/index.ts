@@ -62,6 +62,24 @@ const router = createRouter({
       component: () => import('@/views/TriggerEvalView.vue'),
       props: true,
     },
+    {
+      path: '/v/latency/:sessionId',
+      name: 'replication-latency',
+      component: () => import('@/views/ReplicationLatencyView.vue'),
+      props: true,
+    },
+    {
+      path: '/v/gaps/:sessionId',
+      name: 'gap-detection',
+      component: () => import('@/views/GapDetectionView.vue'),
+      props: true,
+    },
+    {
+      path: '/v/topology/:sessionId',
+      name: 'network-topology',
+      component: () => import('@/views/NetworkTopologyView.vue'),
+      props: true,
+    },
   ],
 });
 

@@ -15,7 +15,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Tracer.Storage.DuckDB")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+cfb5c935aed2e61e7c1176817e8d6f24b1871e58")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+cce0a9e6200feae11ae38e7e55c3dcf7b6762552")]
 [assembly: System.Reflection.AssemblyProductAttribute("Tracer.Storage.DuckDB")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Tracer.Storage.DuckDB")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
