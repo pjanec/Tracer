@@ -34,7 +34,7 @@ public sealed class EntityFastStateService(
         string topic,
         CancellationToken ct)
     {
-        var paths = locator.LocateFiles(topic, entityId);
+        var paths = locator.LocateFilesBySafeTopicName(topic, entityId);
         if (paths.Count == 0)
         {
             logger.LogDebug("GetSchemaAsync: no files for entity {EntityId} topic {Topic}", entityId, topic);
@@ -58,7 +58,7 @@ public sealed class EntityFastStateService(
         int maxSamples,
         CancellationToken ct)
     {
-        var paths = locator.LocateFiles(topic, entityId);
+        var paths = locator.LocateFilesBySafeTopicName(topic, entityId);
         if (paths.Count == 0)
         {
             logger.LogDebug("ReadAsync: no files for entity {EntityId} topic {Topic}", entityId, topic);

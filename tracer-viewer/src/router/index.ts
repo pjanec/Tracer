@@ -39,6 +39,11 @@ const router = createRouter({
       name: 'causal-by-event',
       component: () => import('@/views/CausalTreeView.vue'),
     },
+    {
+      path: '/v/entity/:entityId',
+      name: 'entity-history',
+      component: () => import('@/views/EntityHistoryView.vue'),
+    },
   ],
 });
 

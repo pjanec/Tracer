@@ -113,6 +113,74 @@ export interface EventAggregateRequestDto {
   notablesOnly?: boolean;
 }
 
+export interface EntitySummaryDto {
+  entityId: string;
+  firstSeenUtc: string;
+  lastSeenUtc: string;
+  eventCount: number;
+  samplePlayerId?: string;
+  topics: string[];
+}
+
+export interface EntityListDto {
+  entities: EntitySummaryDto[];
+  count: number;
+}
+
+export interface EntityEventDto {
+  eventId: string;
+  traceId: string;
+  occurredAtUtc: string;
+  topic: string;
+  severity?: string;
+  notableLabel?: string;
+  payloadJson?: string;
+  publisherNode: string;
+}
+
+export interface EntityEventsDto {
+  entityId: string;
+  events: EntityEventDto[];
+  truncated: boolean;
+}
+
+export interface SlowStateSampleDto {
+  topic: string;
+  occurredAtUtc: string;
+  payloadJson: string;
+  traceId?: string;
+}
+
+export interface EntitySlowStateDto {
+  entityId: string;
+  byTopic: Record<string, SlowStateSampleDto[]>;
+}
+
+export interface FastStateColumnDto {
+  name: string;
+  isNumeric: boolean;
+}
+
+export interface FastStateTopicSchemaDto {
+  entityId: string;
+  topic: string;
+  columns: FastStateColumnDto[];
+}
+
+export interface FastStateSampleDto {
+  ts: string;
+  values: Record<string, number | null>;
+}
+
+export interface EntityFastStateDto {
+  entityId: string;
+  topic: string;
+  columns: string[];
+  samples: FastStateSampleDto[];
+  totalSamples: number;
+  downsampled: boolean;
+}
+
 export class TracerApiClient {
   async listSessions(from?: string, to?: string): Promise<SessionDto[]> {
     const params = new URLSearchParams();
@@ -295,6 +363,100 @@ export class TracerApiClient {
     const res = await fetch(`/api/events/${eventId}/descendants?${params}`, { signal: opts?.signal });
     if (!res.ok) throw new Error(`getEventDescendants: ${res.status}`);
     return res.json() as Promise<TraceTreeDto>;
+  }
+
+  async listEntities(
+    sessionId: string,
+    opts?: { topic?: string; playerId?: string; limit?: number; signal?: AbortSignal },
+  ): Promise<EntityListDto> {
+    const params = new URLSearchParams({ sessionId });
+    if (opts?.topic) params.set('topic', opts.topic);
+    if (opts?.playerId) params.set('playerId', opts.playerId);
+    if (opts?.limit != null) params.set('limit', String(opts.limit));
+    const res = await fetch(`/api/entities?${params}`, { signal: opts?.signal });
+    if (!res.ok) throw new Error(`listEntities: ${res.status}`);
+    return res.json() as Promise<EntityListDto>;
+  }
+
+  async getEntitySummary(
+    entityId: string,
+    sessionId: string,
+    opts?: { signal?: AbortSignal },
+  ): Promise<EntitySummaryDto | null> {
+    const params = new URLSearchParams({ sessionId });
+    const res = await fetch(`/api/entities/${encodeURIComponent(entityId)}/summary?${params}`, { signal: opts?.signal });
+    if (res.status === 404) return null;
+    if (!res.ok) throw new Error(`getEntitySummary: ${res.status}`);
+    return res.json() as Promise<EntitySummaryDto>;
+  }
+
+  async getEntityEvents(
+    entityId: string,
+    sessionId: string,
+    from: Date,
+    to: Date,
+    opts?: { limit?: number; signal?: AbortSignal },
+  ): Promise<EntityEventsDto> {
+    const params = new URLSearchParams({ sessionId, from: from.toISOString(), to: to.toISOString() });
+    if (opts?.limit != null) params.set('limit', String(opts.limit));
+    const res = await fetch(`/api/entities/${encodeURIComponent(entityId)}/events?${params}`, { signal: opts?.signal });
+    if (!res.ok) throw new Error(`getEntityEvents: ${res.status}`);
+    return res.json() as Promise<EntityEventsDto>;
+  }
+
+  async getEntitySlowState(
+    entityId: string,
+    sessionId: string,
+    from: Date,
+    to: Date,
+    opts?: { topics?: string[]; signal?: AbortSignal },
+  ): Promise<EntitySlowStateDto> {
+    const params = new URLSearchParams({ sessionId, from: from.toISOString(), to: to.toISOString() });
+    opts?.topics?.forEach(t => params.append('topic', t));
+    const res = await fetch(`/api/entities/${encodeURIComponent(entityId)}/slow-state?${params}`, { signal: opts?.signal });
+    if (!res.ok) throw new Error(`getEntitySlowState: ${res.status}`);
+    return res.json() as Promise<EntitySlowStateDto>;
+  }
+
+  async getEntityFastStateTopics(
+    entityId: string,
+    sessionId: string,
+    opts?: { signal?: AbortSignal },
+  ): Promise<string[]> {
+    const params = new URLSearchParams({ sessionId });
+    const res = await fetch(`/api/entities/${encodeURIComponent(entityId)}/fast-state/topics?${params}`, { signal: opts?.signal });
+    if (!res.ok) throw new Error(`getEntityFastStateTopics: ${res.status}`);
+    return res.json() as Promise<string[]>;
+  }
+
+  async getEntityFastStateSchema(
+    entityId: string,
+    topic: string,
+    sessionId: string,
+    opts?: { signal?: AbortSignal },
+  ): Promise<FastStateTopicSchemaDto | null> {
+    const params = new URLSearchParams({ sessionId });
+    const res = await fetch(`/api/entities/${encodeURIComponent(entityId)}/fast-state/${encodeURIComponent(topic)}/schema?${params}`, { signal: opts?.signal });
+    if (res.status === 404) return null;
+    if (!res.ok) throw new Error(`getEntityFastStateSchema: ${res.status}`);
+    return res.json() as Promise<FastStateTopicSchemaDto>;
+  }
+
+  async getEntityFastState(
+    entityId: string,
+    topic: string,
+    sessionId: string,
+    from: Date,
+    to: Date,
+    columns: string[],
+    opts?: { maxSamples?: number; signal?: AbortSignal },
+  ): Promise<EntityFastStateDto> {
+    const params = new URLSearchParams({ sessionId, from: from.toISOString(), to: to.toISOString() });
+    columns.forEach(c => params.append('column', c));
+    if (opts?.maxSamples != null) params.set('maxSamples', String(opts.maxSamples));
+    const res = await fetch(`/api/entities/${encodeURIComponent(entityId)}/fast-state/${encodeURIComponent(topic)}?${params}`, { signal: opts?.signal });
+    if (!res.ok) throw new Error(`getEntityFastState: ${res.status}`);
+    return res.json() as Promise<EntityFastStateDto>;
   }
 }
 

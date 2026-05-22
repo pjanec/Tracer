@@ -68,9 +68,10 @@ public sealed class EntityFastStateServiceTests : IDisposable
         int sampleCount = 20,
         int startSecond = 1)
     {
-        var safeTopic = BundleNaming.SafeFileName(topic);
+        // topic is used as-is as the directory name (caller must pass already-safe-encoded name
+        // to mirror what LocateFilesBySafeTopicName expects).
         var safeEntity = BundleNaming.SafeFileName(entityId);
-        var dir = Path.Combine(iv.FastStateDirectory, safeTopic, safeEntity);
+        var dir = Path.Combine(iv.FastStateDirectory, topic, safeEntity);
         Directory.CreateDirectory(dir);
         var path = Path.Combine(dir, "samples.parquet");
         var escapedPath = path.Replace("\\", "/");
@@ -136,10 +137,11 @@ public sealed class EntityFastStateServiceTests : IDisposable
     public async Task GetSchemaAsync_ValidFile_ExcludesInfrastructureColumns()
     {
         var iv = CreateIntervalDir("iv-schema");
-        await CreateParquetFileAsync(iv, "pos", "ent-A");
+        var safeTopic = BundleNaming.SafeFileName("pos");
+        await CreateParquetFileAsync(iv, safeTopic, "ent-A");
 
         var service = MakeService(_parquet, iv);
-        var schema = await service.GetSchemaAsync("ent-A", "pos", CancellationToken.None);
+        var schema = await service.GetSchemaAsync("ent-A", safeTopic, CancellationToken.None);
 
         schema.Should().NotBeNull();
         schema!.Columns.Should().NotContain(c => c.Name == "publish_wallclock");
@@ -166,17 +168,18 @@ public sealed class EntityFastStateServiceTests : IDisposable
     public async Task ReadAsync_SingleFile_ReturnsCorrectData()
     {
         var iv = CreateIntervalDir("iv-single");
-        await CreateParquetFileAsync(iv, "pos", "ent-A", sampleCount: 20);
+        var safeTopic = BundleNaming.SafeFileName("pos");
+        await CreateParquetFileAsync(iv, safeTopic, "ent-A", sampleCount: 20);
 
         var service = MakeService(_parquet, iv);
         var from = WallclockTime.Zero;
         var to = WallclockTime.Zero + TimeSpan.FromHours(1);
 
-        var result = await service.ReadAsync("ent-A", "pos", ["x"], from, to, 5000, CancellationToken.None);
+        var result = await service.ReadAsync("ent-A", safeTopic, ["x"], from, to, 5000, CancellationToken.None);
 
         result.Samples.Count.Should().Be(20);
         result.EntityId.Should().Be("ent-A");
-        result.Topic.Should().Be("pos");
+        result.Topic.Should().Be(safeTopic);
         result.Downsampled.Should().BeFalse();
     }
 
@@ -185,14 +188,15 @@ public sealed class EntityFastStateServiceTests : IDisposable
     {
         var iv1 = CreateIntervalDir("iv-multi1");
         var iv2 = CreateIntervalDir("iv-multi2");
-        await CreateParquetFileAsync(iv1, "pos", "ent-B", sampleCount: 10, startSecond: 1);
-        await CreateParquetFileAsync(iv2, "pos", "ent-B", sampleCount: 10, startSecond: 11);
+        var safeTopic = BundleNaming.SafeFileName("pos");
+        await CreateParquetFileAsync(iv1, safeTopic, "ent-B", sampleCount: 10, startSecond: 1);
+        await CreateParquetFileAsync(iv2, safeTopic, "ent-B", sampleCount: 10, startSecond: 11);
 
         var service = MakeService(_parquet, iv1, iv2);
         var from = WallclockTime.Zero;
         var to = WallclockTime.Zero + TimeSpan.FromHours(1);
 
-        var result = await service.ReadAsync("ent-B", "pos", ["x"], from, to, 5000, CancellationToken.None);
+        var result = await service.ReadAsync("ent-B", safeTopic, ["x"], from, to, 5000, CancellationToken.None);
 
         result.TotalSamples.Should().Be(20);
     }
@@ -201,13 +205,14 @@ public sealed class EntityFastStateServiceTests : IDisposable
     public async Task ReadAsync_DownsamplingPropagated()
     {
         var iv = CreateIntervalDir("iv-downsample");
-        await CreateParquetFileAsync(iv, "pos", "ent-C", sampleCount: 200);
+        var safeTopic = BundleNaming.SafeFileName("pos");
+        await CreateParquetFileAsync(iv, safeTopic, "ent-C", sampleCount: 200);
 
         var service = MakeService(_parquet, iv);
         var from = WallclockTime.Zero;
         var to = WallclockTime.Zero + TimeSpan.FromHours(1);
 
-        var result = await service.ReadAsync("ent-C", "pos", ["x"], from, to, maxSamples: 50, CancellationToken.None);
+        var result = await service.ReadAsync("ent-C", safeTopic, ["x"], from, to, maxSamples: 50, CancellationToken.None);
 
         result.Downsampled.Should().BeTrue();
         result.Samples.Count.Should().BeLessOrEqualTo(50);

@@ -53,6 +53,37 @@ public sealed class FastStateFileLocator
     }
 
     /// <summary>
+    /// Like <see cref="LocateFiles"/> but accepts a <paramref name="safeTopic"/> that has
+    /// already been encoded with <see cref="BundleNaming.SafeFileName"/>. Only the entity ID
+    /// is encoded. Use this when the topic comes from <see cref="GetAvailableTopicsForEntity"/>
+    /// (which already returns safe-encoded names).
+    /// </summary>
+    public IReadOnlyList<string> LocateFilesBySafeTopicName(string safeTopic, string entityId)
+    {
+        var safeEntity = BundleNaming.SafeFileName(entityId);
+        var snapshot = _tracker.CurrentSnapshot();
+        var paths = new List<string>();
+
+        foreach (var iv in snapshot.Intervals)
+        {
+            var candidate = Path.Combine(
+                iv.Directory.FastStateDirectory, safeTopic, safeEntity, "samples.parquet");
+            if (File.Exists(candidate))
+                paths.Add(candidate);
+        }
+
+        if (_getBundleWorkingDirectory?.Invoke() is { } bundleDir)
+        {
+            var bundleCandidate = Path.Combine(
+                bundleDir, "fast_state", safeTopic, safeEntity, "samples.parquet");
+            if (File.Exists(bundleCandidate))
+                paths.Add(bundleCandidate);
+        }
+
+        return paths;
+    }
+
+    /// <summary>
     /// Returns the topic names (as safe filenames) for which this entity has fast-state data,
     /// across live intervals and (if open) the current bundle.
     /// </summary>
