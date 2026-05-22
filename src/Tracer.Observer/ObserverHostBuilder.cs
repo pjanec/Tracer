@@ -25,6 +25,8 @@ using Tracer.WebApi.Errors;
 using Tracer.WebApi.Lifecycle;
 using Tracer.WebApi.OpenApi;
 using Tracer.WebApi.Queries;
+using Tracer.Storage.Annotations;
+using Tracer.Storage.SavedViews;
 using Tracer.WebApi.Streaming;
 
 namespace Tracer.Observer;
@@ -159,6 +161,26 @@ public static class ObserverHostBuilder
         builder.Services.AddSingleton<EventAggregationService>();
         builder.Services.AddSingleton<TraceQueryService>();
 
+        // ── Annotations (Phase 8) ─────────────────────────────────────────────────
+        builder.Services.AddSingleton<IAnnotationStore>(sp =>
+        {
+            var cfg = sp.GetRequiredService<ObserverConfig>();
+            var path = Path.Combine(cfg.DataRoot, "annotations.db");
+            var store = new SqliteAnnotationStore(path, sp.GetRequiredService<ILogger<SqliteAnnotationStore>>());
+            store.InitializeAsync(CancellationToken.None).GetAwaiter().GetResult();
+            return store;
+        });
+
+        // ── Saved Views (Phase 8) ─────────────────────────────────────────────────
+        builder.Services.AddSingleton<ISavedViewStore>(sp =>
+        {
+            var cfg = sp.GetRequiredService<ObserverConfig>();
+            var path = Path.Combine(cfg.DataRoot, "annotations.db");
+            var store = new SqliteSavedViewStore(path, sp.GetRequiredService<ILogger<SqliteSavedViewStore>>());
+            store.InitializeAsync(CancellationToken.None).GetAwaiter().GetResult();
+            return store;
+        });
+
         // ── Entity history services (Phase 7) ─────────────────────────────────
         builder.Services.AddSingleton<Tracer.Storage.Parquet.ParquetReader>();
         builder.Services.AddSingleton<FastStateFileLocator>();
@@ -195,7 +217,8 @@ public static class ObserverHostBuilder
         builder.Services.AddSingleton<IAggregationOrchestrator>(sp =>
             new AggregationOrchestrator(
                 sp.GetRequiredService<ITelemetryStorageReader>(),
-                sp.GetRequiredService<ILogger<AggregationOrchestrator>>()));
+                sp.GetRequiredService<ILogger<AggregationOrchestrator>>(),
+                sp.GetRequiredService<IAnnotationStore>()));
         builder.Services.AddSingleton<BundleBuildService>();
 
         // ── Hosted service ────────────────────────────────────────────────────
@@ -234,6 +257,8 @@ public static class ObserverHostBuilder
         BundleEndpoints.Map(app);
         TraceEndpoints.Map(app);
         EntityEndpoints.Map(app);
+        AnnotationEndpoints.Map(app);
+        SavedViewEndpoints.Map(app);
 
         // ── SPA static files (if present) ─────────────────────────────────────
         var spaPath = Path.Combine(app.Environment.ContentRootPath, "wwwroot");

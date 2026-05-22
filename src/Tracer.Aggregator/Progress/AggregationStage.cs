@@ -32,6 +32,9 @@ public enum AggregationStage
     /// <summary>Scenario, topology, and source-intervals metadata files have been written.</summary>
     MetadataWritten,
 
+    /// <summary>Annotations (user notes) have been exported into the bundle's annotations/ directory.</summary>
+    AnnotationsExported,
+
     /// <summary>Checksums and manifest have been computed and written.</summary>
     ManifestWritten,
 

@@ -39,5 +39,8 @@
 | DT-033 | P2 | BATCH-39 | ✅ **Fixed in BATCH-39 review.** `useEntityHistoryUrl` multi-instance URL-wipe risk: `EntityHistoryView`'s instance was overwriting `fastStateTopic` in the URL when time-range changes. Fixed by merging with `route.query` before calling `router.replace`. | BATCH-39 | Resolved |
 | DT-034 | P3 | BATCH-39 | `useFastStateChart` columns cleared on every topic change even when URL restores them — adds an extra round-trip (schema → auto-select → data). Minor UX delay only. | Future | Open |
 
+| DT-035 | P3 | BATCH-43 | `RecordOpenedAsync` (SavedViewEndpoints) swallows all exceptions silently. Should emit at least a log warning when the store call fails, to aid debugging in production. | BATCH-44+ | Open |
+| DT-036 | P3 | BATCH-43 | `AggregationOrchestrator` has 3 constructor overloads. If more optional deps are added, migrate to IOptions<T> or a settings object pattern. | Future | Open |
+
 > P1 = Critical (blocks next batch), P2 = Should fix soon, P3 = Nice to fix eventually  
 > Resolved items are marked ✅ (never deleted)

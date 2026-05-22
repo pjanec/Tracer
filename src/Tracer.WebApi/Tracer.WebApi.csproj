@@ -15,8 +15,8 @@
     <ProjectReference Include="..\Tracer.Bundle\Tracer.Bundle.csproj" />
     <ProjectReference Include="..\Tracer.Adapters.Mock\Tracer.Adapters.Mock.csproj" />
     <ProjectReference Include="..\Tracer.Storage.DuckDB.MultiInterval\Tracer.Storage.DuckDB.MultiInterval.csproj" />
-    <ProjectReference Include="..\Tracer.Storage.Parquet\Tracer.Storage.Parquet.csproj" />
-  </ItemGroup>
+    <ProjectReference Include="..\Tracer.Storage.Parquet\Tracer.Storage.Parquet.csproj" />    <ProjectReference Include="..\Tracer.Storage.Annotations\Tracer.Storage.Annotations.csproj" />
+    <ProjectReference Include="..\Tracer.Storage.SavedViews\Tracer.Storage.SavedViews.csproj" />  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="NSwag.AspNetCore" />

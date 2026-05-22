@@ -16,6 +16,7 @@
     <ProjectReference Include="..\Tracer.Storage.DuckDB.MultiInterval\Tracer.Storage.DuckDB.MultiInterval.csproj" />
     <ProjectReference Include="..\Tracer.Bundle\Tracer.Bundle.csproj" />
     <ProjectReference Include="..\Tracer.Adapters.Mock\Tracer.Adapters.Mock.csproj" />
+    <ProjectReference Include="..\Tracer.Storage.Annotations\Tracer.Storage.Annotations.csproj" />
   </ItemGroup>
 
   <ItemGroup>

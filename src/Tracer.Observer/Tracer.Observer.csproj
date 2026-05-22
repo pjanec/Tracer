@@ -17,7 +17,10 @@
     <ProjectReference Include="..\Tracer.WebApi\Tracer.WebApi.csproj" />
     <ProjectReference Include="..\Tracer.Aggregator\Tracer.Aggregator.csproj" />
     <ProjectReference Include="..\Tracer.Bundle\Tracer.Bundle.csproj" />
-    <ProjectReference Include="..\Tracer.Storage.DuckDB.MultiInterval\Tracer.Storage.DuckDB.MultiInterval.csproj" />  </ItemGroup>
+    <ProjectReference Include="..\Tracer.Storage.DuckDB.MultiInterval\Tracer.Storage.DuckDB.MultiInterval.csproj" />
+    <ProjectReference Include="..\Tracer.Storage.Annotations\Tracer.Storage.Annotations.csproj" />
+    <ProjectReference Include="..\Tracer.Storage.SavedViews\Tracer.Storage.SavedViews.csproj" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" />

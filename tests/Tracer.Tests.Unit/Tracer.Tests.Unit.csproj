@@ -17,6 +17,8 @@
     <ProjectReference Include="..\..\src\Tracer.Observer\Tracer.Observer.csproj" />
     <ProjectReference Include="..\..\src\Tracer.TestHarness\Tracer.TestHarness.csproj" />
     <ProjectReference Include="..\..\src\Tracer.Storage.Parquet\Tracer.Storage.Parquet.csproj" />
+    <ProjectReference Include="..\..\src\Tracer.Storage.Annotations\Tracer.Storage.Annotations.csproj" />
+    <ProjectReference Include="..\..\src\Tracer.Storage.SavedViews\Tracer.Storage.SavedViews.csproj" />
   </ItemGroup>
 
   <ItemGroup>

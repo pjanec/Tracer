@@ -186,15 +186,15 @@
 
 **Phase success criteria:** All conditions from [tracer_phase8_design.md §1.3](./tracer_phase8_design.md#13-success-criteria) AND all Phase 1–7 tests pass.
 
-- [ ] **TRC-P8-001** Tracer.Storage.Annotations Assembly [details](./TASK-DETAIL.md#trc-p8-001--tracerstorageannotations-assembly)
-- [ ] **TRC-P8-002** SqliteAnnotationStore [details](./TASK-DETAIL.md#trc-p8-002--sqliteannotationstore)
-- [ ] **TRC-P8-003** BundleAnnotationStore [details](./TASK-DETAIL.md#trc-p8-003--bundleannotationstore)
-- [ ] **TRC-P8-004** Tracer.Storage.SavedViews Assembly [details](./TASK-DETAIL.md#trc-p8-004--tracerstoragesavedviews-assembly)
-- [ ] **TRC-P8-005** Annotation REST API Endpoints [details](./TASK-DETAIL.md#trc-p8-005--annotation-rest-api-endpoints)
-- [ ] **TRC-P8-006** Saved Views REST API Endpoints [details](./TASK-DETAIL.md#trc-p8-006--saved-views-rest-api-endpoints)
+- [x] **TRC-P8-001** Tracer.Storage.Annotations Assembly [details](./TASK-DETAIL.md#trc-p8-001--tracerstorageannotations-assembly)
+- [x] **TRC-P8-002** SqliteAnnotationStore [details](./TASK-DETAIL.md#trc-p8-002--sqliteannotationstore)
+- [x] **TRC-P8-003** BundleAnnotationStore [details](./TASK-DETAIL.md#trc-p8-003--bundleannotationstore)
+- [x] **TRC-P8-004** Tracer.Storage.SavedViews Assembly [details](./TASK-DETAIL.md#trc-p8-004--tracerstoragesavedviews-assembly)
+- [x] **TRC-P8-005** Annotation REST API Endpoints [details](./TASK-DETAIL.md#trc-p8-005--annotation-rest-api-endpoints)
+- [x] **TRC-P8-006** Saved Views REST API Endpoints [details](./TASK-DETAIL.md#trc-p8-006--saved-views-rest-api-endpoints)
 - [ ] **TRC-P8-007** TriggerEvalService [details](./TASK-DETAIL.md#trc-p8-007--triggerevalservice)
 - [ ] **TRC-P8-008** Trigger Evaluation API Endpoints [details](./TASK-DETAIL.md#trc-p8-008--trigger-evaluation-api-endpoints)
-- [ ] **TRC-P8-009** AnnotationsExporter [details](./TASK-DETAIL.md#trc-p8-009--annotationsexporter)
+- [x] **TRC-P8-009** AnnotationsExporter [details](./TASK-DETAIL.md#trc-p8-009--annotationsexporter)
 - [ ] **TRC-P8-010** Lifecycle Topic Configuration [details](./TASK-DETAIL.md#trc-p8-010--lifecycle-topic-configuration)
 - [ ] **TRC-P8-011** `AnnotationMarker.vue` and Annotation Overlay Integration [details](./TASK-DETAIL.md#trc-p8-011--annotationmarkervue-and-annotation-overlay-integration)
 - [ ] **TRC-P8-012** `AnnotationEditor.vue` and `AnnotationList.vue` [details](./TASK-DETAIL.md#trc-p8-012--annotationeditorvue-and-annotationlistvue)

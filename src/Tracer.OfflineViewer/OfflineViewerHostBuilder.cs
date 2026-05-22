@@ -5,6 +5,8 @@ using Serilog;
 using Tracer.Observer.Lifecycle;
 using Tracer.OfflineViewer.Lifecycle;
 using Tracer.OfflineViewer.WebApi;
+using Tracer.Storage.Annotations;
+using Tracer.Storage.SavedViews;
 using Tracer.Storage.DuckDB.MultiInterval;
 using Tracer.WebApi.Endpoints;
 using Tracer.WebApi.Errors;
@@ -75,6 +77,12 @@ public static class OfflineViewerHostBuilder
         builder.Services.AddSingleton<EntitySlowStateService>();
         builder.Services.AddSingleton<EntityFastStateService>();
 
+        // ── Annotations (Phase 8) ─────────────────────────────────────────────────
+        builder.Services.AddSingleton<IAnnotationStore, LazyBundleAnnotationStore>();
+
+        // ── Saved Views (Phase 8) ─────────────────────────────────────────────────
+        builder.Services.AddSingleton<ISavedViewStore, LazyBundleSavedViewStore>();
+
         // Observer state reporter — inert instance (no events in bundle mode)
         builder.Services.AddSingleton<ObserverStateReporter>(_ => new InertObserverStateReporter());
         builder.Services.AddSingleton<ILiveStatusProvider>(sp =>
@@ -109,6 +117,8 @@ public static class OfflineViewerHostBuilder
         BundleOpenEndpoints.Map(app);
         TraceEndpoints.Map(app);
         EntityEndpoints.Map(app);
+        AnnotationEndpoints.Map(app);
+        SavedViewEndpoints.Map(app);
 
         // SPA fallback
         app.MapFallbackToFile("index.html");

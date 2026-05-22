@@ -10,6 +10,7 @@ using Tracer.Bundle.Format;
 using Tracer.Bundle.Packaging;
 using Tracer.Core.Abstractions;
 using Tracer.Core.Time;
+using Tracer.Storage.Annotations;
 
 namespace Tracer.Aggregator;
 
@@ -21,15 +22,18 @@ public sealed class AggregationOrchestrator : IAggregationOrchestrator
 {
     private readonly ITelemetryStorageReader _nasReader;
     private readonly ILogger<AggregationOrchestrator> _logger;
+    private readonly IAnnotationStore? _annotationStore;
 
     public AggregationOrchestrator(
         ITelemetryStorageReader nasReader,
-        ILogger<AggregationOrchestrator> logger)
+        ILogger<AggregationOrchestrator> logger,
+        IAnnotationStore? annotationStore = null)
     {
         ArgumentNullException.ThrowIfNull(nasReader);
         ArgumentNullException.ThrowIfNull(logger);
         _nasReader = nasReader;
         _logger = logger;
+        _annotationStore = annotationStore;
     }
 
     public AggregationOrchestrator(ITelemetryStorageReader nasReader)
@@ -104,6 +108,14 @@ public sealed class AggregationOrchestrator : IAggregationOrchestrator
             var sourceIntervals = SourceIntervalsBuilder.Build(extracted);
             await BundleMetadataWriter.WriteAsync(staging.BundleStagingPath, scenario, topology, sourceIntervals, ct);
             progress?.Report(AggregationStage.MetadataWritten, "Metadata files written");
+
+            // 7b. Export annotations (if live store provided)
+            if (_annotationStore is not null)
+            {
+                await AnnotationsExporter.ExportAsync(
+                    _annotationStore, request.SessionId ?? "", staging.BundleStagingPath, ct);
+                progress?.Report(AggregationStage.AnnotationsExported, "Annotations exported into bundle");
+            }
 
             // 8. Build manifest (computes SHA-256 per file) and write checksums / manifest.json
             var bundleStatistics = new BundleStatistics
