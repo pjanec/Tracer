@@ -93,6 +93,101 @@ public sealed class SchemaTests : IAsyncDisposable
             indexes.Should().Contain(name, $"index '{name}' should be created by SchemaV1");
     }
 
+    [Fact]
+    public async Task AllIndexes_AreCreated_IncludesSlowStateEntityTimeIndex()
+    {
+        await using (await CreateWriterAsync(_intervalDir))
+        { }
+
+        var indexes = await QueryListAsync<string>(
+            "SELECT index_name FROM duckdb_indexes() WHERE table_name = 'slow_state' AND index_name = 'idx_slow_state_entity_time'");
+
+        indexes.Should().ContainSingle(
+            "idx_slow_state_entity_time should appear exactly once in duckdb_indexes() for slow_state");
+    }
+
+    [Fact]
+    public async Task CreateIndexes_IsIdempotent_SlowStateIndex()
+    {
+        // Run CreateAsync (which calls CreateIndexes) twice
+        await using (await CreateWriterAsync(_intervalDir))
+        { }
+        // Second writer open on the same directory — must not throw
+        await using (await CreateWriterAsync(_intervalDir))
+        { }
+
+        var indexes = await QueryListAsync<string>(
+            "SELECT index_name FROM duckdb_indexes() WHERE index_name = 'idx_slow_state_entity_time'");
+
+        indexes.Should().ContainSingle("idx_slow_state_entity_time should exist exactly once after two CreateAsync calls");
+    }
+
+    [Fact]
+    public void SchemaV1_CreateIndexes_ContainsPhase7CommentBlock()
+    {
+        Tracer.Storage.DuckDB.Schema.SchemaV1.CreateIndexes
+            .Should().Contain("-- Phase 7");
+    }
+
+    [Fact]
+    public async Task SlowStateEntityQuery_WithIndex_CompletesUnder200ms()
+    {
+        // Write 50,000 slow-state rows for 10 distinct entity IDs
+        const int rowsPerEntity = 5000;
+        const int entityCount = 10;
+
+        await using (var writer = await CreateWriterAsync(_intervalDir))
+        {
+            for (int e = 0; e < entityCount; e++)
+            {
+                for (int r = 0; r < rowsPerEntity; r++)
+                {
+                    var record = new Tracer.Core.Records.StateSampleRecord
+                    {
+                        SequenceNumber = (ulong)(e * rowsPerEntity + r),
+                        PublishWallclock = Tracer.Core.Time.WallclockTime.Zero + TimeSpan.FromSeconds(r),
+                        ReceiveWallclock = Tracer.Core.Time.WallclockTime.Zero + TimeSpan.FromSeconds(r),
+                        PublisherNode = new Tracer.Core.Identity.AgentId("publisher"),
+                        SubscriberNode = new Tracer.Core.Identity.AgentId("subscriber"),
+                        Topic = new Tracer.Core.Domain.TopicName("test.topic"),
+                        InstanceKey = $"entity-{e}",
+                        Rate = Tracer.Core.Records.StateSampleRate.Slow,
+                        PayloadJson = "{}",
+                    };
+                    await writer.AppendStateAsync(record, default);
+                }
+            }
+            await writer.FlushAsync(default);
+        }
+
+        // Query entity-1 rows via a raw DuckDB connection (bypassing the writer) to measure index performance
+        var t1 = Tracer.Core.Time.WallclockTime.Zero + TimeSpan.FromSeconds(100);
+        var t2 = Tracer.Core.Time.WallclockTime.Zero + TimeSpan.FromSeconds(200);
+
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        await Task.Run(() =>
+        {
+            using var conn = new DuckDBConnection($"Data Source={_dbPath}");
+            conn.Open();
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = """
+                SELECT COUNT(*) FROM slow_state
+                WHERE instance_key = $entityId
+                  AND publish_wallclock >= $t1
+                  AND publish_wallclock < $t2
+                """;
+            cmd.Parameters.Add(new DuckDBParameter("entityId", "entity-1"));
+            cmd.Parameters.Add(new DuckDBParameter("t1", t1.ToDateTimeOffset().UtcDateTime));
+            cmd.Parameters.Add(new DuckDBParameter("t2", t2.ToDateTimeOffset().UtcDateTime));
+            var count = (long)cmd.ExecuteScalar()!;
+            count.Should().BeGreaterThan(0, "rows for entity-1 should exist in time range");
+        });
+        sw.Stop();
+
+        sw.ElapsedMilliseconds.Should().BeLessThan(200,
+            "indexed instance_key+time query should complete under 200ms");
+    }
+
     // ── helpers ───────────────────────────────────────────────────────────────
 
     private Task<T> QueryScalarAsync<T>(string sql) =>

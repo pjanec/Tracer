@@ -155,13 +155,13 @@
 
 **Phase success criteria:** All conditions from [tracer_phase7_design.md §1.3](./tracer_phase7_design.md#13-success-criteria) AND all Phase 1–6 tests pass.
 
-- [ ] **TRC-P7-001** Tracer.Storage.Parquet Assembly [details](./TASK-DETAIL.md#trc-p7-001--tracerstorageparquet-assembly)
-- [ ] **TRC-P7-002** Schema Extension: slow_state Entity-Time Index [details](./TASK-DETAIL.md#trc-p7-002--schema-extension-slow_state-entity-time-index)
+- [x] **TRC-P7-001** Tracer.Storage.Parquet Assembly [details](./TASK-DETAIL.md#trc-p7-001--tracerstorageparquet-assembly)
+- [x] **TRC-P7-002** Schema Extension: slow_state Entity-Time Index [details](./TASK-DETAIL.md#trc-p7-002--schema-extension-slow_state-entity-time-index)
 - [ ] **TRC-P7-003** EntityDiscoveryService [details](./TASK-DETAIL.md#trc-p7-003--entitydiscoveryservice)
 - [ ] **TRC-P7-004** EntityEventsService [details](./TASK-DETAIL.md#trc-p7-004--entityeventsservice)
 - [ ] **TRC-P7-005** EntitySlowStateService [details](./TASK-DETAIL.md#trc-p7-005--entityslowstateservice)
-- [ ] **TRC-P7-006** BuildSlowStateUnionSql Extension [details](./TASK-DETAIL.md#trc-p7-006--buildslowstateunionsql-extension)
-- [ ] **TRC-P7-007** FastStateFileLocator [details](./TASK-DETAIL.md#trc-p7-007--faststatefilelocator)
+- [x] **TRC-P7-006** BuildSlowStateUnionSql Extension [details](./TASK-DETAIL.md#trc-p7-006--buildslowstateunionsql-extension)
+- [x] **TRC-P7-007** FastStateFileLocator [details](./TASK-DETAIL.md#trc-p7-007--faststatefilelocator)
 - [ ] **TRC-P7-008** EntityFastStateService [details](./TASK-DETAIL.md#trc-p7-008--entityfaststateservice)
 - [ ] **TRC-P7-009** Entity Web API Endpoints, DTOs, and Wiring [details](./TASK-DETAIL.md#trc-p7-009--entity-web-api-endpoints-dtos-and-wiring)
 - [ ] **TRC-P7-010** `EntityHistoryView.vue` — View Layout and Shared Time Axis [details](./TASK-DETAIL.md#trc-p7-010--entityhistoryviewvue--view-layout-and-shared-time-axis)

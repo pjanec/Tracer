@@ -156,4 +156,80 @@ public class MultiIntervalReaderTests
         }
         return count;
     }
+
+    // ── TRC-P7-006: BuildSlowStateUnionSql tests ──────────────────────────
+
+    [Fact]
+    public async Task BuildSlowStateUnionSql_TwoAttachments_ProducesUnionAll()
+    {
+        var path1 = await CreateTempDuckDbAsync();
+        var path2 = await CreateTempDuckDbAsync();
+        await using var reader = await MultiIntervalReader.CreateAsync(
+        [
+            new IntervalDbFile(path1, "node01"),
+            new IntervalDbFile(path2, "node02"),
+        ]);
+
+        var sql = reader.BuildSlowStateUnionSql();
+
+        CountOccurrences(sql, "UNION ALL").Should().Be(1,
+            "two attachments should produce exactly one UNION ALL");
+        CountOccurrences(sql, "slow_state").Should().Be(2,
+            "each attachment should contribute one slow_state reference");
+    }
+
+    [Fact]
+    public async Task BuildSlowStateUnionSql_WhereClause_AppearsInBothArms()
+    {
+        var path1 = await CreateTempDuckDbAsync();
+        var path2 = await CreateTempDuckDbAsync();
+        await using var reader = await MultiIntervalReader.CreateAsync(
+        [
+            new IntervalDbFile(path1, "node01"),
+            new IntervalDbFile(path2, "node02"),
+        ]);
+
+        var sql = reader.BuildSlowStateUnionSql(whereClause: "WHERE instance_key = 'e1'");
+
+        CountOccurrences(sql, "WHERE instance_key = 'e1'").Should().Be(2,
+            "the WHERE clause should appear in both UNION arms");
+    }
+
+    [Fact]
+    public async Task BuildSlowStateUnionSql_NoAttachments_ReturnsSentinel()
+    {
+        await using var reader = await MultiIntervalReader.CreateAsync(
+            Enumerable.Empty<IntervalDbFile>());
+
+        reader.BuildSlowStateUnionSql().Should().Be("SELECT NULL WHERE FALSE");
+    }
+
+    [Fact]
+    public async Task BuildSlowStateUnionSql_LimitSet_AppendsLimitClause()
+    {
+        var path = await CreateTempDuckDbAsync();
+        await using var reader = await MultiIntervalReader.CreateAsync(
+            [new IntervalDbFile(path, "node01")]);
+
+        var sql = reader.BuildSlowStateUnionSql(limit: 500);
+
+        sql.Should().Contain("LIMIT 500");
+    }
+
+    [Fact]
+    public async Task BuildSlowStateUnionSql_DoesNotReferenceEventsTable()
+    {
+        var path1 = await CreateTempDuckDbAsync();
+        var path2 = await CreateTempDuckDbAsync();
+        await using var reader = await MultiIntervalReader.CreateAsync(
+        [
+            new IntervalDbFile(path1, "node01"),
+            new IntervalDbFile(path2, "node02"),
+        ]);
+
+        var sql = reader.BuildSlowStateUnionSql();
+
+        sql.Should().NotContain(".events",
+            "slow_state union SQL must not reference the events table");
+    }
 }

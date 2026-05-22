@@ -58,6 +58,24 @@ public sealed class MultiIntervalReader : IAsyncDisposable
         return string.Join("\nUNION ALL\n", parts);
     }
 
+    /// <summary>
+    /// Builds a UNION ALL SQL string over each attached database's <c>slow_state</c> table.
+    /// Returns the sentinel <c>"SELECT NULL WHERE FALSE"</c> when no files are attached.
+    /// </summary>
+    public string BuildSlowStateUnionSql(string whereClause = "", string orderByClause = "", int? limit = null)
+    {
+        if (_manager.Attachments.Count == 0)
+            return "SELECT NULL WHERE FALSE";
+
+        var parts = _manager.Attachments.Keys.Select(alias =>
+            $"SELECT *, '{alias}' AS __source_alias FROM {alias}.slow_state {whereClause}");
+
+        var sql = string.Join("\nUNION ALL\n", parts);
+        if (!string.IsNullOrEmpty(orderByClause)) sql += "\n" + orderByClause;
+        if (limit.HasValue) sql += $"\nLIMIT {limit.Value}";
+        return sql;
+    }
+
     public async ValueTask DisposeAsync()
     {
         await _manager.DisposeAsync();

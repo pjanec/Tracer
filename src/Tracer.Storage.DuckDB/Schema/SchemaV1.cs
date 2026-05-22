@@ -53,7 +53,7 @@ internal static class SchemaV1
         );
         """;
 
-    /// <summary>DDL for all seven indexes.</summary>
+    /// <summary>DDL for all indexes.</summary>
     public const string CreateIndexes = """
         CREATE INDEX IF NOT EXISTS idx_events_trace ON events(trace_id);
         CREATE INDEX IF NOT EXISTS idx_events_parent_event_id ON events(parent_event_id);
@@ -62,5 +62,8 @@ internal static class SchemaV1
         CREATE INDEX IF NOT EXISTS idx_events_topic_time ON events(topic, publish_wallclock);
         CREATE INDEX IF NOT EXISTS idx_state_instance_time ON slow_state(instance_key, publish_wallclock);
         CREATE INDEX IF NOT EXISTS idx_state_topic ON slow_state(topic);
+
+        -- Phase 7
+        CREATE INDEX IF NOT EXISTS idx_slow_state_entity_time ON slow_state(instance_key, publish_wallclock);
         """;
 }

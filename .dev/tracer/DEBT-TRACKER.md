@@ -27,6 +27,8 @@
 | DT-022 | P2 | BATCH-09 | `@typescript-eslint` v6 in `tracer-viewer/package.json` does not officially support TypeScript 5.4.5 (supported range `<5.4.0`). Upgrade `@typescript-eslint/eslint-plugin` and `@typescript-eslint/parser` to `^7.0.0` or `^8.0.0`. | BATCH-10 | ✅ Resolved |
 | DT-023 | P3 | BATCH-29 | When upgrading DuckDB past 1.0.2, apply `WHERE parent_event_id != 0` partial clause to `SchemaV1.CreateIndexes` and update `SchemaV1Tests` test assertion. DuckDB 1.0.2 does not support partial indexes. | Future | Open |
 | DT-024 | P3 | BATCH-29 | `SchemaV1Tests.CreateIndexes_ContainsPartialIndexOnParentEventId` test name misleading (no longer a partial index). Rename to `CreateIndexes_ContainsIndexOnParentEventId` when DT-023 resolved. | Future | Open |
+| DT-025 | P3 | BATCH-35 | `idx_slow_state_entity_time` duplicates `idx_state_instance_time` — both cover `slow_state(instance_key, publish_wallclock)`. Redundant index has no correctness impact. Resolve when DT-023 is addressed. | Future | Open |
+| DT-026 | P2 | BATCH-35 | `FastStateFileLocator.GetAvailableTopicsForEntity` returns `BundleNaming.SafeFileName`-encoded directory names, not original topic names. BATCH-36 implementors must use `LocateFiles(topic, entityId)` for topic lookup, not this method. | BATCH-36 | Open |
 
 > P1 = Critical (blocks next batch), P2 = Should fix soon, P3 = Nice to fix eventually  
 > Resolved items are marked ✅ (never deleted)

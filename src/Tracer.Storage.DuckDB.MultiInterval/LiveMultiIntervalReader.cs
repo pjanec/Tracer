@@ -294,6 +294,22 @@ public sealed class PooledMultiIntervalConnection : IAsyncDisposable
     }
 
     /// <summary>
+    /// Builds a UNION ALL SQL covering all intervals' <c>slow_state</c> tables.
+    /// Returns <c>"SELECT NULL WHERE FALSE"</c> when there are no intervals.
+    /// </summary>
+    public string BuildSlowStateUnionSql(string whereClause = "", string orderByClause = "", int? limit = null)
+    {
+        var parts = new List<string>();
+        if (_hasActive) parts.Add($"SELECT * FROM main.slow_state {whereClause}");
+        foreach (var alias in _aliases) parts.Add($"SELECT * FROM {alias}.slow_state {whereClause}");
+        if (parts.Count == 0) return "SELECT NULL WHERE FALSE";
+        var sql = string.Join("\nUNION ALL\n", parts);
+        if (!string.IsNullOrEmpty(orderByClause)) sql += "\n" + orderByClause;
+        if (limit.HasValue) sql += $"\nLIMIT {limit.Value}";
+        return sql;
+    }
+
+    /// <summary>
     /// Wraps <paramref name="sql"/> with a <c>WITH events AS (...)</c> CTE that covers
     /// all intervals. Query services should use this instead of bare <c>FROM events</c>.
     /// </summary>

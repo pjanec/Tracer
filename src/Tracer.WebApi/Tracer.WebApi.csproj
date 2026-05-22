@@ -21,4 +21,10 @@
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
   </ItemGroup>
 
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+      <_Parameter1>Tracer.Tests.Unit</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
 </Project>
