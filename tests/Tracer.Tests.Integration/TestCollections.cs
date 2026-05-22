@@ -13,3 +13,12 @@ public sealed class DistributionCollection { }
 
 [CollectionDefinition("TimelineRoundTrip", DisableParallelization = true)]
 public sealed class TimelineRoundTripCollection { }
+
+[CollectionDefinition("AnnotationsRoundTrip", DisableParallelization = true)]
+public sealed class AnnotationsRoundTripCollection { }
+
+[CollectionDefinition("SavedViewsRoundTrip", DisableParallelization = true)]
+public sealed class SavedViewsRoundTripCollection { }
+
+[CollectionDefinition("TriggerEvalIntegration")]
+public sealed class TriggerEvalIntegrationCollection { }

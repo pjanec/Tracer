@@ -41,6 +41,8 @@
 
 | DT-035 | P3 | BATCH-43 | `RecordOpenedAsync` (SavedViewEndpoints) swallows all exceptions silently. Should emit at least a log warning when the store call fails, to aid debugging in production. | BATCH-44+ | Open |
 | DT-036 | P3 | BATCH-43 | `AggregationOrchestrator` has 3 constructor overloads. If more optional deps are added, migrate to IOptions<T> or a settings object pattern. | Future | Open |
+| DT-037 | P3 | BATCH-48 | `BundleBuildService.QueueBuildAsync` returns a ULID used as directory name (`BundleBuildAcceptedDto.BundleId`). `ManifestBuilder.BuildAsync` generates a separate ULID stored in the manifest (`CurrentBundleDto.BundleId`). These two IDs cannot be correlated. Consumers waiting for a specific build to load cannot use `BundleId` from the accepted DTO. Consider aligning or returning the manifest ID from the build response. | Future | Open |
+| DT-038 | P3 | BATCH-48 | `AggregationOrchestrator.ExportAllForSessionAsync("")` uses empty string as a "no session filter" sentinel for time-range annotation exports (`request.SessionId ?? ""`). This is an implicit contract: `AnnotationEndpoints.ValidateCreate` was originally rejecting empty `SessionId`, which broke the round-trip. The intent should be made explicit (e.g., `Option<SessionId>`, `null` with nullable annotation, or a dedicated `ExportForTimeRangeAsync` method). | BATCH-50+ | Open |
 
 > P1 = Critical (blocks next batch), P2 = Should fix soon, P3 = Nice to fix eventually  
 > Resolved items are marked ✅ (never deleted)

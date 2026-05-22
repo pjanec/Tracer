@@ -173,7 +173,7 @@ public static class AnnotationEndpoints
 
     internal static ProblemDetails? ValidateCreate(CreateAnnotationDto dto)
     {
-        if (string.IsNullOrWhiteSpace(dto.SessionId))
+        if (dto.SessionId is null)
             return new ProblemDetails { Title = "SessionId is required", Status = 400 };
 
         var targetCount = new[] { dto.EventId, dto.EntityId, dto.TraceId }
