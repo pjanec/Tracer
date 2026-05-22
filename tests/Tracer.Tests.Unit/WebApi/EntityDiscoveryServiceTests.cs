@@ -11,10 +11,10 @@ using Xunit;
 namespace Tracer.Tests.Unit.WebApi;
 
 /// <summary>Tests for <see cref="EntityDiscoveryService"/> using real DuckDB storage.</summary>
-public sealed class EntityDiscoveryServiceTests : IAsyncDisposable
+public sealed class EntityDiscoveryServiceTests : IAsyncLifetime
 {
-    private readonly ObserverFixture _fixture;
-    private readonly EntityDiscoveryService _svc;
+    private ObserverFixture _fixture = null!;
+    private EntityDiscoveryService _svc = null!;
 
     private static readonly DateTimeOffset BaseTime =
         new DateTimeOffset(2026, 7, 1, 10, 0, 0, TimeSpan.Zero);
@@ -47,13 +47,13 @@ public sealed class EntityDiscoveryServiceTests : IAsyncDisposable
         };
     }
 
-    public EntityDiscoveryServiceTests()
+    public async Task InitializeAsync()
     {
-        _fixture = ObserverFixture.CreateAsync().GetAwaiter().GetResult();
+        _fixture = await ObserverFixture.CreateAsync();
         _svc = _fixture.App.Services.GetRequiredService<EntityDiscoveryService>();
     }
 
-    public async ValueTask DisposeAsync() => await _fixture.DisposeAsync();
+    public async Task DisposeAsync() => await _fixture.DisposeAsync();
 
     [Fact]
     public async Task DiscoverAsync_ThreeEntities_ReturnedOrderedByEventCount()

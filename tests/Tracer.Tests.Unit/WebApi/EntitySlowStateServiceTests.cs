@@ -11,10 +11,10 @@ using Xunit;
 namespace Tracer.Tests.Unit.WebApi;
 
 /// <summary>Tests for <see cref="EntitySlowStateService"/> using real DuckDB storage.</summary>
-public sealed class EntitySlowStateServiceTests : IAsyncDisposable
+public sealed class EntitySlowStateServiceTests : IAsyncLifetime
 {
-    private readonly ObserverFixture _fixture;
-    private readonly EntitySlowStateService _svc;
+    private ObserverFixture _fixture = null!;
+    private EntitySlowStateService _svc = null!;
 
     private static readonly DateTimeOffset BaseTime =
         new DateTimeOffset(2026, 7, 3, 10, 0, 0, TimeSpan.Zero);
@@ -47,13 +47,13 @@ public sealed class EntitySlowStateServiceTests : IAsyncDisposable
         };
     }
 
-    public EntitySlowStateServiceTests()
+    public async Task InitializeAsync()
     {
-        _fixture = ObserverFixture.CreateAsync().GetAwaiter().GetResult();
+        _fixture = await ObserverFixture.CreateAsync();
         _svc = _fixture.App.Services.GetRequiredService<EntitySlowStateService>();
     }
 
-    public async ValueTask DisposeAsync() => await _fixture.DisposeAsync();
+    public async Task DisposeAsync() => await _fixture.DisposeAsync();
 
     [Fact]
     public async Task GetAsync_TwoTopics_ResultsGroupedCorrectly()

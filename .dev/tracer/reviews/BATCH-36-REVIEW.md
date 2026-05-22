@@ -2,7 +2,8 @@
 
 **Batch:** BATCH-36 — Phase 7 Entity History Service Layer and API Wiring  
 **Tasks:** TRC-P7-003, TRC-P7-004, TRC-P7-005, TRC-P7-008, TRC-P7-009  
-**Review Status:** ✅ APPROVED
+**Review Status:** ✅ APPROVED WITH CORRECTIONS  
+**Dev Lead Correction Applied:** IAsyncLifetime pattern fix (see §5)
 
 ---
 

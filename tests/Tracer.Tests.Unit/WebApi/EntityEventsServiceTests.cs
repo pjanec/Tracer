@@ -11,10 +11,10 @@ using Xunit;
 namespace Tracer.Tests.Unit.WebApi;
 
 /// <summary>Tests for <see cref="EntityEventsService"/> using real DuckDB storage.</summary>
-public sealed class EntityEventsServiceTests : IAsyncDisposable
+public sealed class EntityEventsServiceTests : IAsyncLifetime
 {
-    private readonly ObserverFixture _fixture;
-    private readonly EntityEventsService _svc;
+    private ObserverFixture _fixture = null!;
+    private EntityEventsService _svc = null!;
 
     private static readonly DateTimeOffset BaseTime =
         new DateTimeOffset(2026, 7, 2, 10, 0, 0, TimeSpan.Zero);
@@ -43,13 +43,13 @@ public sealed class EntityEventsServiceTests : IAsyncDisposable
         };
     }
 
-    public EntityEventsServiceTests()
+    public async Task InitializeAsync()
     {
-        _fixture = ObserverFixture.CreateAsync().GetAwaiter().GetResult();
+        _fixture = await ObserverFixture.CreateAsync();
         _svc = _fixture.App.Services.GetRequiredService<EntityEventsService>();
     }
 
-    public async ValueTask DisposeAsync() => await _fixture.DisposeAsync();
+    public async Task DisposeAsync() => await _fixture.DisposeAsync();
 
     [Fact]
     public async Task GetEventsAsync_FiveEventsForEntity_ReturnsAll()
