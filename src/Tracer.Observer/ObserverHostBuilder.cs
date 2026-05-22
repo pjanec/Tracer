@@ -28,6 +28,8 @@ using Tracer.WebApi.OpenApi;
 using Tracer.WebApi.Queries;
 using Tracer.Storage.Annotations;
 using Tracer.Storage.SavedViews;
+using Tracer.Storage.SavedQueries;
+using Tracer.Storage.SavedQueries.BuiltIn;
 using Tracer.WebApi.Streaming;
 using Tracer.WebApi.Util;
 
@@ -183,6 +185,56 @@ public static class ObserverHostBuilder
             return store;
         });
 
+        // ── Saved Queries (Phase 10) ──────────────────────────────────────────
+        builder.Services.AddSingleton<ISavedQueryStore>(sp =>
+        {
+            var cfg = sp.GetRequiredService<ObserverConfig>();
+            var path = Path.Combine(cfg.DataRoot, "annotations.db");
+            return new SqliteSavedQueryStore(path, sp.GetRequiredService<ILogger<SqliteSavedQueryStore>>());
+        });
+
+        // ── SQL Console (Phase 10) ────────────────────────────────────────────
+        builder.Services.AddSingleton(sp =>
+        {
+            var cfgSection = sp.GetService<Microsoft.Extensions.Configuration.IConfiguration>()
+                ?.GetSection("SqlExecutor").Get<SqlExecutorConfig>();
+            return cfgSection ?? new SqlExecutorConfig
+            {
+                DefaultTimeoutSeconds = 30,
+                DefaultMaxRows        = 100_000,
+                MaxMemoryMb           = 1024,
+            };
+        });
+        builder.Services.AddSingleton<SqlExecutorService>();
+        builder.Services.AddSingleton<SqlSchemaService>();
+        builder.Services.AddSingleton<ViewSqlTemplateService>();
+
+        // ── Bundle Library (Phase 10) ─────────────────────────────────────────
+        builder.Services.AddSingleton(sp =>
+        {
+            var cfg = sp.GetRequiredService<ObserverConfig>();
+            var bundlesRoot = string.IsNullOrWhiteSpace(cfg.BundlesRoot)
+                ? Path.Combine(cfg.DataRoot, "bundles")
+                : cfg.BundlesRoot;
+            return new BundleLibraryService(bundlesRoot, sp.GetService<ILogger<BundleLibraryService>>());
+        });
+        builder.Services.AddSingleton(sp =>
+        {
+            var cfg = sp.GetRequiredService<ObserverConfig>();
+            var bundlesRoot = string.IsNullOrWhiteSpace(cfg.BundlesRoot)
+                ? Path.Combine(cfg.DataRoot, "bundles")
+                : cfg.BundlesRoot;
+            return new BundleExportService(bundlesRoot);
+        });
+        builder.Services.AddSingleton(sp =>
+        {
+            var cfg = sp.GetRequiredService<ObserverConfig>();
+            var bundlesRoot = string.IsNullOrWhiteSpace(cfg.BundlesRoot)
+                ? Path.Combine(cfg.DataRoot, "bundles")
+                : cfg.BundlesRoot;
+            return new BundleImportService(bundlesRoot, sp.GetRequiredService<ILogger<BundleImportService>>());
+        });
+
         // ── Entity history services (Phase 7) ─────────────────────────────────
         builder.Services.AddSingleton<Tracer.Storage.Parquet.ParquetReader>();
         builder.Services.AddSingleton<FastStateFileLocator>();
@@ -294,6 +346,23 @@ public static class ObserverHostBuilder
         LatencyEndpoints.Map(app);
         GapEndpoints.Map(app);
         BudgetEndpoints.Map(app);
+
+        // Phase 10 endpoints
+        SqlEndpoints.Map(app);
+        SavedQueriesEndpoints.Map(app);
+        BundleLibraryEndpoints.Map(app);
+
+        // Wire schema invalidation on interval set changes
+        var tracker = app.Services.GetRequiredService<IntervalSetTracker>();
+        var schemaService = app.Services.GetRequiredService<SqlSchemaService>();
+        tracker.SetChanged += (_, _) => { _ = schemaService.InvalidateAsync(); return Task.CompletedTask; };
+
+        // Seed built-in queries on startup
+        app.Lifetime.ApplicationStarted.Register(() =>
+        {
+            var store = app.Services.GetRequiredService<ISavedQueryStore>();
+            _ = Task.Run(() => BuiltInLoader.EnsureLoadedAsync(store, CancellationToken.None));
+        });
 
         // ── SPA static files (if present) ─────────────────────────────────────
         var spaPath = Path.Combine(app.Environment.ContentRootPath, "wwwroot");

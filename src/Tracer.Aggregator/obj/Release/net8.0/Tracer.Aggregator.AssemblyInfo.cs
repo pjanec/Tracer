@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Tracer.Aggregator")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+cce0a9e6200feae11ae38e7e55c3dcf7b6762552")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+24a6cdbd8e3975fdd501fc671bab580f18f7f78b")]
 [assembly: System.Reflection.AssemblyProductAttribute("Tracer.Aggregator")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Tracer.Aggregator")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

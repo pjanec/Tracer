@@ -540,3 +540,5 @@ d:\Work\Tracer\tests\Tracer.Tests.Integration\bin\Release\net8.0\Tracer.Storage.
 d:\Work\Tracer\tests\Tracer.Tests.Integration\bin\Release\net8.0\Tracer.Storage.SavedViews.dll
 d:\Work\Tracer\tests\Tracer.Tests.Integration\bin\Release\net8.0\Tracer.Storage.Annotations.pdb
 d:\Work\Tracer\tests\Tracer.Tests.Integration\bin\Release\net8.0\Tracer.Storage.SavedViews.pdb
+D:\Work\Tracer\tests\Tracer.Tests.Integration\bin\Release\net8.0\Tracer.Storage.SavedQueries.dll
+D:\Work\Tracer\tests\Tracer.Tests.Integration\bin\Release\net8.0\Tracer.Storage.SavedQueries.pdb

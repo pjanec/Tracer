@@ -163,6 +163,50 @@ public sealed class ObserverFixture : IAsyncDisposable
                 getBundleWorkingDirectory: null,
                 registry: sp.GetRequiredService<Tracer.WebApi.Queries.InMemoryBudgetRegistry>()));
 
+        // Phase 10 services
+        builder.Services.AddSingleton<Tracer.Storage.SavedQueries.ISavedQueryStore>(sp =>
+        {
+            var cfg = sp.GetRequiredService<ObserverConfig>();
+            var path = System.IO.Path.Combine(cfg.DataRoot, "annotations.db");
+            return new Tracer.Storage.SavedQueries.SqliteSavedQueryStore(
+                path, sp.GetRequiredService<ILogger<Tracer.Storage.SavedQueries.SqliteSavedQueryStore>>());
+        });
+        builder.Services.AddSingleton(new Tracer.WebApi.Queries.SqlExecutorConfig
+        {
+            DefaultTimeoutSeconds = 30,
+            DefaultMaxRows        = 100_000,
+            MaxMemoryMb           = 512,
+        });
+        builder.Services.AddSingleton<Tracer.WebApi.Queries.SqlExecutorService>();
+        builder.Services.AddSingleton<Tracer.WebApi.Queries.SqlSchemaService>();
+        builder.Services.AddSingleton<Tracer.WebApi.Queries.ViewSqlTemplateService>();
+        builder.Services.AddSingleton(sp =>
+        {
+            var cfg = sp.GetRequiredService<ObserverConfig>();
+            var bundlesRoot = string.IsNullOrWhiteSpace(cfg.BundlesRoot)
+                ? System.IO.Path.Combine(cfg.DataRoot, "bundles")
+                : cfg.BundlesRoot;
+            return new Tracer.WebApi.Queries.BundleLibraryService(bundlesRoot);
+        });
+        builder.Services.AddSingleton(sp =>
+        {
+            var cfg = sp.GetRequiredService<ObserverConfig>();
+            var bundlesRoot = string.IsNullOrWhiteSpace(cfg.BundlesRoot)
+                ? System.IO.Path.Combine(cfg.DataRoot, "bundles")
+                : cfg.BundlesRoot;
+            return new Tracer.WebApi.Queries.BundleExportService(bundlesRoot);
+        });
+        builder.Services.AddSingleton(sp =>
+        {
+            var cfg = sp.GetRequiredService<ObserverConfig>();
+            var bundlesRoot = string.IsNullOrWhiteSpace(cfg.BundlesRoot)
+                ? System.IO.Path.Combine(cfg.DataRoot, "bundles")
+                : cfg.BundlesRoot;
+            return new Tracer.WebApi.Queries.BundleImportService(
+                bundlesRoot,
+                sp.GetRequiredService<ILogger<Tracer.WebApi.Queries.BundleImportService>>());
+        });
+
         // SSE services
         var streaming = sseOptions ?? new SseStreamingOptions();
         builder.Services.AddSingleton(streaming);
@@ -188,6 +232,9 @@ public sealed class ObserverFixture : IAsyncDisposable
         Tracer.WebApi.Endpoints.LatencyEndpoints.Map(app);
         Tracer.WebApi.Endpoints.GapEndpoints.Map(app);
         Tracer.WebApi.Endpoints.BudgetEndpoints.Map(app);
+        Tracer.WebApi.Endpoints.SqlEndpoints.Map(app);
+        Tracer.WebApi.Endpoints.SavedQueriesEndpoints.Map(app);
+        Tracer.WebApi.Endpoints.BundleLibraryEndpoints.Map(app);
 
         configureExtraApp?.Invoke(app);
 

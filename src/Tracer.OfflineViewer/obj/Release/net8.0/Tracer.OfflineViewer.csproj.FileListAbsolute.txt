@@ -128,3 +128,5 @@ d:\Work\Tracer\src\Tracer.OfflineViewer\bin\Release\net8.0\Tracer.Storage.Annota
 d:\Work\Tracer\src\Tracer.OfflineViewer\bin\Release\net8.0\Tracer.Storage.SavedViews.dll
 d:\Work\Tracer\src\Tracer.OfflineViewer\bin\Release\net8.0\Tracer.Storage.Annotations.pdb
 d:\Work\Tracer\src\Tracer.OfflineViewer\bin\Release\net8.0\Tracer.Storage.SavedViews.pdb
+D:\Work\Tracer\src\Tracer.OfflineViewer\bin\Release\net8.0\Tracer.Storage.SavedQueries.dll
+D:\Work\Tracer\src\Tracer.OfflineViewer\bin\Release\net8.0\Tracer.Storage.SavedQueries.pdb

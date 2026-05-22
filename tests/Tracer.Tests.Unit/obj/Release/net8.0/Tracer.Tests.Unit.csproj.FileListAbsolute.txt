@@ -515,3 +515,5 @@ D:\Work\Tracer\tests\Tracer.Tests.Unit\obj\Release\net8.0\refint\Tracer.Tests.Un
 D:\Work\Tracer\tests\Tracer.Tests.Unit\obj\Release\net8.0\Tracer.Tests.Unit.pdb
 D:\Work\Tracer\tests\Tracer.Tests.Unit\obj\Release\net8.0\Tracer.Tests.Unit.genruntimeconfig.cache
 D:\Work\Tracer\tests\Tracer.Tests.Unit\obj\Release\net8.0\ref\Tracer.Tests.Unit.dll
+D:\Work\Tracer\tests\Tracer.Tests.Unit\bin\Release\net8.0\Tracer.Storage.SavedQueries.dll
+D:\Work\Tracer\tests\Tracer.Tests.Unit\bin\Release\net8.0\Tracer.Storage.SavedQueries.pdb

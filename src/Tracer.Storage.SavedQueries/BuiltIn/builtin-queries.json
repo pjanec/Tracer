@@ -1,0 +1,57 @@
+[
+  {
+    "id": "builtin-top-topics-by-volume",
+    "label": "Top topics by event count",
+    "description": "Lists the most prolific topics in the current session",
+    "sql": "SELECT topic, COUNT(*) AS event_count\nFROM events\nWHERE publish_wallclock >= $from AND publish_wallclock < $to\nGROUP BY topic\nORDER BY event_count DESC\nLIMIT 20",
+    "parameters": [
+      { "name": "from", "duckType": "TIMESTAMP", "defaultValueText": "session_start", "description": "Time range start" },
+      { "name": "to",   "duckType": "TIMESTAMP", "defaultValueText": "session_end",   "description": "Time range end" }
+    ],
+    "tags": ["overview", "topics"]
+  },
+  {
+    "id": "builtin-events-by-trace",
+    "label": "Events on a trace",
+    "description": "Lists all events sharing a trace_id, ordered chronologically",
+    "sql": "SELECT event_id, publisher_node, topic, publish_wallclock\nFROM events\nWHERE trace_id = $trace_id\nORDER BY publish_wallclock",
+    "parameters": [
+      { "name": "trace_id", "duckType": "UBIGINT", "defaultValueText": "0", "description": "Trace ID (decimal or hex)" }
+    ],
+    "tags": ["traces", "lineage"]
+  },
+  {
+    "id": "builtin-event-counts-per-node",
+    "label": "Event counts per node",
+    "description": "Volume of events published per node",
+    "sql": "SELECT publisher_node, COUNT(*) AS event_count\nFROM events\nWHERE publish_wallclock >= $from AND publish_wallclock < $to\nGROUP BY publisher_node\nORDER BY event_count DESC",
+    "parameters": [
+      { "name": "from", "duckType": "TIMESTAMP", "defaultValueText": "session_start", "description": "Time range start" },
+      { "name": "to",   "duckType": "TIMESTAMP", "defaultValueText": "session_end",   "description": "Time range end" }
+    ],
+    "tags": ["overview", "nodes"]
+  },
+  {
+    "id": "builtin-latency-distribution-by-topic",
+    "label": "Latency distribution by topic (bundle only)",
+    "description": "Per-topic percentiles. Bundle mode only; in live mode events have no per-subscriber receive times.",
+    "sql": "SELECT topic,\n  COUNT(*) AS samples,\n  APPROX_QUANTILE((EXTRACT(EPOCH FROM (receive_wallclock - publish_wallclock)) * 1000), 0.50) AS p50_ms,\n  APPROX_QUANTILE((EXTRACT(EPOCH FROM (receive_wallclock - publish_wallclock)) * 1000), 0.99) AS p99_ms\nFROM events\nWHERE publisher_node != subscriber_node\n  AND publish_wallclock >= $from AND publish_wallclock < $to\nGROUP BY topic\nORDER BY p99_ms DESC\nLIMIT 30",
+    "parameters": [
+      { "name": "from", "duckType": "TIMESTAMP", "defaultValueText": "session_start", "description": "Time range start" },
+      { "name": "to",   "duckType": "TIMESTAMP", "defaultValueText": "session_end",   "description": "Time range end" }
+    ],
+    "tags": ["latency", "performance"]
+  },
+  {
+    "id": "builtin-entity-events",
+    "label": "Events touching an entity",
+    "description": "All events referencing a particular entity_id",
+    "sql": "SELECT event_id, topic, publisher_node, publish_wallclock\nFROM events\nWHERE entity_id = $entity_id\n  AND publish_wallclock >= $from AND publish_wallclock < $to\nORDER BY publish_wallclock",
+    "parameters": [
+      { "name": "entity_id", "duckType": "VARCHAR",   "defaultValueText": "",             "description": "Entity identifier" },
+      { "name": "from",      "duckType": "TIMESTAMP", "defaultValueText": "session_start", "description": "Time range start" },
+      { "name": "to",        "duckType": "TIMESTAMP", "defaultValueText": "session_end",   "description": "Time range end" }
+    ],
+    "tags": ["entities"]
+  }
+]

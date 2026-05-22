@@ -31,3 +31,9 @@ public sealed class GapDetectionIntegrationCollection { }
 
 [CollectionDefinition("TopologyIntegration")]
 public sealed class TopologyIntegrationCollection { }
+
+[CollectionDefinition("SavedQueriesRoundTrip", DisableParallelization = true)]
+public sealed class SavedQueriesRoundTripCollection { }
+
+[CollectionDefinition("BundleLibraryRoundTrip", DisableParallelization = true)]
+public sealed class BundleLibraryRoundTripCollection { }

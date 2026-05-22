@@ -43,6 +43,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tracer.Storage.Annotations"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tracer.Storage.SavedViews", "src\Tracer.Storage.SavedViews\Tracer.Storage.SavedViews.csproj", "{CC0A96F3-3F6C-4140-9603-01495268024E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tracer.Storage.SavedQueries", "src\Tracer.Storage.SavedQueries\Tracer.Storage.SavedQueries.csproj", "{BFD7719F-7D31-4720-82DB-CC8FD993ED4F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -124,6 +126,10 @@ Global
 		{CC0A96F3-3F6C-4140-9603-01495268024E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CC0A96F3-3F6C-4140-9603-01495268024E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CC0A96F3-3F6C-4140-9603-01495268024E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BFD7719F-7D31-4720-82DB-CC8FD993ED4F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BFD7719F-7D31-4720-82DB-CC8FD993ED4F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BFD7719F-7D31-4720-82DB-CC8FD993ED4F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BFD7719F-7D31-4720-82DB-CC8FD993ED4F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{246EF103-28A8-4F5B-9D41-1C3191EF1825} = {FE41F639-B667-4ABE-9046-6868B8702FE2}
@@ -144,5 +150,6 @@ Global
 		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890} = {FE41F639-B667-4ABE-9046-6868B8702FE2}
 		{ED04DD99-151E-4E1C-963E-D3BA2A05906B} = {FE41F639-B667-4ABE-9046-6868B8702FE2}
 		{CC0A96F3-3F6C-4140-9603-01495268024E} = {FE41F639-B667-4ABE-9046-6868B8702FE2}
+		{BFD7719F-7D31-4720-82DB-CC8FD993ED4F} = {FE41F639-B667-4ABE-9046-6868B8702FE2}
 	EndGlobalSection
 EndGlobal

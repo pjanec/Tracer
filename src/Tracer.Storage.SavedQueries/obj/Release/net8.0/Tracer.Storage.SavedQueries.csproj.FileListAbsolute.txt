@@ -1,0 +1,16 @@
+D:\Work\Tracer\src\Tracer.Storage.SavedQueries\bin\Release\net8.0\Tracer.Storage.SavedQueries.deps.json
+D:\Work\Tracer\src\Tracer.Storage.SavedQueries\bin\Release\net8.0\Tracer.Storage.SavedQueries.dll
+D:\Work\Tracer\src\Tracer.Storage.SavedQueries\bin\Release\net8.0\Tracer.Storage.SavedQueries.pdb
+D:\Work\Tracer\src\Tracer.Storage.SavedQueries\bin\Release\net8.0\Tracer.Core.dll
+D:\Work\Tracer\src\Tracer.Storage.SavedQueries\bin\Release\net8.0\Tracer.Core.pdb
+D:\Work\Tracer\src\Tracer.Storage.SavedQueries\obj\Release\net8.0\Tracer.Storage.SavedQueries.csproj.AssemblyReference.cache
+D:\Work\Tracer\src\Tracer.Storage.SavedQueries\obj\Release\net8.0\Tracer.Storage.SavedQueries.GeneratedMSBuildEditorConfig.editorconfig
+D:\Work\Tracer\src\Tracer.Storage.SavedQueries\obj\Release\net8.0\Tracer.Storage.SavedQueries.AssemblyInfoInputs.cache
+D:\Work\Tracer\src\Tracer.Storage.SavedQueries\obj\Release\net8.0\Tracer.Storage.SavedQueries.AssemblyInfo.cs
+D:\Work\Tracer\src\Tracer.Storage.SavedQueries\obj\Release\net8.0\Tracer.Storage.SavedQueries.csproj.CoreCompileInputs.cache
+D:\Work\Tracer\src\Tracer.Storage.SavedQueries\obj\Release\net8.0\Tracer.Storage.SavedQueries.sourcelink.json
+D:\Work\Tracer\src\Tracer.Storage.SavedQueries\obj\Release\net8.0\Tracer.S.A8DE3202.Up2Date
+D:\Work\Tracer\src\Tracer.Storage.SavedQueries\obj\Release\net8.0\Tracer.Storage.SavedQueries.dll
+D:\Work\Tracer\src\Tracer.Storage.SavedQueries\obj\Release\net8.0\refint\Tracer.Storage.SavedQueries.dll
+D:\Work\Tracer\src\Tracer.Storage.SavedQueries\obj\Release\net8.0\Tracer.Storage.SavedQueries.pdb
+D:\Work\Tracer\src\Tracer.Storage.SavedQueries\obj\Release\net8.0\ref\Tracer.Storage.SavedQueries.dll

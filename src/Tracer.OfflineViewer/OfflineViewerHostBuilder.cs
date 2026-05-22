@@ -8,6 +8,8 @@ using Tracer.OfflineViewer.Lifecycle;
 using Tracer.OfflineViewer.WebApi;
 using Tracer.Storage.Annotations;
 using Tracer.Storage.SavedViews;
+using Tracer.Storage.SavedQueries;
+using Tracer.Storage.SavedQueries.BuiltIn;
 using Tracer.Storage.DuckDB.MultiInterval;
 using Tracer.WebApi.Endpoints;
 using Tracer.WebApi.Errors;
@@ -85,6 +87,58 @@ public static class OfflineViewerHostBuilder
         // ── Saved Views (Phase 8) ─────────────────────────────────────────────────
         builder.Services.AddSingleton<ISavedViewStore, LazyBundleSavedViewStore>();
 
+        // ── Saved Queries (Phase 10) ──────────────────────────────────────────
+        builder.Services.AddSingleton<ISavedQueryStore>(sp =>
+        {
+            var logDir = Path.GetDirectoryName(config.LogFilePath)
+                         ?? Path.Combine(
+                             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                             "Tracer", "viewer-data");
+            Directory.CreateDirectory(logDir);
+            var dbPath = Path.Combine(logDir, "annotations.db");
+            return new SqliteSavedQueryStore(dbPath, sp.GetRequiredService<ILogger<SqliteSavedQueryStore>>());
+        });
+
+        // ── SQL Console (Phase 10) ────────────────────────────────────────────
+        builder.Services.AddSingleton(new SqlExecutorConfig
+        {
+            DefaultTimeoutSeconds = 30,
+            DefaultMaxRows        = 100_000,
+            MaxMemoryMb           = 1024,
+        });
+        builder.Services.AddSingleton<SqlExecutorService>();
+        builder.Services.AddSingleton<SqlSchemaService>();
+        builder.Services.AddSingleton<ViewSqlTemplateService>();
+
+        // ── Bundle Library (Phase 10) ─────────────────────────────────────────
+        builder.Services.AddSingleton(sp =>
+        {
+            var logDir = Path.GetDirectoryName(config.LogFilePath)
+                         ?? Path.Combine(
+                             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                             "Tracer", "viewer-data");
+            var bundlesRoot = Path.Combine(logDir, "bundles");
+            return new BundleLibraryService(bundlesRoot, sp.GetService<ILogger<BundleLibraryService>>());
+        });
+        builder.Services.AddSingleton(sp =>
+        {
+            var logDir = Path.GetDirectoryName(config.LogFilePath)
+                         ?? Path.Combine(
+                             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                             "Tracer", "viewer-data");
+            return new BundleExportService(Path.Combine(logDir, "bundles"));
+        });
+        builder.Services.AddSingleton(sp =>
+        {
+            var logDir = Path.GetDirectoryName(config.LogFilePath)
+                         ?? Path.Combine(
+                             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                             "Tracer", "viewer-data");
+            return new BundleImportService(
+                Path.Combine(logDir, "bundles"),
+                sp.GetRequiredService<ILogger<BundleImportService>>());
+        });
+
         // ── Trigger evaluation service (Phase 8) ──────────────────────────────
         builder.Services.AddSingleton<TriggerEvalService>();
 
@@ -152,6 +206,23 @@ public static class OfflineViewerHostBuilder
         LatencyEndpoints.Map(app);
         GapEndpoints.Map(app);
         BudgetEndpoints.Map(app);
+
+        // Phase 10 endpoints
+        SqlEndpoints.Map(app);
+        SavedQueriesEndpoints.Map(app);
+        BundleLibraryEndpoints.Map(app);
+
+        // Wire schema invalidation on bundle changes
+        var bundleTracker = app.Services.GetRequiredService<BundleIntervalSetTracker>();
+        var schemaService = app.Services.GetRequiredService<SqlSchemaService>();
+        bundleTracker.SetChanged += (_, _) => { _ = schemaService.InvalidateAsync(); return Task.CompletedTask; };
+
+        // Seed built-in queries on startup
+        app.Lifetime.ApplicationStarted.Register(() =>
+        {
+            var store = app.Services.GetRequiredService<ISavedQueryStore>();
+            _ = Task.Run(() => BuiltInLoader.EnsureLoadedAsync(store, CancellationToken.None));
+        });
 
         // SPA fallback
         app.MapFallbackToFile("index.html");

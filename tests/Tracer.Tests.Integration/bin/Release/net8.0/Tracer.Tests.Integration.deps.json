@@ -40,6 +40,7 @@
           "Microsoft.NET.Test.Sdk": "17.8.0",
           "Tracer.Storage.Annotations": "1.0.0",
           "Tracer.Storage.Parquet": "1.0.0",
+          "Tracer.Storage.SavedQueries": "1.0.0",
           "Tracer.Storage.SavedViews": "1.0.0",
           "Tracer.TestHarness": "1.0.0",
           "tracer-aggregate": "1.0.0",
@@ -2364,6 +2365,23 @@
           "Tracer.Storage.Parquet.dll": {}
         }
       },
+      "Tracer.Storage.SavedQueries/1.0.0": {
+        "dependencies": {
+          "Microsoft.Data.Sqlite": "8.0.0",
+          "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
+          "Tracer.Core": "1.0.0",
+          "Ulid": "1.3.4"
+        },
+        "runtime": {
+          "Tracer.Storage.SavedQueries.dll": {
+            "assemblyVersion": "1.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        },
+        "compile": {
+          "Tracer.Storage.SavedQueries.dll": {}
+        }
+      },
       "Tracer.Storage.SavedViews/1.0.0": {
         "dependencies": {
           "Microsoft.Data.Sqlite": "8.0.0",
@@ -2420,6 +2438,7 @@
           "Tracer.Storage.DuckDB": "1.0.0",
           "Tracer.Storage.DuckDB.MultiInterval": "1.0.0",
           "Tracer.Storage.Parquet": "1.0.0",
+          "Tracer.Storage.SavedQueries": "1.0.0",
           "Tracer.Storage.SavedViews": "1.0.0"
         },
         "runtime": {
@@ -5314,6 +5333,11 @@
       "sha512": ""
     },
     "Tracer.Storage.Parquet/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Tracer.Storage.SavedQueries/1.0.0": {
       "type": "project",
       "serviceable": false,
       "sha512": ""
