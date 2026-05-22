@@ -35,6 +35,9 @@
 
 | DT-030 | P3 | BATCH-37 | `useEntityHistoryStore.retry()` clears `store.error` but does not re-trigger the fetch watcher (which only watches `[entityId, sessionId]`). A retry that doesn't change entity/session has no effect. Consider a `retryCount` sentinel or a dedicated `refresh()` that directly calls the fetch function. | BATCH-38+ | Open |
 | DT-031 | P3 | BATCH-37 | `entityHistoryStore.setSummary()` uses `from.getTime() === to.getTime()` as "not-yet-set" sentinel for the time range. If a consumer intentionally calls `setTimeRange(now, now)`, the summary would override it. A dedicated `isTimeRangeUserSet` boolean would be cleaner. | BATCH-38+ | Open |
+| DT-032 | P3 | BATCH-39 | `renderFastStateChart` legend uses hardcoded white (`#ffffff`) for text — should derive from theme/background. | Future | Open |
+| DT-033 | P2 | BATCH-39 | ✅ **Fixed in BATCH-39 review.** `useEntityHistoryUrl` multi-instance URL-wipe risk: `EntityHistoryView`'s instance was overwriting `fastStateTopic` in the URL when time-range changes. Fixed by merging with `route.query` before calling `router.replace`. | BATCH-39 | Resolved |
+| DT-034 | P3 | BATCH-39 | `useFastStateChart` columns cleared on every topic change even when URL restores them — adds an extra round-trip (schema → auto-select → data). Minor UX delay only. | Future | Open |
 
 > P1 = Critical (blocks next batch), P2 = Should fix soon, P3 = Nice to fix eventually  
 > Resolved items are marked ✅ (never deleted)

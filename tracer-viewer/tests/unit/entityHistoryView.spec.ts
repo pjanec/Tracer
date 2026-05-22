@@ -10,7 +10,10 @@ vi.mock('../../src/composables/useEntityHistoryQuery', () => ({
   useEntityHistoryQuery: vi.fn(),
 }));
 vi.mock('../../src/composables/useEntityHistoryUrl', () => ({
-  useEntityHistoryUrl: vi.fn(),
+  useEntityHistoryUrl: vi.fn(() => ({
+    fastStateTopic: { value: null },
+    fastStateColumns: { value: [] },
+  })),
 }));
 
 // Mock API to prevent network calls

@@ -154,4 +154,79 @@ describe('useEntityHistoryUrl', () => {
     expect(store.timeRange.to.toISOString()).toBe('2026-06-01T09:00:00.000Z');
     expect(store.selectedEventId).toBe('evt-roundtrip');
   });
+
+  // ── Fast-state URL param tests ────────────────────────────────────────────
+
+  it('fastState_urlToComposable_TopicAndColumns', async () => {
+    mockRouteQuery['fastStateTopic'] = 'transforms';
+    mockRouteQuery['fastStateColumns'] = 'x,y';
+
+    const { useEntityHistoryUrl } = await import('../../src/composables/useEntityHistoryUrl');
+    const result = useEntityHistoryUrl();
+
+    expect(result.fastStateTopic.value).toBe('transforms');
+    expect(result.fastStateColumns.value).toEqual(['x', 'y']);
+  });
+
+  it('fastState_composableToUrl_TopicWrittenAfterDebounce', async () => {
+    mockRouteParams['entityId'] = 'ent-1';
+    mockRouteQuery['session'] = 'sess-1';
+
+    const store = useEntityHistoryStore();
+    store.entityId = 'ent-1';
+    store.sessionId = 'sess-1';
+
+    const { useEntityHistoryUrl } = await import('../../src/composables/useEntityHistoryUrl');
+    const result = useEntityHistoryUrl();
+
+    result.fastStateTopic.value = 'pos';
+    await vi.advanceTimersByTimeAsync(300);
+
+    expect(mockReplace).toHaveBeenCalled();
+    const callArg = mockReplace.mock.calls[mockReplace.mock.calls.length - 1][0] as { query: Record<string, string> };
+    expect(callArg.query['fastStateTopic']).toBe('pos');
+  });
+
+  it('fastState_nullTopic_OmittedFromUrl', async () => {
+    mockRouteParams['entityId'] = 'ent-1';
+    mockRouteQuery['session'] = 'sess-1';
+
+    const store = useEntityHistoryStore();
+    store.entityId = 'ent-1';
+    store.sessionId = 'sess-1';
+
+    const { useEntityHistoryUrl } = await import('../../src/composables/useEntityHistoryUrl');
+    const result = useEntityHistoryUrl();
+
+    // Set then clear
+    result.fastStateTopic.value = 'pos';
+    await vi.advanceTimersByTimeAsync(300);
+    mockReplace.mockReset();
+
+    result.fastStateTopic.value = null;
+    await vi.advanceTimersByTimeAsync(300);
+
+    expect(mockReplace).toHaveBeenCalled();
+    const callArg = mockReplace.mock.calls[0][0] as { query: Record<string, string> };
+    expect(callArg.query['fastStateTopic']).toBeUndefined();
+  });
+
+  it('fastState_emptyColumns_OmittedFromUrl', async () => {
+    mockRouteParams['entityId'] = 'ent-1';
+    mockRouteQuery['session'] = 'sess-1';
+
+    const store = useEntityHistoryStore();
+    store.entityId = 'ent-1';
+    store.sessionId = 'sess-1';
+
+    const { useEntityHistoryUrl } = await import('../../src/composables/useEntityHistoryUrl');
+    const result = useEntityHistoryUrl();
+
+    result.fastStateColumns.value = [];
+    await vi.advanceTimersByTimeAsync(300);
+
+    expect(mockReplace).toHaveBeenCalled();
+    const callArg = mockReplace.mock.calls[mockReplace.mock.calls.length - 1][0] as { query: Record<string, string> };
+    expect(callArg.query['fastStateColumns']).toBeUndefined();
+  });
 });

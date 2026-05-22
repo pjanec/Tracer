@@ -15,7 +15,10 @@ vi.mock('../../src/composables/useEntityHistoryQuery', () => ({
   useEntityHistoryQuery: vi.fn(),
 }));
 vi.mock('../../src/composables/useEntityHistoryUrl', () => ({
-  useEntityHistoryUrl: vi.fn(),
+  useEntityHistoryUrl: vi.fn(() => ({
+    fastStateTopic: { value: null },
+    fastStateColumns: { value: [] },
+  })),
 }));
 
 vi.mock('@/api/tracerApiClient', () => ({
