@@ -3,6 +3,7 @@
   <PropertyGroup>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <CycloneDdsDisableCodeGen>true</CycloneDdsDisableCodeGen>
   </PropertyGroup>
 
   <ItemGroup>
@@ -20,6 +21,10 @@
     <ProjectReference Include="..\..\src\Tracer.Storage.Annotations\Tracer.Storage.Annotations.csproj" />
     <ProjectReference Include="..\..\src\Tracer.Storage.SavedViews\Tracer.Storage.SavedViews.csproj" />
     <ProjectReference Include="..\..\src\Tracer.Storage.SavedQueries\Tracer.Storage.SavedQueries.csproj" />
+    <ProjectReference Include="..\..\src\Tracer.Adapters.DDS\Tracer.Adapters.DDS.csproj" />
+    <ProjectReference Include="..\..\src\Tracer.Adapters.SharedMemory\Tracer.Adapters.SharedMemory.csproj" />
+    <ProjectReference Include="..\..\src\Tracer.Adapters.Sync\Tracer.Adapters.Sync.csproj" />
+    <ProjectReference Include="..\..\src\Tracer.Adapters.Nas\Tracer.Adapters.Nas.csproj" />
   </ItemGroup>
 
   <ItemGroup>

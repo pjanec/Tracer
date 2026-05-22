@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "QHnnAcADTUs=",
+  "dgSpecHash": "UxsjUCSGysg=",
   "success": true,
   "projectFilePath": "D:\\Work\\Tracer\\src\\Tracer.TestHarness\\Tracer.TestHarness.csproj",
   "expectedPackageFiles": [
@@ -10,7 +10,7 @@
     "C:\\Users\\pjane\\.nuget\\packages\\duckdb.net.data\\1.0.2\\duckdb.net.data.1.0.2.nupkg.sha512",
     "C:\\Users\\pjane\\.nuget\\packages\\fluentassertions\\6.12.0\\fluentassertions.6.12.0.nupkg.sha512",
     "C:\\Users\\pjane\\.nuget\\packages\\ironcompress\\1.5.2\\ironcompress.1.5.2.nupkg.sha512",
-    "C:\\Users\\pjane\\.nuget\\packages\\microsoft.aspnetcore.mvc.testing\\8.0.0\\microsoft.aspnetcore.mvc.testing.8.0.0.nupkg.sha512",
+    "C:\\Users\\pjane\\.nuget\\packages\\microsoft.aspnetcore.mvc.testing\\8.0.0\\.nupkg.metadata",
     "C:\\Users\\pjane\\.nuget\\packages\\microsoft.aspnetcore.openapi\\8.0.0\\microsoft.aspnetcore.openapi.8.0.0.nupkg.sha512",
     "C:\\Users\\pjane\\.nuget\\packages\\microsoft.aspnetcore.testhost\\8.0.0\\microsoft.aspnetcore.testhost.8.0.0.nupkg.sha512",
     "C:\\Users\\pjane\\.nuget\\packages\\microsoft.csharp\\4.3.0\\microsoft.csharp.4.3.0.nupkg.sha512",

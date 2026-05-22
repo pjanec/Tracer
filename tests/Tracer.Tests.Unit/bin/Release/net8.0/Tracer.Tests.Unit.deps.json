@@ -39,7 +39,11 @@
           "FluentAssertions": "6.12.0",
           "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
           "Microsoft.NET.Test.Sdk": "17.8.0",
+          "Tracer.Adapters.DDS": "1.0.0",
           "Tracer.Adapters.Mock": "1.0.0",
+          "Tracer.Adapters.Nas": "1.0.0",
+          "Tracer.Adapters.SharedMemory": "1.0.0",
+          "Tracer.Adapters.Sync": "1.0.0",
           "Tracer.Aggregator": "1.0.0",
           "Tracer.Bundle": "1.0.0",
           "Tracer.Core": "1.0.0",
@@ -172,7 +176,7 @@
           "Microsoft.Extensions.FileSystemGlobbing.Reference": "8.0.0.0",
           "Microsoft.Extensions.Hosting.Abstractions.Reference": "8.0.0.0",
           "Microsoft.Extensions.Hosting.Reference": "8.0.0.0",
-          "Microsoft.Extensions.Http": "8.0.0.0",
+          "Microsoft.Extensions.Http.Reference": "8.0.0.0",
           "Microsoft.Extensions.Identity.Core": "8.0.0.0",
           "Microsoft.Extensions.Identity.Stores": "8.0.0.0",
           "Microsoft.Extensions.Localization.Abstractions": "8.0.0.0",
@@ -378,6 +382,38 @@
           "lib/netcoreapp3.1/Apache.Arrow.dll": {}
         }
       },
+      "CycloneDDS.NET/0.2.2": {
+        "dependencies": {
+          "Microsoft.CodeAnalysis.CSharp": "4.8.0",
+          "Microsoft.CodeAnalysis.Common": "4.8.0"
+        },
+        "runtime": {
+          "lib/net8.0/CycloneDDS.Core.dll": {
+            "assemblyVersion": "0.2.0.0",
+            "fileVersion": "0.2.2.21226"
+          },
+          "lib/net8.0/CycloneDDS.Runtime.dll": {
+            "assemblyVersion": "0.2.0.0",
+            "fileVersion": "0.2.2.21226"
+          },
+          "lib/net8.0/CycloneDDS.Schema.dll": {
+            "assemblyVersion": "0.2.0.0",
+            "fileVersion": "0.2.2.21226"
+          }
+        },
+        "runtimeTargets": {
+          "runtimes/win-x64/native/ddsc.dll": {
+            "rid": "win-x64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          }
+        },
+        "compile": {
+          "lib/net8.0/CycloneDDS.Core.dll": {},
+          "lib/net8.0/CycloneDDS.Runtime.dll": {},
+          "lib/net8.0/CycloneDDS.Schema.dll": {}
+        }
+      },
       "DuckDB.NET.Bindings/1.0.2": {
         "runtime": {
           "lib/net6.0/DuckDB.NET.Bindings.dll": {
@@ -523,6 +559,120 @@
         },
         "compile": {
           "lib/net8.0/Microsoft.AspNetCore.TestHost.dll": {}
+        }
+      },
+      "Microsoft.CodeAnalysis.Analyzers/3.3.4": {},
+      "Microsoft.CodeAnalysis.Common/4.8.0": {
+        "dependencies": {
+          "Microsoft.CodeAnalysis.Analyzers": "3.3.4",
+          "System.Collections.Immutable": "7.0.0",
+          "System.Reflection.Metadata": "7.0.0",
+          "System.Runtime.CompilerServices.Unsafe": "6.0.0"
+        },
+        "runtime": {
+          "lib/net7.0/Microsoft.CodeAnalysis.dll": {
+            "assemblyVersion": "4.8.0.0",
+            "fileVersion": "4.800.23.55801"
+          }
+        },
+        "resources": {
+          "lib/net7.0/cs/Microsoft.CodeAnalysis.resources.dll": {
+            "locale": "cs"
+          },
+          "lib/net7.0/de/Microsoft.CodeAnalysis.resources.dll": {
+            "locale": "de"
+          },
+          "lib/net7.0/es/Microsoft.CodeAnalysis.resources.dll": {
+            "locale": "es"
+          },
+          "lib/net7.0/fr/Microsoft.CodeAnalysis.resources.dll": {
+            "locale": "fr"
+          },
+          "lib/net7.0/it/Microsoft.CodeAnalysis.resources.dll": {
+            "locale": "it"
+          },
+          "lib/net7.0/ja/Microsoft.CodeAnalysis.resources.dll": {
+            "locale": "ja"
+          },
+          "lib/net7.0/ko/Microsoft.CodeAnalysis.resources.dll": {
+            "locale": "ko"
+          },
+          "lib/net7.0/pl/Microsoft.CodeAnalysis.resources.dll": {
+            "locale": "pl"
+          },
+          "lib/net7.0/pt-BR/Microsoft.CodeAnalysis.resources.dll": {
+            "locale": "pt-BR"
+          },
+          "lib/net7.0/ru/Microsoft.CodeAnalysis.resources.dll": {
+            "locale": "ru"
+          },
+          "lib/net7.0/tr/Microsoft.CodeAnalysis.resources.dll": {
+            "locale": "tr"
+          },
+          "lib/net7.0/zh-Hans/Microsoft.CodeAnalysis.resources.dll": {
+            "locale": "zh-Hans"
+          },
+          "lib/net7.0/zh-Hant/Microsoft.CodeAnalysis.resources.dll": {
+            "locale": "zh-Hant"
+          }
+        },
+        "compile": {
+          "lib/net7.0/Microsoft.CodeAnalysis.dll": {}
+        }
+      },
+      "Microsoft.CodeAnalysis.CSharp/4.8.0": {
+        "dependencies": {
+          "Microsoft.CodeAnalysis.Common": "4.8.0"
+        },
+        "runtime": {
+          "lib/net7.0/Microsoft.CodeAnalysis.CSharp.dll": {
+            "assemblyVersion": "4.8.0.0",
+            "fileVersion": "4.800.23.55801"
+          }
+        },
+        "resources": {
+          "lib/net7.0/cs/Microsoft.CodeAnalysis.CSharp.resources.dll": {
+            "locale": "cs"
+          },
+          "lib/net7.0/de/Microsoft.CodeAnalysis.CSharp.resources.dll": {
+            "locale": "de"
+          },
+          "lib/net7.0/es/Microsoft.CodeAnalysis.CSharp.resources.dll": {
+            "locale": "es"
+          },
+          "lib/net7.0/fr/Microsoft.CodeAnalysis.CSharp.resources.dll": {
+            "locale": "fr"
+          },
+          "lib/net7.0/it/Microsoft.CodeAnalysis.CSharp.resources.dll": {
+            "locale": "it"
+          },
+          "lib/net7.0/ja/Microsoft.CodeAnalysis.CSharp.resources.dll": {
+            "locale": "ja"
+          },
+          "lib/net7.0/ko/Microsoft.CodeAnalysis.CSharp.resources.dll": {
+            "locale": "ko"
+          },
+          "lib/net7.0/pl/Microsoft.CodeAnalysis.CSharp.resources.dll": {
+            "locale": "pl"
+          },
+          "lib/net7.0/pt-BR/Microsoft.CodeAnalysis.CSharp.resources.dll": {
+            "locale": "pt-BR"
+          },
+          "lib/net7.0/ru/Microsoft.CodeAnalysis.CSharp.resources.dll": {
+            "locale": "ru"
+          },
+          "lib/net7.0/tr/Microsoft.CodeAnalysis.CSharp.resources.dll": {
+            "locale": "tr"
+          },
+          "lib/net7.0/zh-Hans/Microsoft.CodeAnalysis.CSharp.resources.dll": {
+            "locale": "zh-Hans"
+          },
+          "lib/net7.0/zh-Hant/Microsoft.CodeAnalysis.CSharp.resources.dll": {
+            "locale": "zh-Hant"
+          }
+        },
+        "compile": {
+          "lib/net7.0/Microsoft.CodeAnalysis.CSharp.dll": {}
         }
       },
       "Microsoft.CodeCoverage/17.8.0": {
@@ -753,6 +903,16 @@
           "lib/net8.0/Microsoft.Extensions.Hosting.WindowsServices.dll": {}
         }
       },
+      "Microsoft.Extensions.Http/8.0.0": {
+        "dependencies": {
+          "Microsoft.Extensions.Configuration.Abstractions": "8.0.0",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.0",
+          "Microsoft.Extensions.Diagnostics": "8.0.0",
+          "Microsoft.Extensions.Logging": "8.0.0",
+          "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
+          "Microsoft.Extensions.Options": "8.0.0"
+        }
+      },
       "Microsoft.Extensions.Logging/8.0.0": {
         "dependencies": {
           "Microsoft.Extensions.DependencyInjection": "8.0.0",
@@ -848,7 +1008,7 @@
       },
       "Microsoft.ML.DataView/3.0.1": {
         "dependencies": {
-          "System.Collections.Immutable": "1.5.0",
+          "System.Collections.Immutable": "7.0.0",
           "System.Memory": "4.5.5"
         },
         "runtime": {
@@ -883,7 +1043,7 @@
       "Microsoft.TestPlatform.ObjectModel/17.8.0": {
         "dependencies": {
           "NuGet.Frameworks": "6.5.0",
-          "System.Reflection.Metadata": "1.6.0"
+          "System.Reflection.Metadata": "7.0.0"
         },
         "runtime": {
           "lib/netcoreapp3.1/Microsoft.TestPlatform.CoreUtilities.dll": {
@@ -1657,7 +1817,7 @@
           "System.Runtime": "4.3.0"
         }
       },
-      "System.Collections.Immutable/1.5.0": {},
+      "System.Collections.Immutable/7.0.0": {},
       "System.Configuration.ConfigurationManager/4.4.0": {
         "dependencies": {
           "System.Security.Cryptography.ProtectedData": "4.4.0"
@@ -1846,7 +2006,11 @@
           "System.Runtime": "4.3.0"
         }
       },
-      "System.Reflection.Metadata/1.6.0": {},
+      "System.Reflection.Metadata/7.0.0": {
+        "dependencies": {
+          "System.Collections.Immutable": "7.0.0"
+        }
+      },
       "System.Reflection.Primitives/4.3.0": {
         "dependencies": {
           "Microsoft.NETCore.Platforms": "1.1.0",
@@ -2142,6 +2306,22 @@
           "tracer-observer.dll": {}
         }
       },
+      "Tracer.Adapters.DDS/1.0.0": {
+        "dependencies": {
+          "CycloneDDS.NET": "0.2.2",
+          "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
+          "Tracer.Core": "1.0.0"
+        },
+        "runtime": {
+          "Tracer.Adapters.DDS.dll": {
+            "assemblyVersion": "1.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        },
+        "compile": {
+          "Tracer.Adapters.DDS.dll": {}
+        }
+      },
       "Tracer.Adapters.Mock/1.0.0": {
         "dependencies": {
           "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
@@ -2155,6 +2335,52 @@
         },
         "compile": {
           "Tracer.Adapters.Mock.dll": {}
+        }
+      },
+      "Tracer.Adapters.Nas/1.0.0": {
+        "dependencies": {
+          "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
+          "Tracer.Core": "1.0.0"
+        },
+        "runtime": {
+          "Tracer.Adapters.Nas.dll": {
+            "assemblyVersion": "1.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        },
+        "compile": {
+          "Tracer.Adapters.Nas.dll": {}
+        }
+      },
+      "Tracer.Adapters.SharedMemory/1.0.0": {
+        "dependencies": {
+          "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
+          "Tracer.Core": "1.0.0"
+        },
+        "runtime": {
+          "Tracer.Adapters.SharedMemory.dll": {
+            "assemblyVersion": "1.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        },
+        "compile": {
+          "Tracer.Adapters.SharedMemory.dll": {}
+        }
+      },
+      "Tracer.Adapters.Sync/1.0.0": {
+        "dependencies": {
+          "Microsoft.Extensions.Http": "8.0.0",
+          "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
+          "Tracer.Core": "1.0.0"
+        },
+        "runtime": {
+          "Tracer.Adapters.Sync.dll": {
+            "assemblyVersion": "1.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        },
+        "compile": {
+          "Tracer.Adapters.Sync.dll": {}
         }
       },
       "Tracer.Aggregator/1.0.0": {
@@ -3081,7 +3307,7 @@
         },
         "compileOnly": true
       },
-      "Microsoft.Extensions.Http/8.0.0.0": {
+      "Microsoft.Extensions.Http.Reference/8.0.0.0": {
         "compile": {
           "Microsoft.Extensions.Http.dll": {}
         },
@@ -4218,6 +4444,13 @@
       "path": "apache.arrow/11.0.0",
       "hashPath": "apache.arrow.11.0.0.nupkg.sha512"
     },
+    "CycloneDDS.NET/0.2.2": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-4ZA4k2f2fa3jCVPEIYkBiUMk8s5N8t0Er7DWX1xZq+NrDO7oXRv48OunqL+bkwyCH7m17O9aJfRxsG0Ay6cfgA==",
+      "path": "cyclonedds.net/0.2.2",
+      "hashPath": "cyclonedds.net.0.2.2.nupkg.sha512"
+    },
     "DuckDB.NET.Bindings/1.0.2": {
       "type": "package",
       "serviceable": true,
@@ -4256,7 +4489,7 @@
     "Microsoft.AspNetCore.Mvc.Testing/8.0.0": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-PWPgPAlRdMEkVCHHic/Yy6t37PsPsymY1WkEH0TnjTeIlYu+g8Qfw1axj/ZmNDLvhKdiUNC2E2thHrYf2s7Yhg==",
+      "sha512": "sha512-placeholder",
       "path": "microsoft.aspnetcore.mvc.testing/8.0.0",
       "hashPath": "microsoft.aspnetcore.mvc.testing.8.0.0.nupkg.sha512"
     },
@@ -4273,6 +4506,27 @@
       "sha512": "sha512-Rk6Ai9bFf1KubVY5oEbEPN5fiKWW2oeU+easjokyUqqYyTHRsXlkjFeMvwecgoXsoTfXMSwEHzJp8FCjQcyYTQ==",
       "path": "microsoft.aspnetcore.testhost/8.0.0",
       "hashPath": "microsoft.aspnetcore.testhost.8.0.0.nupkg.sha512"
+    },
+    "Microsoft.CodeAnalysis.Analyzers/3.3.4": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-AxkxcPR+rheX0SmvpLVIGLhOUXAKG56a64kV9VQZ4y9gR9ZmPXnqZvHJnmwLSwzrEP6junUF11vuc+aqo5r68g==",
+      "path": "microsoft.codeanalysis.analyzers/3.3.4",
+      "hashPath": "microsoft.codeanalysis.analyzers.3.3.4.nupkg.sha512"
+    },
+    "Microsoft.CodeAnalysis.Common/4.8.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-/jR+e/9aT+BApoQJABlVCKnnggGQbvGh7BKq2/wI1LamxC+LbzhcLj4Vj7gXCofl1n4E521YfF9w0WcASGg/KA==",
+      "path": "microsoft.codeanalysis.common/4.8.0",
+      "hashPath": "microsoft.codeanalysis.common.4.8.0.nupkg.sha512"
+    },
+    "Microsoft.CodeAnalysis.CSharp/4.8.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-+3+qfdb/aaGD8PZRCrsdobbzGs1m9u119SkkJt8e/mk3xLJz/udLtS2T6nY27OTXxBBw10HzAbC8Z9w08VyP/g==",
+      "path": "microsoft.codeanalysis.csharp/4.8.0",
+      "hashPath": "microsoft.codeanalysis.csharp.4.8.0.nupkg.sha512"
     },
     "Microsoft.CodeCoverage/17.8.0": {
       "type": "package",
@@ -4455,6 +4709,13 @@
       "sha512": "sha512-8JIvU6R9fejZj/p6QATeDaNEPtIvLuwE5Uh7qyPx7tp+Fc9FqYaAe6ylU2dM839IUpmsU4ZVev956slZyrYEhQ==",
       "path": "microsoft.extensions.hosting.windowsservices/8.0.0",
       "hashPath": "microsoft.extensions.hosting.windowsservices.8.0.0.nupkg.sha512"
+    },
+    "Microsoft.Extensions.Http/8.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-cWz4caHwvx0emoYe7NkHPxII/KkTI8R/LC9qdqJqnKv2poTJ4e2qqPGQqvRoQ5kaSA4FU5IV3qFAuLuOhoqULQ==",
+      "path": "microsoft.extensions.http/8.0.0",
+      "hashPath": "microsoft.extensions.http.8.0.0.nupkg.sha512"
     },
     "Microsoft.Extensions.Logging/8.0.0": {
       "type": "package",
@@ -4813,12 +5074,12 @@
       "path": "system.collections/4.3.0",
       "hashPath": "system.collections.4.3.0.nupkg.sha512"
     },
-    "System.Collections.Immutable/1.5.0": {
+    "System.Collections.Immutable/7.0.0": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-EXKiDFsChZW0RjrZ4FYHu9aW6+P4MCgEDCklsVseRfhoO0F+dXeMSsMRAlVXIo06kGJ/zv+2w1a2uc2+kxxSaQ==",
-      "path": "system.collections.immutable/1.5.0",
-      "hashPath": "system.collections.immutable.1.5.0.nupkg.sha512"
+      "sha512": "sha512-dQPcs0U1IKnBdRDBkrCTi1FoajSTBzLcVTpjO4MBCMC7f4pDOIPzgBoX8JjG7X6uZRJ8EBxsi8+DR1JuwjnzOQ==",
+      "path": "system.collections.immutable/7.0.0",
+      "hashPath": "system.collections.immutable.7.0.0.nupkg.sha512"
     },
     "System.Configuration.ConfigurationManager/4.4.0": {
       "type": "package",
@@ -4967,12 +5228,12 @@
       "path": "system.reflection.extensions/4.3.0",
       "hashPath": "system.reflection.extensions.4.3.0.nupkg.sha512"
     },
-    "System.Reflection.Metadata/1.6.0": {
+    "System.Reflection.Metadata/7.0.0": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-COC1aiAJjCoA5GBF+QKL2uLqEBew4JsCkQmoHKbN3TlOZKa2fKLz5CpiRQKDz0RsAOEGsVKqOD5bomsXq/4STQ==",
-      "path": "system.reflection.metadata/1.6.0",
-      "hashPath": "system.reflection.metadata.1.6.0.nupkg.sha512"
+      "sha512": "sha512-MclTG61lsD9sYdpNz9xsKBzjsmsfCtcMZYXz/IUr2zlhaTaABonlr1ESeompTgM+Xk+IwtGYU7/voh3YWB/fWw==",
+      "path": "system.reflection.metadata/7.0.0",
+      "hashPath": "system.reflection.metadata.7.0.0.nupkg.sha512"
     },
     "System.Reflection.Primitives/4.3.0": {
       "type": "package",
@@ -5171,7 +5432,27 @@
       "serviceable": false,
       "sha512": ""
     },
+    "Tracer.Adapters.DDS/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
     "Tracer.Adapters.Mock/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Tracer.Adapters.Nas/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Tracer.Adapters.SharedMemory/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Tracer.Adapters.Sync/1.0.0": {
       "type": "project",
       "serviceable": false,
       "sha512": ""
@@ -5816,7 +6097,7 @@
       "serviceable": false,
       "sha512": ""
     },
-    "Microsoft.Extensions.Http/8.0.0.0": {
+    "Microsoft.Extensions.Http.Reference/8.0.0.0": {
       "type": "referenceassembly",
       "serviceable": false,
       "sha512": ""

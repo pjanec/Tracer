@@ -11,6 +11,36 @@
           "lib/netcoreapp3.1/Apache.Arrow.dll": {}
         }
       },
+      "CycloneDDS.NET/0.2.2": {
+        "type": "package",
+        "dependencies": {
+          "Microsoft.CodeAnalysis.CSharp": "4.8.0",
+          "Microsoft.CodeAnalysis.Common": "4.8.0"
+        },
+        "compile": {
+          "lib/net8.0/CycloneDDS.Core.dll": {},
+          "lib/net8.0/CycloneDDS.Runtime.dll": {
+            "related": ".pdb"
+          },
+          "lib/net8.0/CycloneDDS.Schema.dll": {}
+        },
+        "runtime": {
+          "lib/net8.0/CycloneDDS.Core.dll": {},
+          "lib/net8.0/CycloneDDS.Runtime.dll": {
+            "related": ".pdb"
+          },
+          "lib/net8.0/CycloneDDS.Schema.dll": {}
+        },
+        "build": {
+          "buildTransitive/CycloneDDS.NET.targets": {}
+        },
+        "runtimeTargets": {
+          "runtimes/win-x64/native/ddsc.dll": {
+            "assetType": "native",
+            "rid": "win-x64"
+          }
+        }
+      },
       "DuckDB.NET.Bindings/1.0.2": {
         "type": "package",
         "compile": {
@@ -179,6 +209,130 @@
         "frameworkReferences": [
           "Microsoft.AspNetCore.App"
         ]
+      },
+      "Microsoft.CodeAnalysis.Analyzers/3.3.4": {
+        "type": "package",
+        "build": {
+          "buildTransitive/Microsoft.CodeAnalysis.Analyzers.props": {},
+          "buildTransitive/Microsoft.CodeAnalysis.Analyzers.targets": {}
+        }
+      },
+      "Microsoft.CodeAnalysis.Common/4.8.0": {
+        "type": "package",
+        "dependencies": {
+          "Microsoft.CodeAnalysis.Analyzers": "3.3.4",
+          "System.Collections.Immutable": "7.0.0",
+          "System.Reflection.Metadata": "7.0.0",
+          "System.Runtime.CompilerServices.Unsafe": "6.0.0"
+        },
+        "compile": {
+          "lib/net7.0/Microsoft.CodeAnalysis.dll": {
+            "related": ".pdb;.xml"
+          }
+        },
+        "runtime": {
+          "lib/net7.0/Microsoft.CodeAnalysis.dll": {
+            "related": ".pdb;.xml"
+          }
+        },
+        "resource": {
+          "lib/net7.0/cs/Microsoft.CodeAnalysis.resources.dll": {
+            "locale": "cs"
+          },
+          "lib/net7.0/de/Microsoft.CodeAnalysis.resources.dll": {
+            "locale": "de"
+          },
+          "lib/net7.0/es/Microsoft.CodeAnalysis.resources.dll": {
+            "locale": "es"
+          },
+          "lib/net7.0/fr/Microsoft.CodeAnalysis.resources.dll": {
+            "locale": "fr"
+          },
+          "lib/net7.0/it/Microsoft.CodeAnalysis.resources.dll": {
+            "locale": "it"
+          },
+          "lib/net7.0/ja/Microsoft.CodeAnalysis.resources.dll": {
+            "locale": "ja"
+          },
+          "lib/net7.0/ko/Microsoft.CodeAnalysis.resources.dll": {
+            "locale": "ko"
+          },
+          "lib/net7.0/pl/Microsoft.CodeAnalysis.resources.dll": {
+            "locale": "pl"
+          },
+          "lib/net7.0/pt-BR/Microsoft.CodeAnalysis.resources.dll": {
+            "locale": "pt-BR"
+          },
+          "lib/net7.0/ru/Microsoft.CodeAnalysis.resources.dll": {
+            "locale": "ru"
+          },
+          "lib/net7.0/tr/Microsoft.CodeAnalysis.resources.dll": {
+            "locale": "tr"
+          },
+          "lib/net7.0/zh-Hans/Microsoft.CodeAnalysis.resources.dll": {
+            "locale": "zh-Hans"
+          },
+          "lib/net7.0/zh-Hant/Microsoft.CodeAnalysis.resources.dll": {
+            "locale": "zh-Hant"
+          }
+        }
+      },
+      "Microsoft.CodeAnalysis.CSharp/4.8.0": {
+        "type": "package",
+        "dependencies": {
+          "Microsoft.CodeAnalysis.Common": "[4.8.0]"
+        },
+        "compile": {
+          "lib/net7.0/Microsoft.CodeAnalysis.CSharp.dll": {
+            "related": ".pdb;.xml"
+          }
+        },
+        "runtime": {
+          "lib/net7.0/Microsoft.CodeAnalysis.CSharp.dll": {
+            "related": ".pdb;.xml"
+          }
+        },
+        "resource": {
+          "lib/net7.0/cs/Microsoft.CodeAnalysis.CSharp.resources.dll": {
+            "locale": "cs"
+          },
+          "lib/net7.0/de/Microsoft.CodeAnalysis.CSharp.resources.dll": {
+            "locale": "de"
+          },
+          "lib/net7.0/es/Microsoft.CodeAnalysis.CSharp.resources.dll": {
+            "locale": "es"
+          },
+          "lib/net7.0/fr/Microsoft.CodeAnalysis.CSharp.resources.dll": {
+            "locale": "fr"
+          },
+          "lib/net7.0/it/Microsoft.CodeAnalysis.CSharp.resources.dll": {
+            "locale": "it"
+          },
+          "lib/net7.0/ja/Microsoft.CodeAnalysis.CSharp.resources.dll": {
+            "locale": "ja"
+          },
+          "lib/net7.0/ko/Microsoft.CodeAnalysis.CSharp.resources.dll": {
+            "locale": "ko"
+          },
+          "lib/net7.0/pl/Microsoft.CodeAnalysis.CSharp.resources.dll": {
+            "locale": "pl"
+          },
+          "lib/net7.0/pt-BR/Microsoft.CodeAnalysis.CSharp.resources.dll": {
+            "locale": "pt-BR"
+          },
+          "lib/net7.0/ru/Microsoft.CodeAnalysis.CSharp.resources.dll": {
+            "locale": "ru"
+          },
+          "lib/net7.0/tr/Microsoft.CodeAnalysis.CSharp.resources.dll": {
+            "locale": "tr"
+          },
+          "lib/net7.0/zh-Hans/Microsoft.CodeAnalysis.CSharp.resources.dll": {
+            "locale": "zh-Hans"
+          },
+          "lib/net7.0/zh-Hant/Microsoft.CodeAnalysis.CSharp.resources.dll": {
+            "locale": "zh-Hant"
+          }
+        }
       },
       "Microsoft.CodeCoverage/17.8.0": {
         "type": "package",
@@ -699,6 +853,30 @@
         },
         "runtime": {
           "lib/net8.0/Microsoft.Extensions.Hosting.WindowsServices.dll": {
+            "related": ".xml"
+          }
+        },
+        "build": {
+          "buildTransitive/net6.0/_._": {}
+        }
+      },
+      "Microsoft.Extensions.Http/8.0.0": {
+        "type": "package",
+        "dependencies": {
+          "Microsoft.Extensions.Configuration.Abstractions": "8.0.0",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.0",
+          "Microsoft.Extensions.Diagnostics": "8.0.0",
+          "Microsoft.Extensions.Logging": "8.0.0",
+          "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
+          "Microsoft.Extensions.Options": "8.0.0"
+        },
+        "compile": {
+          "lib/net8.0/Microsoft.Extensions.Http.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net8.0/Microsoft.Extensions.Http.dll": {
             "related": ".xml"
           }
         },
@@ -1845,17 +2023,20 @@
           }
         }
       },
-      "System.Collections.Immutable/1.5.0": {
+      "System.Collections.Immutable/7.0.0": {
         "type": "package",
         "compile": {
-          "lib/netstandard2.0/System.Collections.Immutable.dll": {
+          "lib/net7.0/System.Collections.Immutable.dll": {
             "related": ".xml"
           }
         },
         "runtime": {
-          "lib/netstandard2.0/System.Collections.Immutable.dll": {
+          "lib/net7.0/System.Collections.Immutable.dll": {
             "related": ".xml"
           }
+        },
+        "build": {
+          "buildTransitive/net6.0/_._": {}
         }
       },
       "System.Configuration.ConfigurationManager/4.4.0": {
@@ -2242,17 +2423,23 @@
           }
         }
       },
-      "System.Reflection.Metadata/1.6.0": {
+      "System.Reflection.Metadata/7.0.0": {
         "type": "package",
+        "dependencies": {
+          "System.Collections.Immutable": "7.0.0"
+        },
         "compile": {
-          "lib/netstandard2.0/System.Reflection.Metadata.dll": {
+          "lib/net7.0/System.Reflection.Metadata.dll": {
             "related": ".xml"
           }
         },
         "runtime": {
-          "lib/netstandard2.0/System.Reflection.Metadata.dll": {
+          "lib/net7.0/System.Reflection.Metadata.dll": {
             "related": ".xml"
           }
+        },
+        "build": {
+          "buildTransitive/net6.0/_._": {}
         }
       },
       "System.Reflection.Primitives/4.3.0": {
@@ -2701,6 +2888,21 @@
           "Microsoft.AspNetCore.App"
         ]
       },
+      "Tracer.Adapters.DDS/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v8.0",
+        "dependencies": {
+          "CycloneDDS.NET": "0.2.2",
+          "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
+          "Tracer.Core": "1.0.0"
+        },
+        "compile": {
+          "bin/placeholder/Tracer.Adapters.DDS.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/Tracer.Adapters.DDS.dll": {}
+        }
+      },
       "Tracer.Adapters.Mock/1.0.0": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v8.0",
@@ -2713,6 +2915,49 @@
         },
         "runtime": {
           "bin/placeholder/Tracer.Adapters.Mock.dll": {}
+        }
+      },
+      "Tracer.Adapters.Nas/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v8.0",
+        "dependencies": {
+          "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
+          "Tracer.Core": "1.0.0"
+        },
+        "compile": {
+          "bin/placeholder/Tracer.Adapters.Nas.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/Tracer.Adapters.Nas.dll": {}
+        }
+      },
+      "Tracer.Adapters.SharedMemory/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v8.0",
+        "dependencies": {
+          "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
+          "Tracer.Core": "1.0.0"
+        },
+        "compile": {
+          "bin/placeholder/Tracer.Adapters.SharedMemory.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/Tracer.Adapters.SharedMemory.dll": {}
+        }
+      },
+      "Tracer.Adapters.Sync/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v8.0",
+        "dependencies": {
+          "Microsoft.Extensions.Http": "8.0.0",
+          "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
+          "Tracer.Core": "1.0.0"
+        },
+        "compile": {
+          "bin/placeholder/Tracer.Adapters.Sync.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/Tracer.Adapters.Sync.dll": {}
         }
       },
       "Tracer.Aggregator/1.0.0": {
@@ -2935,6 +3180,52 @@
         "lib/netstandard2.0/Apache.Arrow.dll"
       ]
     },
+    "CycloneDDS.NET/0.2.2": {
+      "sha512": "4ZA4k2f2fa3jCVPEIYkBiUMk8s5N8t0Er7DWX1xZq+NrDO7oXRv48OunqL+bkwyCH7m17O9aJfRxsG0Ay6cfgA==",
+      "type": "package",
+      "path": "cyclonedds.net/0.2.2",
+      "hasTools": true,
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "README.md",
+        "ThirdPartyNotices.txt",
+        "buildTransitive/CycloneDDS.NET.targets",
+        "cyclonedds.net.0.2.2.nupkg.sha512",
+        "cyclonedds.net.nuspec",
+        "icon.png",
+        "lib/net8.0/CycloneDDS.Core.dll",
+        "lib/net8.0/CycloneDDS.Runtime.dll",
+        "lib/net8.0/CycloneDDS.Runtime.pdb",
+        "lib/net8.0/CycloneDDS.Schema.dll",
+        "runtimes/win-x64/native/ddsc.dll",
+        "tools/CycloneDDS.CodeGen.deps.json",
+        "tools/CycloneDDS.CodeGen.dll",
+        "tools/CycloneDDS.CodeGen.exe",
+        "tools/CycloneDDS.CodeGen.pdb",
+        "tools/CycloneDDS.CodeGen.runtimeconfig.json",
+        "tools/CycloneDDS.Compiler.Common.dll",
+        "tools/CycloneDDS.Compiler.Common.pdb",
+        "tools/CycloneDDS.Core.dll",
+        "tools/CycloneDDS.Core.pdb",
+        "tools/CycloneDDS.IdlImporter.deps.json",
+        "tools/CycloneDDS.IdlImporter.dll",
+        "tools/CycloneDDS.IdlImporter.exe",
+        "tools/CycloneDDS.IdlImporter.pdb",
+        "tools/CycloneDDS.IdlImporter.ps1",
+        "tools/CycloneDDS.IdlImporter.runtimeconfig.json",
+        "tools/CycloneDDS.Schema.dll",
+        "tools/CycloneDDS.Schema.pdb",
+        "tools/Microsoft.CodeAnalysis.CSharp.dll",
+        "tools/Microsoft.CodeAnalysis.dll",
+        "tools/System.CommandLine.dll",
+        "tools/cycloneddsidl.dll",
+        "tools/cycloneddsidlc.dll",
+        "tools/cycloneddsidljson.dll",
+        "tools/ddsc.dll",
+        "tools/idlc.exe"
+      ]
+    },
     "DuckDB.NET.Bindings/1.0.2": {
       "sha512": "MW8i7GRffpUm8P3rMme5SM7ycWwDpxMTQUCpUstXQJcEva8X4HhARTlzHbxC3eobtdBkZ3jd5vfvjsIcij0aaA==",
       "type": "package",
@@ -3046,21 +3337,21 @@
       ]
     },
     "Microsoft.AspNetCore.Mvc.Testing/8.0.0": {
-      "sha512": "PWPgPAlRdMEkVCHHic/Yy6t37PsPsymY1WkEH0TnjTeIlYu+g8Qfw1axj/ZmNDLvhKdiUNC2E2thHrYf2s7Yhg==",
+      "sha512": "placeholder",
       "type": "package",
       "path": "microsoft.aspnetcore.mvc.testing/8.0.0",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
         "Icon.png",
+        "Microsoft.AspNetCore.Mvc.Testing.nuspec",
         "THIRD-PARTY-NOTICES.TXT",
         "build/net8.0/Microsoft.AspNetCore.Mvc.Testing.targets",
         "buildTransitive/net8.0/Microsoft.AspNetCore.Mvc.Testing.targets",
         "lib/net8.0/Microsoft.AspNetCore.Mvc.Testing.dll",
         "lib/net8.0/Microsoft.AspNetCore.Mvc.Testing.xml",
-        "microsoft.aspnetcore.mvc.testing.8.0.0.nupkg.sha512",
-        "microsoft.aspnetcore.mvc.testing.nuspec",
-        "tasks/netstandard2.0/Microsoft.AspNetCore.Mvc.Testing.Tasks.dll"
+        "tasks/netstandard2.0/Microsoft.AspNetCore.Mvc.Testing.Tasks.dll",
+        "tasks/netstandard2.0/Microsoft.AspNetCore.Mvc.Testing.Tasks.dll.bak"
       ]
     },
     "Microsoft.AspNetCore.OpenApi/8.0.0": {
@@ -3091,6 +3382,729 @@
         "lib/net8.0/Microsoft.AspNetCore.TestHost.xml",
         "microsoft.aspnetcore.testhost.8.0.0.nupkg.sha512",
         "microsoft.aspnetcore.testhost.nuspec"
+      ]
+    },
+    "Microsoft.CodeAnalysis.Analyzers/3.3.4": {
+      "sha512": "AxkxcPR+rheX0SmvpLVIGLhOUXAKG56a64kV9VQZ4y9gR9ZmPXnqZvHJnmwLSwzrEP6junUF11vuc+aqo5r68g==",
+      "type": "package",
+      "path": "microsoft.codeanalysis.analyzers/3.3.4",
+      "hasTools": true,
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "Icon.png",
+        "ThirdPartyNotices.txt",
+        "analyzers/dotnet/cs/Microsoft.CodeAnalysis.Analyzers.dll",
+        "analyzers/dotnet/cs/Microsoft.CodeAnalysis.CSharp.Analyzers.dll",
+        "analyzers/dotnet/cs/cs/Microsoft.CodeAnalysis.Analyzers.resources.dll",
+        "analyzers/dotnet/cs/de/Microsoft.CodeAnalysis.Analyzers.resources.dll",
+        "analyzers/dotnet/cs/es/Microsoft.CodeAnalysis.Analyzers.resources.dll",
+        "analyzers/dotnet/cs/fr/Microsoft.CodeAnalysis.Analyzers.resources.dll",
+        "analyzers/dotnet/cs/it/Microsoft.CodeAnalysis.Analyzers.resources.dll",
+        "analyzers/dotnet/cs/ja/Microsoft.CodeAnalysis.Analyzers.resources.dll",
+        "analyzers/dotnet/cs/ko/Microsoft.CodeAnalysis.Analyzers.resources.dll",
+        "analyzers/dotnet/cs/pl/Microsoft.CodeAnalysis.Analyzers.resources.dll",
+        "analyzers/dotnet/cs/pt-BR/Microsoft.CodeAnalysis.Analyzers.resources.dll",
+        "analyzers/dotnet/cs/ru/Microsoft.CodeAnalysis.Analyzers.resources.dll",
+        "analyzers/dotnet/cs/tr/Microsoft.CodeAnalysis.Analyzers.resources.dll",
+        "analyzers/dotnet/cs/zh-Hans/Microsoft.CodeAnalysis.Analyzers.resources.dll",
+        "analyzers/dotnet/cs/zh-Hant/Microsoft.CodeAnalysis.Analyzers.resources.dll",
+        "analyzers/dotnet/vb/Microsoft.CodeAnalysis.Analyzers.dll",
+        "analyzers/dotnet/vb/Microsoft.CodeAnalysis.VisualBasic.Analyzers.dll",
+        "analyzers/dotnet/vb/cs/Microsoft.CodeAnalysis.Analyzers.resources.dll",
+        "analyzers/dotnet/vb/de/Microsoft.CodeAnalysis.Analyzers.resources.dll",
+        "analyzers/dotnet/vb/es/Microsoft.CodeAnalysis.Analyzers.resources.dll",
+        "analyzers/dotnet/vb/fr/Microsoft.CodeAnalysis.Analyzers.resources.dll",
+        "analyzers/dotnet/vb/it/Microsoft.CodeAnalysis.Analyzers.resources.dll",
+        "analyzers/dotnet/vb/ja/Microsoft.CodeAnalysis.Analyzers.resources.dll",
+        "analyzers/dotnet/vb/ko/Microsoft.CodeAnalysis.Analyzers.resources.dll",
+        "analyzers/dotnet/vb/pl/Microsoft.CodeAnalysis.Analyzers.resources.dll",
+        "analyzers/dotnet/vb/pt-BR/Microsoft.CodeAnalysis.Analyzers.resources.dll",
+        "analyzers/dotnet/vb/ru/Microsoft.CodeAnalysis.Analyzers.resources.dll",
+        "analyzers/dotnet/vb/tr/Microsoft.CodeAnalysis.Analyzers.resources.dll",
+        "analyzers/dotnet/vb/zh-Hans/Microsoft.CodeAnalysis.Analyzers.resources.dll",
+        "analyzers/dotnet/vb/zh-Hant/Microsoft.CodeAnalysis.Analyzers.resources.dll",
+        "buildTransitive/Microsoft.CodeAnalysis.Analyzers.props",
+        "buildTransitive/Microsoft.CodeAnalysis.Analyzers.targets",
+        "buildTransitive/config/analysislevel_2_9_8_all.globalconfig",
+        "buildTransitive/config/analysislevel_2_9_8_all_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevel_2_9_8_default.globalconfig",
+        "buildTransitive/config/analysislevel_2_9_8_default_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevel_2_9_8_minimum.globalconfig",
+        "buildTransitive/config/analysislevel_2_9_8_minimum_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevel_2_9_8_none.globalconfig",
+        "buildTransitive/config/analysislevel_2_9_8_none_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevel_2_9_8_recommended.globalconfig",
+        "buildTransitive/config/analysislevel_2_9_8_recommended_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevel_3_3_3_all.globalconfig",
+        "buildTransitive/config/analysislevel_3_3_3_all_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevel_3_3_3_default.globalconfig",
+        "buildTransitive/config/analysislevel_3_3_3_default_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevel_3_3_3_minimum.globalconfig",
+        "buildTransitive/config/analysislevel_3_3_3_minimum_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevel_3_3_3_none.globalconfig",
+        "buildTransitive/config/analysislevel_3_3_3_none_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevel_3_3_3_recommended.globalconfig",
+        "buildTransitive/config/analysislevel_3_3_3_recommended_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevel_3_3_all.globalconfig",
+        "buildTransitive/config/analysislevel_3_3_all_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevel_3_3_default.globalconfig",
+        "buildTransitive/config/analysislevel_3_3_default_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevel_3_3_minimum.globalconfig",
+        "buildTransitive/config/analysislevel_3_3_minimum_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevel_3_3_none.globalconfig",
+        "buildTransitive/config/analysislevel_3_3_none_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevel_3_3_recommended.globalconfig",
+        "buildTransitive/config/analysislevel_3_3_recommended_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevel_3_all.globalconfig",
+        "buildTransitive/config/analysislevel_3_all_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevel_3_default.globalconfig",
+        "buildTransitive/config/analysislevel_3_default_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevel_3_minimum.globalconfig",
+        "buildTransitive/config/analysislevel_3_minimum_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevel_3_none.globalconfig",
+        "buildTransitive/config/analysislevel_3_none_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevel_3_recommended.globalconfig",
+        "buildTransitive/config/analysislevel_3_recommended_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevel_4_3_all.globalconfig",
+        "buildTransitive/config/analysislevel_4_3_all_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevel_4_3_default.globalconfig",
+        "buildTransitive/config/analysislevel_4_3_default_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevel_4_3_minimum.globalconfig",
+        "buildTransitive/config/analysislevel_4_3_minimum_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevel_4_3_none.globalconfig",
+        "buildTransitive/config/analysislevel_4_3_none_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevel_4_3_recommended.globalconfig",
+        "buildTransitive/config/analysislevel_4_3_recommended_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelcorrectness_2_9_8_all.globalconfig",
+        "buildTransitive/config/analysislevelcorrectness_2_9_8_all_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelcorrectness_2_9_8_default.globalconfig",
+        "buildTransitive/config/analysislevelcorrectness_2_9_8_default_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelcorrectness_2_9_8_minimum.globalconfig",
+        "buildTransitive/config/analysislevelcorrectness_2_9_8_minimum_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelcorrectness_2_9_8_none.globalconfig",
+        "buildTransitive/config/analysislevelcorrectness_2_9_8_none_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelcorrectness_2_9_8_recommended.globalconfig",
+        "buildTransitive/config/analysislevelcorrectness_2_9_8_recommended_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelcorrectness_3_3_3_all.globalconfig",
+        "buildTransitive/config/analysislevelcorrectness_3_3_3_all_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelcorrectness_3_3_3_default.globalconfig",
+        "buildTransitive/config/analysislevelcorrectness_3_3_3_default_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelcorrectness_3_3_3_minimum.globalconfig",
+        "buildTransitive/config/analysislevelcorrectness_3_3_3_minimum_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelcorrectness_3_3_3_none.globalconfig",
+        "buildTransitive/config/analysislevelcorrectness_3_3_3_none_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelcorrectness_3_3_3_recommended.globalconfig",
+        "buildTransitive/config/analysislevelcorrectness_3_3_3_recommended_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelcorrectness_3_3_all.globalconfig",
+        "buildTransitive/config/analysislevelcorrectness_3_3_all_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelcorrectness_3_3_default.globalconfig",
+        "buildTransitive/config/analysislevelcorrectness_3_3_default_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelcorrectness_3_3_minimum.globalconfig",
+        "buildTransitive/config/analysislevelcorrectness_3_3_minimum_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelcorrectness_3_3_none.globalconfig",
+        "buildTransitive/config/analysislevelcorrectness_3_3_none_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelcorrectness_3_3_recommended.globalconfig",
+        "buildTransitive/config/analysislevelcorrectness_3_3_recommended_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelcorrectness_3_all.globalconfig",
+        "buildTransitive/config/analysislevelcorrectness_3_all_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelcorrectness_3_default.globalconfig",
+        "buildTransitive/config/analysislevelcorrectness_3_default_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelcorrectness_3_minimum.globalconfig",
+        "buildTransitive/config/analysislevelcorrectness_3_minimum_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelcorrectness_3_none.globalconfig",
+        "buildTransitive/config/analysislevelcorrectness_3_none_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelcorrectness_3_recommended.globalconfig",
+        "buildTransitive/config/analysislevelcorrectness_3_recommended_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelcorrectness_4_3_all.globalconfig",
+        "buildTransitive/config/analysislevelcorrectness_4_3_all_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelcorrectness_4_3_default.globalconfig",
+        "buildTransitive/config/analysislevelcorrectness_4_3_default_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelcorrectness_4_3_minimum.globalconfig",
+        "buildTransitive/config/analysislevelcorrectness_4_3_minimum_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelcorrectness_4_3_none.globalconfig",
+        "buildTransitive/config/analysislevelcorrectness_4_3_none_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelcorrectness_4_3_recommended.globalconfig",
+        "buildTransitive/config/analysislevelcorrectness_4_3_recommended_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevellibrary_2_9_8_all.globalconfig",
+        "buildTransitive/config/analysislevellibrary_2_9_8_all_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevellibrary_2_9_8_default.globalconfig",
+        "buildTransitive/config/analysislevellibrary_2_9_8_default_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevellibrary_2_9_8_minimum.globalconfig",
+        "buildTransitive/config/analysislevellibrary_2_9_8_minimum_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevellibrary_2_9_8_none.globalconfig",
+        "buildTransitive/config/analysislevellibrary_2_9_8_none_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevellibrary_2_9_8_recommended.globalconfig",
+        "buildTransitive/config/analysislevellibrary_2_9_8_recommended_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevellibrary_3_3_3_all.globalconfig",
+        "buildTransitive/config/analysislevellibrary_3_3_3_all_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevellibrary_3_3_3_default.globalconfig",
+        "buildTransitive/config/analysislevellibrary_3_3_3_default_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevellibrary_3_3_3_minimum.globalconfig",
+        "buildTransitive/config/analysislevellibrary_3_3_3_minimum_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevellibrary_3_3_3_none.globalconfig",
+        "buildTransitive/config/analysislevellibrary_3_3_3_none_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevellibrary_3_3_3_recommended.globalconfig",
+        "buildTransitive/config/analysislevellibrary_3_3_3_recommended_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevellibrary_3_3_all.globalconfig",
+        "buildTransitive/config/analysislevellibrary_3_3_all_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevellibrary_3_3_default.globalconfig",
+        "buildTransitive/config/analysislevellibrary_3_3_default_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevellibrary_3_3_minimum.globalconfig",
+        "buildTransitive/config/analysislevellibrary_3_3_minimum_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevellibrary_3_3_none.globalconfig",
+        "buildTransitive/config/analysislevellibrary_3_3_none_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevellibrary_3_3_recommended.globalconfig",
+        "buildTransitive/config/analysislevellibrary_3_3_recommended_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevellibrary_3_all.globalconfig",
+        "buildTransitive/config/analysislevellibrary_3_all_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevellibrary_3_default.globalconfig",
+        "buildTransitive/config/analysislevellibrary_3_default_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevellibrary_3_minimum.globalconfig",
+        "buildTransitive/config/analysislevellibrary_3_minimum_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevellibrary_3_none.globalconfig",
+        "buildTransitive/config/analysislevellibrary_3_none_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevellibrary_3_recommended.globalconfig",
+        "buildTransitive/config/analysislevellibrary_3_recommended_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevellibrary_4_3_all.globalconfig",
+        "buildTransitive/config/analysislevellibrary_4_3_all_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevellibrary_4_3_default.globalconfig",
+        "buildTransitive/config/analysislevellibrary_4_3_default_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevellibrary_4_3_minimum.globalconfig",
+        "buildTransitive/config/analysislevellibrary_4_3_minimum_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevellibrary_4_3_none.globalconfig",
+        "buildTransitive/config/analysislevellibrary_4_3_none_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevellibrary_4_3_recommended.globalconfig",
+        "buildTransitive/config/analysislevellibrary_4_3_recommended_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscompatibility_2_9_8_all.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscompatibility_2_9_8_all_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscompatibility_2_9_8_default.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscompatibility_2_9_8_default_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscompatibility_2_9_8_minimum.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscompatibility_2_9_8_minimum_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscompatibility_2_9_8_none.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscompatibility_2_9_8_none_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscompatibility_2_9_8_recommended.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscompatibility_2_9_8_recommended_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscompatibility_3_3_3_all.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscompatibility_3_3_3_all_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscompatibility_3_3_3_default.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscompatibility_3_3_3_default_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscompatibility_3_3_3_minimum.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscompatibility_3_3_3_minimum_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscompatibility_3_3_3_none.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscompatibility_3_3_3_none_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscompatibility_3_3_3_recommended.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscompatibility_3_3_3_recommended_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscompatibility_3_3_all.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscompatibility_3_3_all_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscompatibility_3_3_default.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscompatibility_3_3_default_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscompatibility_3_3_minimum.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscompatibility_3_3_minimum_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscompatibility_3_3_none.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscompatibility_3_3_none_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscompatibility_3_3_recommended.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscompatibility_3_3_recommended_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscompatibility_3_all.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscompatibility_3_all_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscompatibility_3_default.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscompatibility_3_default_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscompatibility_3_minimum.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscompatibility_3_minimum_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscompatibility_3_none.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscompatibility_3_none_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscompatibility_3_recommended.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscompatibility_3_recommended_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscompatibility_4_3_all.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscompatibility_4_3_all_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscompatibility_4_3_default.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscompatibility_4_3_default_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscompatibility_4_3_minimum.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscompatibility_4_3_minimum_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscompatibility_4_3_none.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscompatibility_4_3_none_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscompatibility_4_3_recommended.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscompatibility_4_3_recommended_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscorrectness_2_9_8_all.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscorrectness_2_9_8_all_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscorrectness_2_9_8_default.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscorrectness_2_9_8_default_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscorrectness_2_9_8_minimum.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscorrectness_2_9_8_minimum_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscorrectness_2_9_8_none.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscorrectness_2_9_8_none_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscorrectness_2_9_8_recommended.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscorrectness_2_9_8_recommended_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscorrectness_3_3_3_all.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscorrectness_3_3_3_all_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscorrectness_3_3_3_default.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscorrectness_3_3_3_default_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscorrectness_3_3_3_minimum.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscorrectness_3_3_3_minimum_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscorrectness_3_3_3_none.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscorrectness_3_3_3_none_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscorrectness_3_3_3_recommended.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscorrectness_3_3_3_recommended_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscorrectness_3_3_all.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscorrectness_3_3_all_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscorrectness_3_3_default.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscorrectness_3_3_default_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscorrectness_3_3_minimum.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscorrectness_3_3_minimum_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscorrectness_3_3_none.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscorrectness_3_3_none_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscorrectness_3_3_recommended.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscorrectness_3_3_recommended_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscorrectness_3_all.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscorrectness_3_all_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscorrectness_3_default.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscorrectness_3_default_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscorrectness_3_minimum.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscorrectness_3_minimum_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscorrectness_3_none.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscorrectness_3_none_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscorrectness_3_recommended.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscorrectness_3_recommended_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscorrectness_4_3_all.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscorrectness_4_3_all_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscorrectness_4_3_default.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscorrectness_4_3_default_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscorrectness_4_3_minimum.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscorrectness_4_3_minimum_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscorrectness_4_3_none.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscorrectness_4_3_none_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscorrectness_4_3_recommended.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysiscorrectness_4_3_recommended_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdesign_2_9_8_all.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdesign_2_9_8_all_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdesign_2_9_8_default.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdesign_2_9_8_default_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdesign_2_9_8_minimum.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdesign_2_9_8_minimum_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdesign_2_9_8_none.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdesign_2_9_8_none_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdesign_2_9_8_recommended.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdesign_2_9_8_recommended_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdesign_3_3_3_all.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdesign_3_3_3_all_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdesign_3_3_3_default.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdesign_3_3_3_default_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdesign_3_3_3_minimum.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdesign_3_3_3_minimum_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdesign_3_3_3_none.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdesign_3_3_3_none_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdesign_3_3_3_recommended.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdesign_3_3_3_recommended_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdesign_3_3_all.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdesign_3_3_all_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdesign_3_3_default.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdesign_3_3_default_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdesign_3_3_minimum.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdesign_3_3_minimum_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdesign_3_3_none.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdesign_3_3_none_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdesign_3_3_recommended.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdesign_3_3_recommended_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdesign_3_all.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdesign_3_all_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdesign_3_default.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdesign_3_default_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdesign_3_minimum.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdesign_3_minimum_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdesign_3_none.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdesign_3_none_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdesign_3_recommended.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdesign_3_recommended_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdesign_4_3_all.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdesign_4_3_all_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdesign_4_3_default.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdesign_4_3_default_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdesign_4_3_minimum.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdesign_4_3_minimum_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdesign_4_3_none.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdesign_4_3_none_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdesign_4_3_recommended.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdesign_4_3_recommended_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdocumentation_2_9_8_all.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdocumentation_2_9_8_all_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdocumentation_2_9_8_default.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdocumentation_2_9_8_default_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdocumentation_2_9_8_minimum.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdocumentation_2_9_8_minimum_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdocumentation_2_9_8_none.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdocumentation_2_9_8_none_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdocumentation_2_9_8_recommended.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdocumentation_2_9_8_recommended_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdocumentation_3_3_3_all.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdocumentation_3_3_3_all_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdocumentation_3_3_3_default.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdocumentation_3_3_3_default_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdocumentation_3_3_3_minimum.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdocumentation_3_3_3_minimum_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdocumentation_3_3_3_none.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdocumentation_3_3_3_none_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdocumentation_3_3_3_recommended.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdocumentation_3_3_3_recommended_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdocumentation_3_3_all.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdocumentation_3_3_all_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdocumentation_3_3_default.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdocumentation_3_3_default_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdocumentation_3_3_minimum.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdocumentation_3_3_minimum_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdocumentation_3_3_none.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdocumentation_3_3_none_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdocumentation_3_3_recommended.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdocumentation_3_3_recommended_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdocumentation_3_all.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdocumentation_3_all_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdocumentation_3_default.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdocumentation_3_default_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdocumentation_3_minimum.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdocumentation_3_minimum_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdocumentation_3_none.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdocumentation_3_none_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdocumentation_3_recommended.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdocumentation_3_recommended_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdocumentation_4_3_all.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdocumentation_4_3_all_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdocumentation_4_3_default.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdocumentation_4_3_default_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdocumentation_4_3_minimum.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdocumentation_4_3_minimum_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdocumentation_4_3_none.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdocumentation_4_3_none_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdocumentation_4_3_recommended.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisdocumentation_4_3_recommended_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysislocalization_2_9_8_all.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysislocalization_2_9_8_all_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysislocalization_2_9_8_default.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysislocalization_2_9_8_default_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysislocalization_2_9_8_minimum.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysislocalization_2_9_8_minimum_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysislocalization_2_9_8_none.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysislocalization_2_9_8_none_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysislocalization_2_9_8_recommended.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysislocalization_2_9_8_recommended_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysislocalization_3_3_3_all.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysislocalization_3_3_3_all_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysislocalization_3_3_3_default.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysislocalization_3_3_3_default_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysislocalization_3_3_3_minimum.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysislocalization_3_3_3_minimum_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysislocalization_3_3_3_none.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysislocalization_3_3_3_none_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysislocalization_3_3_3_recommended.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysislocalization_3_3_3_recommended_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysislocalization_3_3_all.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysislocalization_3_3_all_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysislocalization_3_3_default.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysislocalization_3_3_default_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysislocalization_3_3_minimum.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysislocalization_3_3_minimum_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysislocalization_3_3_none.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysislocalization_3_3_none_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysislocalization_3_3_recommended.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysislocalization_3_3_recommended_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysislocalization_3_all.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysislocalization_3_all_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysislocalization_3_default.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysislocalization_3_default_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysislocalization_3_minimum.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysislocalization_3_minimum_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysislocalization_3_none.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysislocalization_3_none_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysislocalization_3_recommended.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysislocalization_3_recommended_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysislocalization_4_3_all.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysislocalization_4_3_all_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysislocalization_4_3_default.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysislocalization_4_3_default_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysislocalization_4_3_minimum.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysislocalization_4_3_minimum_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysislocalization_4_3_none.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysislocalization_4_3_none_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysislocalization_4_3_recommended.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysislocalization_4_3_recommended_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisperformance_2_9_8_all.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisperformance_2_9_8_all_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisperformance_2_9_8_default.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisperformance_2_9_8_default_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisperformance_2_9_8_minimum.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisperformance_2_9_8_minimum_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisperformance_2_9_8_none.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisperformance_2_9_8_none_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisperformance_2_9_8_recommended.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisperformance_2_9_8_recommended_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisperformance_3_3_3_all.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisperformance_3_3_3_all_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisperformance_3_3_3_default.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisperformance_3_3_3_default_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisperformance_3_3_3_minimum.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisperformance_3_3_3_minimum_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisperformance_3_3_3_none.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisperformance_3_3_3_none_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisperformance_3_3_3_recommended.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisperformance_3_3_3_recommended_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisperformance_3_3_all.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisperformance_3_3_all_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisperformance_3_3_default.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisperformance_3_3_default_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisperformance_3_3_minimum.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisperformance_3_3_minimum_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisperformance_3_3_none.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisperformance_3_3_none_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisperformance_3_3_recommended.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisperformance_3_3_recommended_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisperformance_3_all.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisperformance_3_all_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisperformance_3_default.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisperformance_3_default_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisperformance_3_minimum.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisperformance_3_minimum_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisperformance_3_none.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisperformance_3_none_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisperformance_3_recommended.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisperformance_3_recommended_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisperformance_4_3_all.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisperformance_4_3_all_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisperformance_4_3_default.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisperformance_4_3_default_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisperformance_4_3_minimum.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisperformance_4_3_minimum_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisperformance_4_3_none.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisperformance_4_3_none_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisperformance_4_3_recommended.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisperformance_4_3_recommended_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisreleasetracking_2_9_8_all.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisreleasetracking_2_9_8_all_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisreleasetracking_2_9_8_default.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisreleasetracking_2_9_8_default_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisreleasetracking_2_9_8_minimum.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisreleasetracking_2_9_8_minimum_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisreleasetracking_2_9_8_none.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisreleasetracking_2_9_8_none_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisreleasetracking_2_9_8_recommended.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisreleasetracking_2_9_8_recommended_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisreleasetracking_3_3_3_all.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisreleasetracking_3_3_3_all_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisreleasetracking_3_3_3_default.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisreleasetracking_3_3_3_default_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisreleasetracking_3_3_3_minimum.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisreleasetracking_3_3_3_minimum_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisreleasetracking_3_3_3_none.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisreleasetracking_3_3_3_none_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisreleasetracking_3_3_3_recommended.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisreleasetracking_3_3_3_recommended_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisreleasetracking_3_3_all.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisreleasetracking_3_3_all_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisreleasetracking_3_3_default.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisreleasetracking_3_3_default_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisreleasetracking_3_3_minimum.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisreleasetracking_3_3_minimum_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisreleasetracking_3_3_none.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisreleasetracking_3_3_none_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisreleasetracking_3_3_recommended.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisreleasetracking_3_3_recommended_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisreleasetracking_3_all.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisreleasetracking_3_all_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisreleasetracking_3_default.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisreleasetracking_3_default_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisreleasetracking_3_minimum.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisreleasetracking_3_minimum_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisreleasetracking_3_none.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisreleasetracking_3_none_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisreleasetracking_3_recommended.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisreleasetracking_3_recommended_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisreleasetracking_4_3_all.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisreleasetracking_4_3_all_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisreleasetracking_4_3_default.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisreleasetracking_4_3_default_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisreleasetracking_4_3_minimum.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisreleasetracking_4_3_minimum_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisreleasetracking_4_3_none.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisreleasetracking_4_3_none_warnaserror.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisreleasetracking_4_3_recommended.globalconfig",
+        "buildTransitive/config/analysislevelmicrosoftcodeanalysisreleasetracking_4_3_recommended_warnaserror.globalconfig",
+        "documentation/Analyzer Configuration.md",
+        "documentation/Microsoft.CodeAnalysis.Analyzers.md",
+        "documentation/Microsoft.CodeAnalysis.Analyzers.sarif",
+        "editorconfig/AllRulesDefault/.editorconfig",
+        "editorconfig/AllRulesDisabled/.editorconfig",
+        "editorconfig/AllRulesEnabled/.editorconfig",
+        "editorconfig/CorrectnessRulesDefault/.editorconfig",
+        "editorconfig/CorrectnessRulesEnabled/.editorconfig",
+        "editorconfig/DataflowRulesDefault/.editorconfig",
+        "editorconfig/DataflowRulesEnabled/.editorconfig",
+        "editorconfig/LibraryRulesDefault/.editorconfig",
+        "editorconfig/LibraryRulesEnabled/.editorconfig",
+        "editorconfig/MicrosoftCodeAnalysisCompatibilityRulesDefault/.editorconfig",
+        "editorconfig/MicrosoftCodeAnalysisCompatibilityRulesEnabled/.editorconfig",
+        "editorconfig/MicrosoftCodeAnalysisCorrectnessRulesDefault/.editorconfig",
+        "editorconfig/MicrosoftCodeAnalysisCorrectnessRulesEnabled/.editorconfig",
+        "editorconfig/MicrosoftCodeAnalysisDesignRulesDefault/.editorconfig",
+        "editorconfig/MicrosoftCodeAnalysisDesignRulesEnabled/.editorconfig",
+        "editorconfig/MicrosoftCodeAnalysisDocumentationRulesDefault/.editorconfig",
+        "editorconfig/MicrosoftCodeAnalysisDocumentationRulesEnabled/.editorconfig",
+        "editorconfig/MicrosoftCodeAnalysisLocalizationRulesDefault/.editorconfig",
+        "editorconfig/MicrosoftCodeAnalysisLocalizationRulesEnabled/.editorconfig",
+        "editorconfig/MicrosoftCodeAnalysisPerformanceRulesDefault/.editorconfig",
+        "editorconfig/MicrosoftCodeAnalysisPerformanceRulesEnabled/.editorconfig",
+        "editorconfig/MicrosoftCodeAnalysisReleaseTrackingRulesDefault/.editorconfig",
+        "editorconfig/MicrosoftCodeAnalysisReleaseTrackingRulesEnabled/.editorconfig",
+        "editorconfig/PortedFromFxCopRulesDefault/.editorconfig",
+        "editorconfig/PortedFromFxCopRulesEnabled/.editorconfig",
+        "microsoft.codeanalysis.analyzers.3.3.4.nupkg.sha512",
+        "microsoft.codeanalysis.analyzers.nuspec",
+        "rulesets/AllRulesDefault.ruleset",
+        "rulesets/AllRulesDisabled.ruleset",
+        "rulesets/AllRulesEnabled.ruleset",
+        "rulesets/CorrectnessRulesDefault.ruleset",
+        "rulesets/CorrectnessRulesEnabled.ruleset",
+        "rulesets/DataflowRulesDefault.ruleset",
+        "rulesets/DataflowRulesEnabled.ruleset",
+        "rulesets/LibraryRulesDefault.ruleset",
+        "rulesets/LibraryRulesEnabled.ruleset",
+        "rulesets/MicrosoftCodeAnalysisCompatibilityRulesDefault.ruleset",
+        "rulesets/MicrosoftCodeAnalysisCompatibilityRulesEnabled.ruleset",
+        "rulesets/MicrosoftCodeAnalysisCorrectnessRulesDefault.ruleset",
+        "rulesets/MicrosoftCodeAnalysisCorrectnessRulesEnabled.ruleset",
+        "rulesets/MicrosoftCodeAnalysisDesignRulesDefault.ruleset",
+        "rulesets/MicrosoftCodeAnalysisDesignRulesEnabled.ruleset",
+        "rulesets/MicrosoftCodeAnalysisDocumentationRulesDefault.ruleset",
+        "rulesets/MicrosoftCodeAnalysisDocumentationRulesEnabled.ruleset",
+        "rulesets/MicrosoftCodeAnalysisLocalizationRulesDefault.ruleset",
+        "rulesets/MicrosoftCodeAnalysisLocalizationRulesEnabled.ruleset",
+        "rulesets/MicrosoftCodeAnalysisPerformanceRulesDefault.ruleset",
+        "rulesets/MicrosoftCodeAnalysisPerformanceRulesEnabled.ruleset",
+        "rulesets/MicrosoftCodeAnalysisReleaseTrackingRulesDefault.ruleset",
+        "rulesets/MicrosoftCodeAnalysisReleaseTrackingRulesEnabled.ruleset",
+        "rulesets/PortedFromFxCopRulesDefault.ruleset",
+        "rulesets/PortedFromFxCopRulesEnabled.ruleset",
+        "tools/install.ps1",
+        "tools/uninstall.ps1"
+      ]
+    },
+    "Microsoft.CodeAnalysis.Common/4.8.0": {
+      "sha512": "/jR+e/9aT+BApoQJABlVCKnnggGQbvGh7BKq2/wI1LamxC+LbzhcLj4Vj7gXCofl1n4E521YfF9w0WcASGg/KA==",
+      "type": "package",
+      "path": "microsoft.codeanalysis.common/4.8.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "Icon.png",
+        "ThirdPartyNotices.rtf",
+        "lib/net6.0/Microsoft.CodeAnalysis.dll",
+        "lib/net6.0/Microsoft.CodeAnalysis.pdb",
+        "lib/net6.0/Microsoft.CodeAnalysis.xml",
+        "lib/net6.0/cs/Microsoft.CodeAnalysis.resources.dll",
+        "lib/net6.0/de/Microsoft.CodeAnalysis.resources.dll",
+        "lib/net6.0/es/Microsoft.CodeAnalysis.resources.dll",
+        "lib/net6.0/fr/Microsoft.CodeAnalysis.resources.dll",
+        "lib/net6.0/it/Microsoft.CodeAnalysis.resources.dll",
+        "lib/net6.0/ja/Microsoft.CodeAnalysis.resources.dll",
+        "lib/net6.0/ko/Microsoft.CodeAnalysis.resources.dll",
+        "lib/net6.0/pl/Microsoft.CodeAnalysis.resources.dll",
+        "lib/net6.0/pt-BR/Microsoft.CodeAnalysis.resources.dll",
+        "lib/net6.0/ru/Microsoft.CodeAnalysis.resources.dll",
+        "lib/net6.0/tr/Microsoft.CodeAnalysis.resources.dll",
+        "lib/net6.0/zh-Hans/Microsoft.CodeAnalysis.resources.dll",
+        "lib/net6.0/zh-Hant/Microsoft.CodeAnalysis.resources.dll",
+        "lib/net7.0/Microsoft.CodeAnalysis.dll",
+        "lib/net7.0/Microsoft.CodeAnalysis.pdb",
+        "lib/net7.0/Microsoft.CodeAnalysis.xml",
+        "lib/net7.0/cs/Microsoft.CodeAnalysis.resources.dll",
+        "lib/net7.0/de/Microsoft.CodeAnalysis.resources.dll",
+        "lib/net7.0/es/Microsoft.CodeAnalysis.resources.dll",
+        "lib/net7.0/fr/Microsoft.CodeAnalysis.resources.dll",
+        "lib/net7.0/it/Microsoft.CodeAnalysis.resources.dll",
+        "lib/net7.0/ja/Microsoft.CodeAnalysis.resources.dll",
+        "lib/net7.0/ko/Microsoft.CodeAnalysis.resources.dll",
+        "lib/net7.0/pl/Microsoft.CodeAnalysis.resources.dll",
+        "lib/net7.0/pt-BR/Microsoft.CodeAnalysis.resources.dll",
+        "lib/net7.0/ru/Microsoft.CodeAnalysis.resources.dll",
+        "lib/net7.0/tr/Microsoft.CodeAnalysis.resources.dll",
+        "lib/net7.0/zh-Hans/Microsoft.CodeAnalysis.resources.dll",
+        "lib/net7.0/zh-Hant/Microsoft.CodeAnalysis.resources.dll",
+        "lib/netstandard2.0/Microsoft.CodeAnalysis.dll",
+        "lib/netstandard2.0/Microsoft.CodeAnalysis.pdb",
+        "lib/netstandard2.0/Microsoft.CodeAnalysis.xml",
+        "lib/netstandard2.0/cs/Microsoft.CodeAnalysis.resources.dll",
+        "lib/netstandard2.0/de/Microsoft.CodeAnalysis.resources.dll",
+        "lib/netstandard2.0/es/Microsoft.CodeAnalysis.resources.dll",
+        "lib/netstandard2.0/fr/Microsoft.CodeAnalysis.resources.dll",
+        "lib/netstandard2.0/it/Microsoft.CodeAnalysis.resources.dll",
+        "lib/netstandard2.0/ja/Microsoft.CodeAnalysis.resources.dll",
+        "lib/netstandard2.0/ko/Microsoft.CodeAnalysis.resources.dll",
+        "lib/netstandard2.0/pl/Microsoft.CodeAnalysis.resources.dll",
+        "lib/netstandard2.0/pt-BR/Microsoft.CodeAnalysis.resources.dll",
+        "lib/netstandard2.0/ru/Microsoft.CodeAnalysis.resources.dll",
+        "lib/netstandard2.0/tr/Microsoft.CodeAnalysis.resources.dll",
+        "lib/netstandard2.0/zh-Hans/Microsoft.CodeAnalysis.resources.dll",
+        "lib/netstandard2.0/zh-Hant/Microsoft.CodeAnalysis.resources.dll",
+        "microsoft.codeanalysis.common.4.8.0.nupkg.sha512",
+        "microsoft.codeanalysis.common.nuspec"
+      ]
+    },
+    "Microsoft.CodeAnalysis.CSharp/4.8.0": {
+      "sha512": "+3+qfdb/aaGD8PZRCrsdobbzGs1m9u119SkkJt8e/mk3xLJz/udLtS2T6nY27OTXxBBw10HzAbC8Z9w08VyP/g==",
+      "type": "package",
+      "path": "microsoft.codeanalysis.csharp/4.8.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "Icon.png",
+        "ThirdPartyNotices.rtf",
+        "lib/net6.0/Microsoft.CodeAnalysis.CSharp.dll",
+        "lib/net6.0/Microsoft.CodeAnalysis.CSharp.pdb",
+        "lib/net6.0/Microsoft.CodeAnalysis.CSharp.xml",
+        "lib/net6.0/cs/Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "lib/net6.0/de/Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "lib/net6.0/es/Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "lib/net6.0/fr/Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "lib/net6.0/it/Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "lib/net6.0/ja/Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "lib/net6.0/ko/Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "lib/net6.0/pl/Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "lib/net6.0/pt-BR/Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "lib/net6.0/ru/Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "lib/net6.0/tr/Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "lib/net6.0/zh-Hans/Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "lib/net6.0/zh-Hant/Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "lib/net7.0/Microsoft.CodeAnalysis.CSharp.dll",
+        "lib/net7.0/Microsoft.CodeAnalysis.CSharp.pdb",
+        "lib/net7.0/Microsoft.CodeAnalysis.CSharp.xml",
+        "lib/net7.0/cs/Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "lib/net7.0/de/Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "lib/net7.0/es/Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "lib/net7.0/fr/Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "lib/net7.0/it/Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "lib/net7.0/ja/Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "lib/net7.0/ko/Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "lib/net7.0/pl/Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "lib/net7.0/pt-BR/Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "lib/net7.0/ru/Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "lib/net7.0/tr/Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "lib/net7.0/zh-Hans/Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "lib/net7.0/zh-Hant/Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "lib/netstandard2.0/Microsoft.CodeAnalysis.CSharp.dll",
+        "lib/netstandard2.0/Microsoft.CodeAnalysis.CSharp.pdb",
+        "lib/netstandard2.0/Microsoft.CodeAnalysis.CSharp.xml",
+        "lib/netstandard2.0/cs/Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "lib/netstandard2.0/de/Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "lib/netstandard2.0/es/Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "lib/netstandard2.0/fr/Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "lib/netstandard2.0/it/Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "lib/netstandard2.0/ja/Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "lib/netstandard2.0/ko/Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "lib/netstandard2.0/pl/Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "lib/netstandard2.0/pt-BR/Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "lib/netstandard2.0/ru/Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "lib/netstandard2.0/tr/Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "lib/netstandard2.0/zh-Hans/Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "lib/netstandard2.0/zh-Hant/Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "microsoft.codeanalysis.csharp.4.8.0.nupkg.sha512",
+        "microsoft.codeanalysis.csharp.nuspec"
       ]
     },
     "Microsoft.CodeCoverage/17.8.0": {
@@ -4111,6 +5125,36 @@
         "lib/netstandard2.1/Microsoft.Extensions.Hosting.WindowsServices.xml",
         "microsoft.extensions.hosting.windowsservices.8.0.0.nupkg.sha512",
         "microsoft.extensions.hosting.windowsservices.nuspec",
+        "useSharedDesignerContext.txt"
+      ]
+    },
+    "Microsoft.Extensions.Http/8.0.0": {
+      "sha512": "cWz4caHwvx0emoYe7NkHPxII/KkTI8R/LC9qdqJqnKv2poTJ4e2qqPGQqvRoQ5kaSA4FU5IV3qFAuLuOhoqULQ==",
+      "type": "package",
+      "path": "microsoft.extensions.http/8.0.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "Icon.png",
+        "LICENSE.TXT",
+        "PACKAGE.md",
+        "THIRD-PARTY-NOTICES.TXT",
+        "buildTransitive/net461/Microsoft.Extensions.Http.targets",
+        "buildTransitive/net462/_._",
+        "buildTransitive/net6.0/_._",
+        "buildTransitive/netcoreapp2.0/Microsoft.Extensions.Http.targets",
+        "lib/net462/Microsoft.Extensions.Http.dll",
+        "lib/net462/Microsoft.Extensions.Http.xml",
+        "lib/net6.0/Microsoft.Extensions.Http.dll",
+        "lib/net6.0/Microsoft.Extensions.Http.xml",
+        "lib/net7.0/Microsoft.Extensions.Http.dll",
+        "lib/net7.0/Microsoft.Extensions.Http.xml",
+        "lib/net8.0/Microsoft.Extensions.Http.dll",
+        "lib/net8.0/Microsoft.Extensions.Http.xml",
+        "lib/netstandard2.0/Microsoft.Extensions.Http.dll",
+        "lib/netstandard2.0/Microsoft.Extensions.Http.xml",
+        "microsoft.extensions.http.8.0.0.nupkg.sha512",
+        "microsoft.extensions.http.nuspec",
         "useSharedDesignerContext.txt"
       ]
     },
@@ -5491,27 +6535,32 @@
         "system.collections.nuspec"
       ]
     },
-    "System.Collections.Immutable/1.5.0": {
-      "sha512": "EXKiDFsChZW0RjrZ4FYHu9aW6+P4MCgEDCklsVseRfhoO0F+dXeMSsMRAlVXIo06kGJ/zv+2w1a2uc2+kxxSaQ==",
+    "System.Collections.Immutable/7.0.0": {
+      "sha512": "dQPcs0U1IKnBdRDBkrCTi1FoajSTBzLcVTpjO4MBCMC7f4pDOIPzgBoX8JjG7X6uZRJ8EBxsi8+DR1JuwjnzOQ==",
       "type": "package",
-      "path": "system.collections.immutable/1.5.0",
+      "path": "system.collections.immutable/7.0.0",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
+        "Icon.png",
         "LICENSE.TXT",
+        "README.md",
         "THIRD-PARTY-NOTICES.TXT",
-        "lib/netstandard1.0/System.Collections.Immutable.dll",
-        "lib/netstandard1.0/System.Collections.Immutable.xml",
-        "lib/netstandard1.3/System.Collections.Immutable.dll",
-        "lib/netstandard1.3/System.Collections.Immutable.xml",
+        "buildTransitive/net461/System.Collections.Immutable.targets",
+        "buildTransitive/net462/_._",
+        "buildTransitive/net6.0/_._",
+        "buildTransitive/netcoreapp2.0/System.Collections.Immutable.targets",
+        "lib/net462/System.Collections.Immutable.dll",
+        "lib/net462/System.Collections.Immutable.xml",
+        "lib/net6.0/System.Collections.Immutable.dll",
+        "lib/net6.0/System.Collections.Immutable.xml",
+        "lib/net7.0/System.Collections.Immutable.dll",
+        "lib/net7.0/System.Collections.Immutable.xml",
         "lib/netstandard2.0/System.Collections.Immutable.dll",
         "lib/netstandard2.0/System.Collections.Immutable.xml",
-        "lib/portable-net45+win8+wp8+wpa81/System.Collections.Immutable.dll",
-        "lib/portable-net45+win8+wp8+wpa81/System.Collections.Immutable.xml",
-        "system.collections.immutable.1.5.0.nupkg.sha512",
+        "system.collections.immutable.7.0.0.nupkg.sha512",
         "system.collections.immutable.nuspec",
-        "useSharedDesignerContext.txt",
-        "version.txt"
+        "useSharedDesignerContext.txt"
       ]
     },
     "System.Configuration.ConfigurationManager/4.4.0": {
@@ -6620,25 +7669,32 @@
         "system.reflection.extensions.nuspec"
       ]
     },
-    "System.Reflection.Metadata/1.6.0": {
-      "sha512": "COC1aiAJjCoA5GBF+QKL2uLqEBew4JsCkQmoHKbN3TlOZKa2fKLz5CpiRQKDz0RsAOEGsVKqOD5bomsXq/4STQ==",
+    "System.Reflection.Metadata/7.0.0": {
+      "sha512": "MclTG61lsD9sYdpNz9xsKBzjsmsfCtcMZYXz/IUr2zlhaTaABonlr1ESeompTgM+Xk+IwtGYU7/voh3YWB/fWw==",
       "type": "package",
-      "path": "system.reflection.metadata/1.6.0",
+      "path": "system.reflection.metadata/7.0.0",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
+        "Icon.png",
         "LICENSE.TXT",
+        "README.md",
         "THIRD-PARTY-NOTICES.TXT",
-        "lib/netstandard1.1/System.Reflection.Metadata.dll",
-        "lib/netstandard1.1/System.Reflection.Metadata.xml",
+        "buildTransitive/net461/System.Reflection.Metadata.targets",
+        "buildTransitive/net462/_._",
+        "buildTransitive/net6.0/_._",
+        "buildTransitive/netcoreapp2.0/System.Reflection.Metadata.targets",
+        "lib/net462/System.Reflection.Metadata.dll",
+        "lib/net462/System.Reflection.Metadata.xml",
+        "lib/net6.0/System.Reflection.Metadata.dll",
+        "lib/net6.0/System.Reflection.Metadata.xml",
+        "lib/net7.0/System.Reflection.Metadata.dll",
+        "lib/net7.0/System.Reflection.Metadata.xml",
         "lib/netstandard2.0/System.Reflection.Metadata.dll",
         "lib/netstandard2.0/System.Reflection.Metadata.xml",
-        "lib/portable-net45+win8/System.Reflection.Metadata.dll",
-        "lib/portable-net45+win8/System.Reflection.Metadata.xml",
-        "system.reflection.metadata.1.6.0.nupkg.sha512",
+        "system.reflection.metadata.7.0.0.nupkg.sha512",
         "system.reflection.metadata.nuspec",
-        "useSharedDesignerContext.txt",
-        "version.txt"
+        "useSharedDesignerContext.txt"
       ]
     },
     "System.Reflection.Primitives/4.3.0": {
@@ -7765,10 +8821,30 @@
       "path": "../../src/Tracer.Observer/Tracer.Observer.csproj",
       "msbuildProject": "../../src/Tracer.Observer/Tracer.Observer.csproj"
     },
+    "Tracer.Adapters.DDS/1.0.0": {
+      "type": "project",
+      "path": "../../src/Tracer.Adapters.DDS/Tracer.Adapters.DDS.csproj",
+      "msbuildProject": "../../src/Tracer.Adapters.DDS/Tracer.Adapters.DDS.csproj"
+    },
     "Tracer.Adapters.Mock/1.0.0": {
       "type": "project",
       "path": "../../src/Tracer.Adapters.Mock/Tracer.Adapters.Mock.csproj",
       "msbuildProject": "../../src/Tracer.Adapters.Mock/Tracer.Adapters.Mock.csproj"
+    },
+    "Tracer.Adapters.Nas/1.0.0": {
+      "type": "project",
+      "path": "../../src/Tracer.Adapters.Nas/Tracer.Adapters.Nas.csproj",
+      "msbuildProject": "../../src/Tracer.Adapters.Nas/Tracer.Adapters.Nas.csproj"
+    },
+    "Tracer.Adapters.SharedMemory/1.0.0": {
+      "type": "project",
+      "path": "../../src/Tracer.Adapters.SharedMemory/Tracer.Adapters.SharedMemory.csproj",
+      "msbuildProject": "../../src/Tracer.Adapters.SharedMemory/Tracer.Adapters.SharedMemory.csproj"
+    },
+    "Tracer.Adapters.Sync/1.0.0": {
+      "type": "project",
+      "path": "../../src/Tracer.Adapters.Sync/Tracer.Adapters.Sync.csproj",
+      "msbuildProject": "../../src/Tracer.Adapters.Sync/Tracer.Adapters.Sync.csproj"
     },
     "Tracer.Aggregator/1.0.0": {
       "type": "project",
@@ -7831,7 +8907,11 @@
       "FluentAssertions >= 6.12.0",
       "Microsoft.Extensions.Logging.Abstractions >= 8.0.0",
       "Microsoft.NET.Test.Sdk >= 17.8.0",
+      "Tracer.Adapters.DDS >= 1.0.0",
       "Tracer.Adapters.Mock >= 1.0.0",
+      "Tracer.Adapters.Nas >= 1.0.0",
+      "Tracer.Adapters.SharedMemory >= 1.0.0",
+      "Tracer.Adapters.Sync >= 1.0.0",
       "Tracer.Aggregator >= 1.0.0",
       "Tracer.Bundle >= 1.0.0",
       "Tracer.Core >= 1.0.0",
@@ -7884,8 +8964,20 @@
         "net8.0": {
           "targetAlias": "net8.0",
           "projectReferences": {
+            "D:\\Work\\Tracer\\src\\Tracer.Adapters.DDS\\Tracer.Adapters.DDS.csproj": {
+              "projectPath": "D:\\Work\\Tracer\\src\\Tracer.Adapters.DDS\\Tracer.Adapters.DDS.csproj"
+            },
             "D:\\Work\\Tracer\\src\\Tracer.Adapters.Mock\\Tracer.Adapters.Mock.csproj": {
               "projectPath": "D:\\Work\\Tracer\\src\\Tracer.Adapters.Mock\\Tracer.Adapters.Mock.csproj"
+            },
+            "D:\\Work\\Tracer\\src\\Tracer.Adapters.Nas\\Tracer.Adapters.Nas.csproj": {
+              "projectPath": "D:\\Work\\Tracer\\src\\Tracer.Adapters.Nas\\Tracer.Adapters.Nas.csproj"
+            },
+            "D:\\Work\\Tracer\\src\\Tracer.Adapters.SharedMemory\\Tracer.Adapters.SharedMemory.csproj": {
+              "projectPath": "D:\\Work\\Tracer\\src\\Tracer.Adapters.SharedMemory\\Tracer.Adapters.SharedMemory.csproj"
+            },
+            "D:\\Work\\Tracer\\src\\Tracer.Adapters.Sync\\Tracer.Adapters.Sync.csproj": {
+              "projectPath": "D:\\Work\\Tracer\\src\\Tracer.Adapters.Sync\\Tracer.Adapters.Sync.csproj"
             },
             "D:\\Work\\Tracer\\src\\Tracer.Agent\\Tracer.Agent.csproj": {
               "projectPath": "D:\\Work\\Tracer\\src\\Tracer.Agent\\Tracer.Agent.csproj"
@@ -7972,6 +9064,7 @@
           }
         },
         "centralPackageVersions": {
+          "CycloneDDS.NET": "0.2.2",
           "DuckDB.NET.Bindings.Full": "1.0.2",
           "DuckDB.NET.Data": "1.0.2",
           "FluentAssertions": "6.12.0",
@@ -7982,6 +9075,7 @@
           "Microsoft.Extensions.Configuration.Json": "8.0.0",
           "Microsoft.Extensions.Hosting": "8.0.0",
           "Microsoft.Extensions.Hosting.WindowsServices": "8.0.0",
+          "Microsoft.Extensions.Http": "8.0.0",
           "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
           "Microsoft.Extensions.Options": "8.0.0",
           "Microsoft.Extensions.Options.DataAnnotations": "8.0.0",
@@ -8024,6 +9118,10 @@
   },
   "centralTransitiveDependencyGroups": {
     "net8.0": {
+      "CycloneDDS.NET": {
+        "include": "Runtime, Compile, Native, BuildTransitive",
+        "version": "[0.2.2, )"
+      },
       "DuckDB.NET.Bindings.Full": {
         "include": "Runtime, Compile, Native, BuildTransitive",
         "version": "[1.0.2, )"
@@ -8057,6 +9155,10 @@
         "version": "[8.0.0, )"
       },
       "Microsoft.Extensions.Hosting.WindowsServices": {
+        "include": "Runtime, Compile, Native, BuildTransitive",
+        "version": "[8.0.0, )"
+      },
+      "Microsoft.Extensions.Http": {
         "include": "Runtime, Compile, Native, BuildTransitive",
         "version": "[8.0.0, )"
       },

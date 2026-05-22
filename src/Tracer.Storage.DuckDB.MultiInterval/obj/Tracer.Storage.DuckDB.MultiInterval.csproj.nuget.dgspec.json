@@ -64,6 +64,7 @@
             }
           },
           "centralPackageVersions": {
+            "CycloneDDS.NET": "0.2.2",
             "DuckDB.NET.Bindings.Full": "1.0.2",
             "DuckDB.NET.Data": "1.0.2",
             "FluentAssertions": "6.12.0",
@@ -74,6 +75,7 @@
             "Microsoft.Extensions.Configuration.Json": "8.0.0",
             "Microsoft.Extensions.Hosting": "8.0.0",
             "Microsoft.Extensions.Hosting.WindowsServices": "8.0.0",
+            "Microsoft.Extensions.Http": "8.0.0",
             "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
             "Microsoft.Extensions.Options": "8.0.0",
             "Microsoft.Extensions.Options.DataAnnotations": "8.0.0",
@@ -230,6 +232,7 @@
             }
           },
           "centralPackageVersions": {
+            "CycloneDDS.NET": "0.2.2",
             "DuckDB.NET.Bindings.Full": "1.0.2",
             "DuckDB.NET.Data": "1.0.2",
             "FluentAssertions": "6.12.0",
@@ -240,6 +243,7 @@
             "Microsoft.Extensions.Configuration.Json": "8.0.0",
             "Microsoft.Extensions.Hosting": "8.0.0",
             "Microsoft.Extensions.Hosting.WindowsServices": "8.0.0",
+            "Microsoft.Extensions.Http": "8.0.0",
             "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
             "Microsoft.Extensions.Options": "8.0.0",
             "Microsoft.Extensions.Options.DataAnnotations": "8.0.0",
@@ -329,6 +333,7 @@
         "net8.0": {
           "targetAlias": "net8.0",
           "centralPackageVersions": {
+            "CycloneDDS.NET": "0.2.2",
             "DuckDB.NET.Bindings.Full": "1.0.2",
             "DuckDB.NET.Data": "1.0.2",
             "FluentAssertions": "6.12.0",
@@ -339,6 +344,7 @@
             "Microsoft.Extensions.Configuration.Json": "8.0.0",
             "Microsoft.Extensions.Hosting": "8.0.0",
             "Microsoft.Extensions.Hosting.WindowsServices": "8.0.0",
+            "Microsoft.Extensions.Http": "8.0.0",
             "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
             "Microsoft.Extensions.Options": "8.0.0",
             "Microsoft.Extensions.Options.DataAnnotations": "8.0.0",
@@ -455,6 +461,7 @@
             }
           },
           "centralPackageVersions": {
+            "CycloneDDS.NET": "0.2.2",
             "DuckDB.NET.Bindings.Full": "1.0.2",
             "DuckDB.NET.Data": "1.0.2",
             "FluentAssertions": "6.12.0",
@@ -465,6 +472,7 @@
             "Microsoft.Extensions.Configuration.Json": "8.0.0",
             "Microsoft.Extensions.Hosting": "8.0.0",
             "Microsoft.Extensions.Hosting.WindowsServices": "8.0.0",
+            "Microsoft.Extensions.Http": "8.0.0",
             "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
             "Microsoft.Extensions.Options": "8.0.0",
             "Microsoft.Extensions.Options.DataAnnotations": "8.0.0",
@@ -580,6 +588,7 @@
             }
           },
           "centralPackageVersions": {
+            "CycloneDDS.NET": "0.2.2",
             "DuckDB.NET.Bindings.Full": "1.0.2",
             "DuckDB.NET.Data": "1.0.2",
             "FluentAssertions": "6.12.0",
@@ -590,6 +599,7 @@
             "Microsoft.Extensions.Configuration.Json": "8.0.0",
             "Microsoft.Extensions.Hosting": "8.0.0",
             "Microsoft.Extensions.Hosting.WindowsServices": "8.0.0",
+            "Microsoft.Extensions.Http": "8.0.0",
             "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
             "Microsoft.Extensions.Options": "8.0.0",
             "Microsoft.Extensions.Options.DataAnnotations": "8.0.0",

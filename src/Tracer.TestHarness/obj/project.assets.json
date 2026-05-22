@@ -2616,21 +2616,21 @@
       ]
     },
     "Microsoft.AspNetCore.Mvc.Testing/8.0.0": {
-      "sha512": "PWPgPAlRdMEkVCHHic/Yy6t37PsPsymY1WkEH0TnjTeIlYu+g8Qfw1axj/ZmNDLvhKdiUNC2E2thHrYf2s7Yhg==",
+      "sha512": "placeholder",
       "type": "package",
       "path": "microsoft.aspnetcore.mvc.testing/8.0.0",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
         "Icon.png",
+        "Microsoft.AspNetCore.Mvc.Testing.nuspec",
         "THIRD-PARTY-NOTICES.TXT",
         "build/net8.0/Microsoft.AspNetCore.Mvc.Testing.targets",
         "buildTransitive/net8.0/Microsoft.AspNetCore.Mvc.Testing.targets",
         "lib/net8.0/Microsoft.AspNetCore.Mvc.Testing.dll",
         "lib/net8.0/Microsoft.AspNetCore.Mvc.Testing.xml",
-        "microsoft.aspnetcore.mvc.testing.8.0.0.nupkg.sha512",
-        "microsoft.aspnetcore.mvc.testing.nuspec",
-        "tasks/netstandard2.0/Microsoft.AspNetCore.Mvc.Testing.Tasks.dll"
+        "tasks/netstandard2.0/Microsoft.AspNetCore.Mvc.Testing.Tasks.dll",
+        "tasks/netstandard2.0/Microsoft.AspNetCore.Mvc.Testing.Tasks.dll.bak"
       ]
     },
     "Microsoft.AspNetCore.OpenApi/8.0.0": {
@@ -7068,6 +7068,7 @@
           }
         },
         "centralPackageVersions": {
+          "CycloneDDS.NET": "0.2.2",
           "DuckDB.NET.Bindings.Full": "1.0.2",
           "DuckDB.NET.Data": "1.0.2",
           "FluentAssertions": "6.12.0",
@@ -7078,6 +7079,7 @@
           "Microsoft.Extensions.Configuration.Json": "8.0.0",
           "Microsoft.Extensions.Hosting": "8.0.0",
           "Microsoft.Extensions.Hosting.WindowsServices": "8.0.0",
+          "Microsoft.Extensions.Http": "8.0.0",
           "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
           "Microsoft.Extensions.Options": "8.0.0",
           "Microsoft.Extensions.Options.DataAnnotations": "8.0.0",
