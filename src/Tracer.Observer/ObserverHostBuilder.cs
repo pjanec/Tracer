@@ -189,6 +189,19 @@ public static class ObserverHostBuilder
         builder.Services.AddSingleton<EntitySlowStateService>();
         builder.Services.AddSingleton<EntityFastStateService>();
 
+        // ── Trigger evaluation service (Phase 8) ──────────────────────────────
+        builder.Services.AddSingleton<TriggerEvalService>();
+
+        // ── Lifecycle classification (Phase 8) ────────────────────────────────
+        builder.Services.AddSingleton(sp =>
+        {
+            var obs = sp.GetRequiredService<ObserverConfig>();
+            return obs.LifecycleClassification;
+        });
+        builder.Services.AddSingleton<ILifecycleTopicClassifier>(sp =>
+            new ConfigurableLifecycleTopicClassifier(
+                sp.GetRequiredService<LifecycleClassificationConfig>()));
+
         // ── Live streaming ────────────────────────────────────────────────────
         builder.Services.AddSingleton<SseStreamingOptions>();
         builder.Services.AddSingleton<SseConnectionManager>();
@@ -259,6 +272,8 @@ public static class ObserverHostBuilder
         EntityEndpoints.Map(app);
         AnnotationEndpoints.Map(app);
         SavedViewEndpoints.Map(app);
+        TriggerEvalEndpoints.Map(app);
+        ConfigEndpoints.Map(app);
 
         // ── SPA static files (if present) ─────────────────────────────────────
         var spaPath = Path.Combine(app.Environment.ContentRootPath, "wwwroot");

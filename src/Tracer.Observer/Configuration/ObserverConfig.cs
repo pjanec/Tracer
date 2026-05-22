@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Tracer.WebApi.Lifecycle;
 
 namespace Tracer.Observer.Configuration;
 
@@ -34,6 +35,9 @@ public sealed class ObserverConfig
 
     /// <summary>Controls how many completed intervals are included in live queries.</summary>
     public LiveQueryWindowConfig LiveQueryWindow { get; set; } = new();
+
+    /// <summary>Configures lifecycle topic classification (spawn/ownership/destruction).</summary>
+    public LifecycleClassificationConfig LifecycleClassification { get; set; } = new();
 }
 
 public sealed class LiveQueryWindowConfig

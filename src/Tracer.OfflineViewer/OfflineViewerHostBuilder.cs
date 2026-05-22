@@ -83,6 +83,14 @@ public static class OfflineViewerHostBuilder
         // ── Saved Views (Phase 8) ─────────────────────────────────────────────────
         builder.Services.AddSingleton<ISavedViewStore, LazyBundleSavedViewStore>();
 
+        // ── Trigger evaluation service (Phase 8) ──────────────────────────────
+        builder.Services.AddSingleton<TriggerEvalService>();
+
+        // ── Lifecycle classification (Phase 8) ────────────────────────────────
+        builder.Services.AddSingleton(config.LifecycleClassification);
+        builder.Services.AddSingleton<ILifecycleTopicClassifier>(
+            new ConfigurableLifecycleTopicClassifier(config.LifecycleClassification));
+
         // Observer state reporter — inert instance (no events in bundle mode)
         builder.Services.AddSingleton<ObserverStateReporter>(_ => new InertObserverStateReporter());
         builder.Services.AddSingleton<ILiveStatusProvider>(sp =>
@@ -119,6 +127,8 @@ public static class OfflineViewerHostBuilder
         EntityEndpoints.Map(app);
         AnnotationEndpoints.Map(app);
         SavedViewEndpoints.Map(app);
+        TriggerEvalEndpoints.Map(app);
+        ConfigEndpoints.Map(app);
 
         // SPA fallback
         app.MapFallbackToFile("index.html");
