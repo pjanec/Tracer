@@ -17,6 +17,7 @@
     <ProjectReference Include="..\Tracer.Bundle\Tracer.Bundle.csproj" />
     <ProjectReference Include="..\Tracer.Adapters.Mock\Tracer.Adapters.Mock.csproj" />
     <ProjectReference Include="..\Tracer.Storage.Annotations\Tracer.Storage.Annotations.csproj" />
+    <ProjectReference Include="..\Tracer.Storage.SavedViews\Tracer.Storage.SavedViews.csproj" />
   </ItemGroup>
 
   <ItemGroup>

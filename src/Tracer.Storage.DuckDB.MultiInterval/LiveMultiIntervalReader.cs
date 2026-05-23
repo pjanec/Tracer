@@ -196,7 +196,7 @@ public class LiveMultiIntervalReader : IAsyncDisposable
 
         IReadOnlyList<string> readOnlyAliases = aliases.AsReadOnly();
         var pooled = new PooledMultiIntervalConnection(
-            this, conn, manager, readOnlyAliases, snapshot, hasActive: true);
+            this, conn, manager, readOnlyAliases, null, snapshot, hasActive: true);
         return (pooled, readOnlyAliases);
     }
 
@@ -217,7 +217,7 @@ public class LiveMultiIntervalReader : IAsyncDisposable
 
         // Pass null manager — workers do not own ATTACHments and must not DETACH on dispose.
         return new PooledMultiIntervalConnection(
-            this, conn, null, aliases, snapshot, hasActive: true);
+            this, conn, null, aliases, null, snapshot, hasActive: true);
     }
 
     /// <summary>
@@ -234,6 +234,7 @@ public class LiveMultiIntervalReader : IAsyncDisposable
 
         var manager = new AttachedDatabaseManager(conn);
         var aliases = new List<string>();
+        var slowStateAliases = new List<string>();
 
         foreach (var ivref in completed)
         {
@@ -242,10 +243,25 @@ public class LiveMultiIntervalReader : IAsyncDisposable
                 $"iv_{ivref.Directory.Timestamp.Value}");
             var alias = await manager.AttachAsync(file, ct);
             aliases.Add(alias);
+
+            // If slow_state lives in a separate file (bundle mode), attach it independently
+            var ssPath = ivref.Directory.SlowStateDbPath;
+            if (!string.IsNullOrEmpty(ssPath) &&
+                !string.Equals(ssPath, ivref.Directory.EventsDbPath, StringComparison.OrdinalIgnoreCase) &&
+                File.Exists(ssPath))
+            {
+                var ssFile = new IntervalDbFile(ssPath, $"ss_{ivref.Directory.Timestamp.Value}");
+                var ssAlias = await manager.AttachAsync(ssFile, ct);
+                slowStateAliases.Add(ssAlias);
+            }
+            else
+            {
+                slowStateAliases.Add(alias);
+            }
         }
 
         return new PooledMultiIntervalConnection(
-            this, conn, manager, aliases, snapshot, hasActive: false);
+            this, conn, manager, aliases, slowStateAliases, snapshot, hasActive: false);
     }
 }
 
@@ -258,6 +274,7 @@ public sealed class PooledMultiIntervalConnection : IAsyncDisposable
     private readonly DuckDBConnection _connection;
     private readonly AttachedDatabaseManager? _manager; // null for worker slots
     private readonly IReadOnlyList<string> _aliases;
+    private readonly IReadOnlyList<string>? _slowStateAliases;
     private readonly bool _hasActive;
 
     public DuckDBConnection Connection => _connection;
@@ -268,6 +285,7 @@ public sealed class PooledMultiIntervalConnection : IAsyncDisposable
         DuckDBConnection connection,
         AttachedDatabaseManager? manager,
         IReadOnlyList<string> aliases,
+        IReadOnlyList<string>? slowStateAliases,
         IntervalSetSnapshot? issuingSnapshot,
         bool hasActive)
     {
@@ -275,6 +293,7 @@ public sealed class PooledMultiIntervalConnection : IAsyncDisposable
         _connection = connection;
         _manager = manager;
         _aliases = aliases;
+        _slowStateAliases = slowStateAliases;
         IssuingSnapshot = issuingSnapshot;
         _hasActive = hasActive;
     }
@@ -299,9 +318,10 @@ public sealed class PooledMultiIntervalConnection : IAsyncDisposable
     /// </summary>
     public string BuildSlowStateUnionSql(string whereClause = "", string orderByClause = "", int? limit = null)
     {
+        var effectiveAliases = _slowStateAliases ?? _aliases;
         var parts = new List<string>();
         if (_hasActive) parts.Add($"SELECT * FROM main.slow_state {whereClause}");
-        foreach (var alias in _aliases) parts.Add($"SELECT * FROM {alias}.slow_state {whereClause}");
+        foreach (var alias in effectiveAliases) parts.Add($"SELECT * FROM {alias}.slow_state {whereClause}");
         if (parts.Count == 0) return "SELECT NULL WHERE FALSE";
         var sql = string.Join("\nUNION ALL\n", parts);
         if (!string.IsNullOrEmpty(orderByClause)) sql += "\n" + orderByClause;

@@ -11,6 +11,7 @@ using Tracer.Bundle.Packaging;
 using Tracer.Core.Abstractions;
 using Tracer.Core.Time;
 using Tracer.Storage.Annotations;
+using Tracer.Storage.SavedViews;
 
 namespace Tracer.Aggregator;
 
@@ -23,17 +24,20 @@ public sealed class AggregationOrchestrator : IAggregationOrchestrator
     private readonly ITelemetryStorageReader _nasReader;
     private readonly ILogger<AggregationOrchestrator> _logger;
     private readonly IAnnotationStore? _annotationStore;
+    private readonly ISavedViewStore? _savedViewStore;
 
     public AggregationOrchestrator(
         ITelemetryStorageReader nasReader,
         ILogger<AggregationOrchestrator> logger,
-        IAnnotationStore? annotationStore = null)
+        IAnnotationStore? annotationStore = null,
+        ISavedViewStore? savedViewStore = null)
     {
         ArgumentNullException.ThrowIfNull(nasReader);
         ArgumentNullException.ThrowIfNull(logger);
         _nasReader = nasReader;
         _logger = logger;
         _annotationStore = annotationStore;
+        _savedViewStore = savedViewStore;
     }
 
     public AggregationOrchestrator(ITelemetryStorageReader nasReader)
@@ -115,6 +119,14 @@ public sealed class AggregationOrchestrator : IAggregationOrchestrator
                 await AnnotationsExporter.ExportAsync(
                     _annotationStore, request.SessionId ?? "", staging.BundleStagingPath, ct);
                 progress?.Report(AggregationStage.AnnotationsExported, "Annotations exported into bundle");
+            }
+
+            // 7c. Export saved views (if live store provided)
+            if (_savedViewStore is not null)
+            {
+                await SavedViewsExporter.ExportAsync(
+                    _savedViewStore, request.SessionId ?? "", staging.BundleStagingPath, ct);
+                progress?.Report(AggregationStage.SavedViewsExported, "Saved views exported into bundle");
             }
 
             // 8. Build manifest (computes SHA-256 per file) and write checksums / manifest.json

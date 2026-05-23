@@ -18,6 +18,7 @@ public sealed class SharedMemoryTransport : IAgentTransport
     private readonly ILogger<SharedMemoryTransport> _logger;
 
     private long _totalReceived;
+    private long _totalDropped;
     private WallclockTime _lastReceivedAt;
 
     public SharedMemoryTransport(SharedMemoryConfig config, ILogger<SharedMemoryTransport> logger)
@@ -53,6 +54,8 @@ public sealed class SharedMemoryTransport : IAgentTransport
                 _lastReceivedAt = WallclockTime.FromDateTimeOffset(DateTimeOffset.UtcNow);
                 yield return record;
             }
+            // Update drop count after processing each batch
+            Interlocked.Exchange(ref _totalDropped, reader.GetDroppedCount());
         }
     }
 
@@ -62,7 +65,7 @@ public sealed class SharedMemoryTransport : IAgentTransport
         PendingCount = 0,
         Capacity = (int)Math.Min(_config.CapacityBytes, int.MaxValue),
         TotalReceived = Interlocked.Read(ref _totalReceived),
-        TotalDropped = 0L,
+        TotalDropped = Interlocked.Read(ref _totalDropped),
         LastReceivedAt = _lastReceivedAt,
     };
 

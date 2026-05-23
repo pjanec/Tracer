@@ -35,6 +35,9 @@ public enum AggregationStage
     /// <summary>Annotations (user notes) have been exported into the bundle's annotations/ directory.</summary>
     AnnotationsExported,
 
+    /// <summary>Saved views have been exported into the bundle's saved_views/ directory.</summary>
+    SavedViewsExported,
+
     /// <summary>Checksums and manifest have been computed and written.</summary>
     ManifestWritten,
 

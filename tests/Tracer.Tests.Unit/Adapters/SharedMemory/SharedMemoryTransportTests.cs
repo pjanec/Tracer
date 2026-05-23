@@ -89,6 +89,17 @@ public sealed class SharedMemoryTransportTests : IDisposable
     }
 
     [Fact]
+    public void GetHealth_Initially_ReturnsTotalDroppedZero()
+    {
+        var transport = new SharedMemoryTransport(MakeConfig(),
+            NullLogger<SharedMemoryTransport>.Instance);
+
+        var health = transport.GetHealth();
+
+        health.TotalDropped.Should().Be(0L);
+    }
+
+    [Fact]
     public async Task ReadAsync_CancelledImmediately_DoesNotThrow()
     {
         using var cts = new CancellationTokenSource();
