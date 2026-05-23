@@ -46,6 +46,8 @@
 | DT-039 | P2 | BATCH-53-REVIEW | `DdsTraceContextExtractorTests` is missing a cache-hit path test — second call with same traceId/parentEventId should return the cached `TraceContext` without allocating a new one. | BATCH-55+ | Open |
 | DT-040 | P2 | BATCH-53-REVIEW | `SharedMemoryRingBuffer` padding-marker wraparound test missing — ring wraps around to slot 0, padding marker (0xDEAD) is written in the slot immediately before the wrap, and a read past the wrap still returns the correct record. | BATCH-55+ | Open |
 | DT-041 | P2 | BATCH-54-REVIEW | `AdapterRegistry.BuildDdsTopicRegistry` hardcodes `Kind = DdsTopicKind.Event` and `EntityIdField = "entityId"` for every topic in config. `DdsTopicSubscription` currently has no Kind or field-mapping properties, so this is by design, but it means the runtime registry cannot distinguish Event/SlowState/FastState topics from config. Extend `DdsTopicSubscription` with optional `Kind` and `EntityIdField` properties and honour them in `BuildDdsTopicRegistry`. | Future | Open |
+| DT-042 | P2 | BATCH-55-REVIEW | `NasStorageReader.ExecuteFileOp<T>` uses `Thread.Sleep` for retry delays. Replace with `Task.Delay` (making the method `async Task<T>`) to avoid blocking thread pool threads in async callers. | Future | Open |
+| DT-043 | P2 | BATCH-55-REVIEW | `UploadIntentDispatcher.WaitForPendingAsync` reads `_pendingCount` as a plain field read inside a polling loop. Use `Volatile.Read(ref _pendingCount)` for explicit memory ordering guarantee across architectures. Low-risk on .NET x86/x64 but not portable. | Future | Open |
 
 > P1 = Critical (blocks next batch), P2 = Should fix soon, P3 = Nice to fix eventually  
 > Resolved items are marked ✅ (never deleted)

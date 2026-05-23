@@ -280,7 +280,7 @@
 - [x] **TRC-P11-005** `Tracer.AdapterSelection` — Adapter Registry and DI [details](./TASK-DETAIL.md#trc-p11-005--traceradapterselection-assembly--adapter-registry-and-di)
 - [x] **TRC-P11-006** Configuration Additions — `appsettings.json` Adapter Sections [details](./TASK-DETAIL.md#trc-p11-006--configuration-additions--appsetingsjson-adapter-sections)
 - [x] **TRC-P11-007** Hardening — Resource Limits, Back-Pressure, and Error Recovery [details](./TASK-DETAIL.md#trc-p11-007--hardening--resource-limits-back-pressure-and-error-recovery)
-- [ ] **TRC-P11-008** Integration Test Infrastructure — `Tracer.Tests.Integration.Real` [details](./TASK-DETAIL.md#trc-p11-008--integration-test-infrastructure--tracertestsintegrationreal)
-- [ ] **TRC-P11-009** Soak Test and Final Validation [details](./TASK-DETAIL.md#trc-p11-009--soak-test-and-final-validation)
+- [x] **TRC-P11-008** Integration Test Infrastructure — `Tracer.Tests.Integration.Real` [details](./TASK-DETAIL.md#trc-p11-008--integration-test-infrastructure--tracertestsintegrationreal)
+- [x] **TRC-P11-009** Soak Test and Final Validation [details](./TASK-DETAIL.md#trc-p11-009--soak-test-and-final-validation)
 
 <!-- PHASE 11 TRACKER END -->

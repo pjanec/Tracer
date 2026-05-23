@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Tracer.Adapters.DDS\Tracer.Adapters.DDS.csproj" />
+    <ProjectReference Include="..\..\src\Tracer.Adapters.SharedMemory\Tracer.Adapters.SharedMemory.csproj" />
+    <ProjectReference Include="..\..\src\Tracer.Adapters.Sync\Tracer.Adapters.Sync.csproj" />
+    <ProjectReference Include="..\..\src\Tracer.Adapters.Nas\Tracer.Adapters.Nas.csproj" />
+    <ProjectReference Include="..\..\src\Tracer.AdapterSelection\Tracer.AdapterSelection.csproj" />
+    <ProjectReference Include="..\..\src\Tracer.Agent\Tracer.Agent.csproj" />
+    <ProjectReference Include="..\..\src\Tracer.Bundle\Tracer.Bundle.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="FluentAssertions" />
+  </ItemGroup>
+
+</Project>
