@@ -23,6 +23,9 @@ const editLabel = ref('');
 const editSql = ref('');
 const editDesc = ref('');
 
+const paramQueryId = ref<string | null>(null);
+const paramValues = ref<Record<string, string>>({});
+
 onMounted(() => load());
 
 const allTags = computed(() => {
@@ -80,13 +83,45 @@ function cancelEdit() {
   editingId.value = null;
 }
 
-async function runQuery(q: SavedQueryDto) {
-  await api.recordSavedQueryRun(q.savedQueryId);
-  void router.push({
-    name: 'sql-console',
-    params: { sessionId: 'default' },
-    query: { sql: q.sql },
+function runQuery(q: SavedQueryDto) {
+  if (q.parameters.length > 0) {
+    // Initialize param values from defaults
+    paramValues.value = Object.fromEntries(
+      q.parameters.map(p => [p.name, p.defaultValueText ?? ''])
+    );
+    paramQueryId.value = q.savedQueryId;
+    return;
+  }
+  void executeQuery(q.sql, q.savedQueryId);
+}
+
+async function executeQuery(sql: string, savedQueryId: string) {
+  await api.recordSavedQueryRun(savedQueryId);
+  void router.push({ name: 'sql-console', params: { sessionId: 'default' }, query: { sql } });
+}
+
+const NUMERIC_TYPES = /^(int|bigint|double|float|numeric)/i;
+
+const paramRunDisabled = computed(() => {
+  const q = filtered.value.find(q => q.savedQueryId === paramQueryId.value);
+  if (!q) return true;
+  return q.parameters.some(p => {
+    const val = paramValues.value[p.name] ?? '';
+    return NUMERIC_TYPES.test(p.duckType) && isNaN(Number(val));
   });
+});
+
+async function submitParamRun() {
+  const q = filtered.value.find(q => q.savedQueryId === paramQueryId.value);
+  if (!q) return;
+  // Substitute param values into the SQL
+  let sql = q.sql;
+  for (const p of q.parameters) {
+    const val = paramValues.value[p.name] ?? p.defaultValueText ?? '';
+    sql = sql.replaceAll(`$${p.name}`, val);
+  }
+  paramQueryId.value = null;
+  await executeQuery(sql, q.savedQueryId);
 }
 
 async function cloneQuery(q: SavedQueryDto) {
@@ -188,6 +223,35 @@ async function deleteQuery(q: SavedQueryDto) {
             >
               Delete
             </button>
+          </div>
+          <!-- Parameter form (shown when Run was clicked on a query with parameters) -->
+          <div v-if="paramQueryId === q.savedQueryId && q.parameters.length > 0" class="saved-queries-view__param-form">
+            <div
+              v-for="param in q.parameters"
+              :key="param.name"
+              class="saved-queries-view__param-row"
+            >
+              <label class="saved-queries-view__param-label">
+                {{ param.name }}
+                <span class="saved-queries-view__param-type">{{ param.duckType }}</span>
+              </label>
+              <input
+                v-model="paramValues[param.name]"
+                type="text"
+                class="saved-queries-view__form-input"
+                :placeholder="param.defaultValueText"
+              />
+            </div>
+            <div class="saved-queries-view__form-actions">
+              <button
+                class="saved-queries-view__btn saved-queries-view__btn--primary"
+                :disabled="paramRunDisabled"
+                @click="submitParamRun"
+              >
+                Execute
+              </button>
+              <button class="saved-queries-view__btn" @click="paramQueryId = null">Cancel</button>
+            </div>
           </div>
         </template>
 
@@ -333,6 +397,34 @@ async function deleteQuery(q: SavedQueryDto) {
     &:disabled { opacity: 0.4; cursor: not-allowed; }
     &--primary { background: var(--c-accent); color: white; border-color: var(--c-accent); &:hover:not(:disabled) { opacity: 0.85; } }
     &--danger { color: var(--c-danger, #f87171); }
+  }
+
+  &__param-form {
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    background: var(--c-bg-subtle, #f8f8f8);
+    border-radius: 4px;
+    border: 1px solid var(--c-bg-subtle, #ddd);
+  }
+
+  &__param-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+
+  &__param-label {
+    min-width: 10rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+  }
+
+  &__param-type {
+    font-size: 0.75rem;
+    color: var(--c-text-muted, #888);
+    font-family: monospace;
+    margin-left: 0.25rem;
   }
 }
 </style>
