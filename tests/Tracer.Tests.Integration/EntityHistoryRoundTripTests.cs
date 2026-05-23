@@ -15,7 +15,7 @@ public sealed class EntityHistoryRoundTripTests : IAsyncLifetime
     private ObserverFixture _fixture = null!;
 
     private static readonly DateTimeOffset BaseTime =
-        new DateTimeOffset(2026, 8, 1, 9, 0, 0, TimeSpan.Zero);
+        new DateTimeOffset(2024, 1, 15, 9, 0, 0, TimeSpan.Zero);
 
     private static ulong _nextId = 5000;
 

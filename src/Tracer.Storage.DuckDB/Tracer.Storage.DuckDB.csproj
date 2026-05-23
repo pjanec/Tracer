@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Tracer.Core\Tracer.Core.csproj" />
+    <ProjectReference Include="..\Tracer.Bundle\Tracer.Bundle.csproj" />
   </ItemGroup>
 
   <ItemGroup>

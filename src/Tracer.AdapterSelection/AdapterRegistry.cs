@@ -172,6 +172,7 @@ public sealed class AdapterRegistry
         switch (choice)
         {
             case "system":
+                services.AddSingleton(TimeProvider.System);
                 services.AddSingleton<IClock, SystemClock>();
                 break;
 

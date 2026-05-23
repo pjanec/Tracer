@@ -1,0 +1,37 @@
+﻿Here is the fixing tasks tracker based on the gap and flaw analysis in the `FIX1-TASKS` document. 
+
+- [x] **Refactor Time Handling**: Update `SystemClock` implementations to use `.NET 8 TimeProvider` instead of `DateTimeOffset.UtcNow` (Ref: Part A — Foundation and Cross-Cutting, Section 1).
+- [x] **Update Fast State Records**: Add the missing `TypedValues` property to `StateSampleRecord` (Ref: Part A — Foundation and Cross-Cutting, Section 2).
+- [x] **Correct Slow State Index**: Fix the DuckDB schema definition for `idx_slow_state_entity_time` to match the exact specified SQL (Ref: Part A — Foundation and Cross-Cutting, Section 3).
+- [x] **Add Startup Log Output**: Ensure `TracerAgent` emits the `LOG_FILE=<path>` convention to `stdout` at startup (Ref: Part A — Foundation and Cross-Cutting, Section 4).
+- [x] **Improve Error Handling Domain Separation**: Consider future custom validation extensions for the `TracerException` hierarchy (Ref: Part A — Foundation and Cross-Cutting, Section 5). *(Deferred — P3 future work as noted in spec)*
+- [ ] **Export Saved Views in Aggregator**: Implement the missing step to export the Saved Views SQLite database during bundle aggregation (Ref: Part B — Backend Components, Section 1).
+- [x] **Add Warnings for NAS Sentinel**: Log warnings instead of silently returning false when the `_ready` sentinel is missing or corrupt in `NasStorageReader` (Ref: Part B — Backend Components, Section 2).
+- [x] **Fix Fire-and-Forget Startup Tasks**: Add proper error handling and DI lifecycle management for async tasks in `Tracer.Observer` startup (Ref: Part B — Backend Components, Section 3).
+- [x] **Correct BudgetService DI**: Enforce strict DI resolution using `GetRequiredService` for the `BudgetService` logger (Ref: Part B — Backend Components, Section 4).
+- [ ] **Include Slow State in Bundle Connection**: Ensure `BundleOpenManager` passes the `slow_state.duckdb` file to the bundle connection pool (Ref: Part B — Backend Components, Section 5).
+- [x] **Standardize Sentinel Filename**: Ensure the interval sentinel filename is consistently `_ready` instead of `.complete` across the platform (Ref: Part C — Storage Layouts, Section 1). *(Already consistent — verified in review)*
+- [x] **Secure Fast State Parquet Paths**: Apply `BundleNaming.SafeFileName` to topic and entity variables before writing Parquet files (Ref: Part C — Storage Layouts, Section 2).
+- [x] **Handle Missing User Metadata**: Provide a graceful default fallback if `bundle-metadata.json` is missing in `BundleLibraryService` (Ref: Part C — Storage Layouts, Section 3).
+- [x] **Fix Metadata JSON Naming Policy**: Configure `JsonSerializerOptions` to enforce `camelCase` naming for `metadata.json` (Ref: Part C — Storage Layouts, Section 4).
+- [ ] **Register Phase 8 SPA Routes**: Add the missing Vue Router definitions for the Saved Views and Trigger Evaluation Log views (Ref: Part D — Frontend Application Shell, Section 1).
+- [ ] **Enhance AppHeader Context**: Update `AppHeader` to show the active session label/ID and application mode badge (Ref: Part D — Frontend Application Shell, Section 2).
+- [ ] **Integrate Global BookmarkBar**: Place the `BookmarkBar` component into the global application shell layout (Ref: Part D — Frontend Application Shell, Section 3).
+- [ ] **Add Show SQL Affordance to Latency View**: Implement the `<ShowSqlButton />` component in the Replication Latency view header (Ref: Part D — Frontend Application Shell, Section 4).
+- [ ] **Fix Timeline Query Cancellation**: Ensure `AbortController.abort()` is called before issuing new requests to prevent network flooding (Ref: Part E — Analytical Views, Section 1).
+- [ ] **Implement Cycle Guard in Causal Tree**: Add a visited-set mechanism to `TraceWalker.WalkAncestorsAsync` to prevent infinite recursion (Ref: Part E — Analytical Views, Section 2).
+- [ ] **Clamp Entity Lifecycle Ribbon Markers**: Clamp the computed percentage (`xPct`) to 0-100% to prevent UI overflow outside view bounds (Ref: Part E — Analytical Views, Section 3).
+- [ ] **Restore First-Sample Gaps**: Remove frontend filters suppressing gaps with `previousSequence === 0` in the Gap Detection view (Ref: Part E — Analytical Views, Section 4).
+- [ ] **Gracefully Handle Unknown SQL Templates**: Return HTTP 400 ProblemDetails for unrecognized view strings in the SQL Console template endpoint (Ref: Part E — Analytical Views, Section 5).
+- [ ] **Enforce Strict Target Count for Annotations**: Reject requests with anything other than exactly one non-null target identifier (Ref: Part F — User Content Features, Section 1).
+- [ ] **Make Saved View Tracking Fire-and-Forget**: Catch exceptions and return HTTP 204 when recording the "Opened" timestamp for stale Saved View IDs (Ref: Part F — User Content Features, Section 2).
+- [ ] **Reject Built-In Query Mutations**: Catch `InvalidOperationException` and return HTTP 405 when trying to mutate a built-in saved query (Ref: Part F — User Content Features, Section 3).
+- [ ] **Validate Numeric Parameter Inputs**: Ensure the Saved Query dialog restricts execution if numeric inputs are invalid (Ref: Part F — User Content Features, Section 4).
+- [ ] **Expose Shared Memory Drop Telemetry**: Plumb the actual shared memory drop count into `SharedMemoryTransport.GetHealth()` instead of hardcoding zero (Ref: Real Adapter Integration, Section 1).
+- [ ] **Dispose Native Memory in DDS Subscriber**: Prevent zero-copy buffer leaks by properly casting and disposing Cyclone DDS loans (Ref: Real Adapter Integration, Section 2).
+- [x] **Guard Against Nulls in Ingestion Pipeline**: Silently drop `null` records from unknown topics before they reach the ingest channel (Ref: Real Adapter Integration, Section 3). *(Already implemented — verified in review)*
+- [ ] **Add Missing Metrics to Health Endpoint**: Expand `/api/health` to include interval upload and SSE connection metrics (Ref: Real Adapter Integration, Section 4).
+- [ ] **Implement Zip-Slip Defense**: Validate Zip archive entry paths during bundle import to prevent directory traversal attacks (Ref: Part I — Testing and Quality, Section 1).
+- [x] **Gate Simulation-Dependent Integration Tests**: Use `[SkipIfNoSimulationHarness]` for real integration tests so they don't break standard dev environments (Ref: Part I — Testing and Quality, Section 2). *(Done in BATCH-56)*
+- [x] **Add Mathematical Slope Validation to Soak Tests**: Compute and assert the linear regression slope of memory and file handles in the 48-hour soak test (Ref: Part I — Testing and Quality, Section 3). *(Done in BATCH-56)*
+- [ ] **Parameterize SQL Security Tests**: Convert `SqlGuardrailsTests` to parameterised `[Theory]` tests to ensure all forbidden keywords are individually checked (Ref: Part I — Testing and Quality, Section 4).

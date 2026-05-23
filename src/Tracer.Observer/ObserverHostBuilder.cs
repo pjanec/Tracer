@@ -91,6 +91,7 @@ public static class ObserverHostBuilder
         });
 
         // ── Core / clock ─────────────────────────────────────────────────────
+        builder.Services.AddSingleton(TimeProvider.System);
         builder.Services.AddSingleton<IClock, SystemClock>();
 
         // ── Schema registry ──────────────────────────────────────────────────
@@ -267,7 +268,7 @@ public static class ObserverHostBuilder
             new BudgetService(
                 getBundleWorkingDirectory: null,
                 registry: sp.GetRequiredService<InMemoryBudgetRegistry>(),
-                logger: sp.GetService<ILogger<BudgetService>>()));
+                logger: sp.GetRequiredService<ILogger<BudgetService>>()));
 
         // ── Live streaming ────────────────────────────────────────────────────
         builder.Services.AddSingleton<SseStreamingOptions>();
@@ -355,13 +356,34 @@ public static class ObserverHostBuilder
         // Wire schema invalidation on interval set changes
         var tracker = app.Services.GetRequiredService<IntervalSetTracker>();
         var schemaService = app.Services.GetRequiredService<SqlSchemaService>();
-        tracker.SetChanged += (_, _) => { _ = schemaService.InvalidateAsync(); return Task.CompletedTask; };
+        var hostLogger = app.Services.GetRequiredService<ILogger<WebApplication>>();
+        tracker.SetChanged += async (_, _) =>
+        {
+            try
+            {
+                await schemaService.InvalidateAsync().ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                hostLogger.LogError(ex, "Unhandled exception in schema invalidation after interval set change");
+            }
+        };
 
         // Seed built-in queries on startup
         app.Lifetime.ApplicationStarted.Register(() =>
         {
             var store = app.Services.GetRequiredService<ISavedQueryStore>();
-            _ = Task.Run(() => BuiltInLoader.EnsureLoadedAsync(store, CancellationToken.None));
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await BuiltInLoader.EnsureLoadedAsync(store, CancellationToken.None).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    hostLogger.LogError(ex, "Unhandled exception while seeding built-in queries on startup");
+                }
+            });
         });
 
         // ── SPA static files (if present) ─────────────────────────────────────

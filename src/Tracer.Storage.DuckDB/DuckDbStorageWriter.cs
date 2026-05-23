@@ -191,7 +191,7 @@ public sealed class DuckDbStorageWriter : IDiagnosticStorageWriter
             return null;
         }
 
-        var safeFileName = MakeSafeFileName(topic);
+        var safeFileName = Tracer.Bundle.Format.BundleNaming.SafeFileName(topic);
         var path = Path.Combine(_fastStateDirectory, $"{safeFileName}.parquet");
         var newWriter = await FastStateParquetWriter.CreateAsync(path, schema, _logger, ct)
             .ConfigureAwait(false);
@@ -310,6 +310,9 @@ public sealed class DuckDbStorageWriter : IDiagnosticStorageWriter
     private static string MakeSafeFileName(string topic)
         => string.Concat(topic.Select(c => char.IsLetterOrDigit(c) || c == '-' ? c : '_'));
 
+    // Note: new fast-state file paths now use BundleNaming.SafeFileName which includes a
+    // collision-prevention hash suffix. MakeSafeFileName is retained only for reference.
+
     private void ThrowIfDisposed()
     {
         if (_disposed)
@@ -366,6 +369,8 @@ public sealed class DuckDbStorageWriter : IDiagnosticStorageWriter
         row.AppendValue(r.PublisherNode.Value);
         row.AppendValue(r.SubscriberNode.Value);
         row.AppendValue(r.Topic.Value);
+        row.AppendValue(r.InstanceKey);
+        // entity_id: populated from InstanceKey so the partial index covers all rows
         row.AppendValue(r.InstanceKey);
         if (r.TraceId.HasValue)
             row.AppendValue((ulong?)r.TraceId.Value.Value);

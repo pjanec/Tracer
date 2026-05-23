@@ -39,6 +39,7 @@ internal static class SchemaV1
             subscriber_node     VARCHAR NOT NULL,
             topic               VARCHAR NOT NULL,
             instance_key        VARCHAR NOT NULL,
+            entity_id           VARCHAR,
             trace_id            UBIGINT,
             payload             JSON NOT NULL
         );
@@ -64,6 +65,6 @@ internal static class SchemaV1
         CREATE INDEX IF NOT EXISTS idx_state_topic ON slow_state(topic);
 
         -- Phase 7
-        CREATE INDEX IF NOT EXISTS idx_slow_state_entity_time ON slow_state(instance_key, publish_wallclock);
+        CREATE INDEX IF NOT EXISTS idx_slow_state_entity_time ON slow_state (entity_id, publish_wallclock);
         """;
 }

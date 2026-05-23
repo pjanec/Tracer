@@ -12,9 +12,7 @@ public static class BundleLibraryEndpoints
         app.MapGet   ("/api/bundles/library",           HandleListAsync).WithOpenApi();
         app.MapPut   ("/api/bundles/{id}/metadata",     HandleUpdateMetadataAsync).WithOpenApi();
         app.MapPost  ("/api/bundles/{id}/opened",       HandleRecordOpenedAsync).WithOpenApi();
-        app.MapDelete("/api/bundles/{id}",              HandleDeleteAsync).WithOpenApi();
         app.MapPost  ("/api/bundles/import",            HandleImportAsync).WithOpenApi();
-        app.MapGet   ("/api/bundles/{id}/download",     HandleDownloadAsync).WithOpenApi();
     }
 
     public static async Task<Ok<BundleLibraryListDto>> HandleListAsync(

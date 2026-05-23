@@ -227,8 +227,16 @@ public sealed class NasStorageReader : ITelemetryStorageReader
             return ExecuteFileOp(zipPath, a => a.GetEntry(ReadySentinelEntry) is not null);
         }
         catch (CircuitBreakerOpenException) { throw; }
-        catch (InvalidDataException) { return false; }
-        catch (IOException) { return false; }
+        catch (InvalidDataException ex)
+        {
+            _logger.LogWarning(ex, "Skipping incomplete interval archive at {Path}: _ready sentinel missing or zip corrupt", zipPath);
+            return false;
+        }
+        catch (IOException ex)
+        {
+            _logger.LogWarning(ex, "Skipping incomplete interval archive at {Path}: _ready sentinel missing or zip corrupt", zipPath);
+            return false;
+        }
     }
 
     private async Task<IntervalManifest?> ReadManifestFromZipAsync(

@@ -21,4 +21,5 @@ public sealed record StateSampleRecord : DiagnosticRecord
     public Tracer.Core.Identity.TraceId? TraceId { get; init; }
     public required string PayloadJson { get; init; }
     public required StateSampleRate Rate { get; init; }
+    public IReadOnlyDictionary<string, double?>? TypedValues { get; init; }
 }

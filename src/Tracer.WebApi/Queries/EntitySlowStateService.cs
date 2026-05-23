@@ -59,11 +59,11 @@ public sealed class EntitySlowStateService(LiveMultiIntervalReader reader, ILogg
             // slow_state columns (schema order, no __source_alias in PooledMultiIntervalConnection):
             // 0: sequence_number, 1: publish_wallclock, 2: receive_wallclock,
             // 3: publisher_node, 4: subscriber_node, 5: topic, 6: instance_key,
-            // 7: trace_id (nullable), 8: payload
+            // 7: entity_id (nullable), 8: trace_id (nullable), 9: payload
             var topic = r.GetString(5);
             var publishWallclock = GetWallclock(r, 1);
-            var payload = r.GetString(8);
-            var traceId = r.IsDBNull(7) ? 0UL : Convert.ToUInt64(r.GetValue(7));
+            var payload = r.GetString(9);
+            var traceId = r.IsDBNull(8) ? 0UL : Convert.ToUInt64(r.GetValue(8));
 
             if (!byTopic.TryGetValue(topic, out var list))
                 byTopic[topic] = list = new List<SlowStateSample>();

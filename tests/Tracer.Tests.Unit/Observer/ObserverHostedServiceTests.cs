@@ -41,7 +41,7 @@ public sealed class ObserverHostedServiceTests : IAsyncDisposable
             DiskWatermarkPercent = 10,
         };
 
-        var clock = new SystemClock();
+        var clock = new SystemClock(TimeProvider.System);
         _scheduler = new IntervalScheduler(clock, _agentConfig);
         var upload = new NoOpUploadService();
         var dispatcher = new UploadIntentDispatcher(upload, NullLogger<UploadIntentDispatcher>.Instance);
@@ -68,7 +68,7 @@ public sealed class ObserverHostedServiceTests : IAsyncDisposable
 
         var svc = new ObserverHostedService(
             recovery, _rotator, _scheduler, _ingestion, tracker, reader, _retention,
-            new SystemClock(), NullLogger<ObserverHostedService>.Instance);
+            new SystemClock(TimeProvider.System), NullLogger<ObserverHostedService>.Instance);
 
         await svc.StartAsync(default);
         await Task.Delay(300); // allow ExecuteAsync to reach tracker init
@@ -88,7 +88,7 @@ public sealed class ObserverHostedServiceTests : IAsyncDisposable
 
         var svc = new ObserverHostedService(
             recovery, _rotator, _scheduler, _ingestion, tracker, reader, _retention,
-            new SystemClock(), NullLogger<ObserverHostedService>.Instance);
+            new SystemClock(TimeProvider.System), NullLogger<ObserverHostedService>.Instance);
 
         try { await svc.StartAsync(default); } catch { }
         try { await Task.Delay(300); } catch { }
@@ -106,7 +106,7 @@ public sealed class ObserverHostedServiceTests : IAsyncDisposable
 
         var svc = new ObserverHostedService(
             recovery, _rotator, _scheduler, _ingestion, tracker, reader, _retention,
-            new SystemClock(), NullLogger<ObserverHostedService>.Instance);
+            new SystemClock(TimeProvider.System), NullLogger<ObserverHostedService>.Instance);
 
         try { await svc.StartAsync(default); } catch { }
         try { await Task.Delay(300); } catch { }
@@ -132,7 +132,7 @@ public sealed class ObserverHostedServiceTests : IAsyncDisposable
 
         var svc = new ObserverHostedService(
             recovery, _rotator, _scheduler, _ingestion, tracker, reader, _retention,
-            new SystemClock(), NullLogger<ObserverHostedService>.Instance);
+            new SystemClock(TimeProvider.System), NullLogger<ObserverHostedService>.Instance);
 
         // Should not throw even when tracker refresh fails
         Func<Task> act = async () =>
@@ -153,7 +153,7 @@ public sealed class ObserverHostedServiceTests : IAsyncDisposable
 
         var svc = new ObserverHostedService(
             recovery, _rotator, _scheduler, _ingestion, tracker, reader, _retention,
-            new SystemClock(), NullLogger<ObserverHostedService>.Instance);
+            new SystemClock(TimeProvider.System), NullLogger<ObserverHostedService>.Instance);
 
         Func<Task> act = async () =>
         {

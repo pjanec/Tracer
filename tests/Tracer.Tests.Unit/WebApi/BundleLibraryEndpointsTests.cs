@@ -35,7 +35,7 @@ public sealed class BundleLibraryEndpointsTests : IDisposable
               "statistics":{"eventCount":0,"nodeCount":0},"files":[]
             }
             """;
-        File.WriteAllText(Path.Combine(dir, "metadata.json"), manifest);
+        File.WriteAllText(Path.Combine(dir, "manifest.json"), manifest);
     }
 
     [Fact]

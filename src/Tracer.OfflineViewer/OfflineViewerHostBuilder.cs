@@ -161,7 +161,7 @@ public static class OfflineViewerHostBuilder
             new BudgetService(
                 getBundleWorkingDirectory: () => sp.GetRequiredService<BundleOpenManager>().Current?.WorkingDirectory,
                 registry: sp.GetRequiredService<InMemoryBudgetRegistry>(),
-                logger: sp.GetService<ILogger<BudgetService>>()));
+                logger: sp.GetRequiredService<ILogger<BudgetService>>()));
 
         // Observer state reporter — inert instance (no events in bundle mode)
         builder.Services.AddSingleton<ObserverStateReporter>(_ => new InertObserverStateReporter());
@@ -215,13 +215,34 @@ public static class OfflineViewerHostBuilder
         // Wire schema invalidation on bundle changes
         var bundleTracker = app.Services.GetRequiredService<BundleIntervalSetTracker>();
         var schemaService = app.Services.GetRequiredService<SqlSchemaService>();
-        bundleTracker.SetChanged += (_, _) => { _ = schemaService.InvalidateAsync(); return Task.CompletedTask; };
+        var hostLogger = app.Services.GetRequiredService<ILogger<WebApplication>>();
+        bundleTracker.SetChanged += async (_, _) =>
+        {
+            try
+            {
+                await schemaService.InvalidateAsync().ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                hostLogger.LogError(ex, "Unhandled exception in schema invalidation after bundle set change");
+            }
+        };
 
         // Seed built-in queries on startup
         app.Lifetime.ApplicationStarted.Register(() =>
         {
             var store = app.Services.GetRequiredService<ISavedQueryStore>();
-            _ = Task.Run(() => BuiltInLoader.EnsureLoadedAsync(store, CancellationToken.None));
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await BuiltInLoader.EnsureLoadedAsync(store, CancellationToken.None).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    hostLogger.LogError(ex, "Unhandled exception while seeding built-in queries on startup");
+                }
+            });
         });
 
         // SPA fallback

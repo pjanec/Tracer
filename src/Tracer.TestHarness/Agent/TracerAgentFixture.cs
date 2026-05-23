@@ -106,7 +106,10 @@ public sealed class TracerAgentFixture : IAsyncDisposable
         if (simulatedClock is not null)
             builder.Services.AddSingleton<IClock>(simulatedClock);
         else
+        {
+            builder.Services.AddSingleton(TimeProvider.System);
             builder.Services.AddSingleton<IClock, SystemClock>();
+        }
 
         builder.Services.AddSingleton<IReadOnlyDictionary<string, ParquetTopicSchema>>(
             _ => WellKnownTopicSchemas.ToDictionary());
@@ -123,6 +126,7 @@ public sealed class TracerAgentFixture : IAsyncDisposable
         builder.Services.AddSingleton<StartupRecoveryService>();
         builder.Services.AddSingleton<RetentionManager>();
         builder.Services.AddSingleton<AgentStateReporter>();
+        builder.Services.AddSingleton<TransportMonitor>();
 
         builder.Services.AddHostedService<AgentHostedService>();
 

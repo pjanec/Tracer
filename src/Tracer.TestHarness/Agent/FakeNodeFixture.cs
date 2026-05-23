@@ -84,6 +84,7 @@ public sealed class FakeNodeFixture : IAsyncDisposable
         builder.Services.AddSingleton<ITelemetryUploadService>(uploadService);
 
         // ── Agent services ────────────────────────────────────────────────────
+        builder.Services.AddSingleton(TimeProvider.System);
         builder.Services.AddSingleton<IClock, SystemClock>();
 
         builder.Services.AddSingleton<IReadOnlyDictionary<string, ParquetTopicSchema>>(

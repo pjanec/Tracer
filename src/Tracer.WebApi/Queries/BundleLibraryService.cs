@@ -1,12 +1,13 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
+using Tracer.Bundle.Format;
 
 namespace Tracer.WebApi.Queries;
 
 /// <summary>
 /// File-system-backed metadata service for the bundle library.
-/// Reads immutable aggregator-written <c>metadata.json</c> and user-editable <c>bundle-metadata.json</c>.
+/// Reads immutable aggregator-written <c>manifest.json</c> and user-editable <c>bundle-metadata.json</c>.
 /// </summary>
 public sealed class BundleLibraryService
 {
@@ -36,7 +37,7 @@ public sealed class BundleLibraryService
         foreach (var dir in Directory.EnumerateDirectories(_bundlesRoot))
         {
             ct.ThrowIfCancellationRequested();
-            var metaPath = Path.Combine(dir, "metadata.json");
+            var metaPath = Path.Combine(dir, BundleLayout.ManifestFile);
             if (!File.Exists(metaPath)) continue;
 
             try
@@ -92,7 +93,7 @@ public sealed class BundleLibraryService
 
     private BundleLibraryEntry? BuildEntry(string bundleDir)
     {
-        var metaPath = Path.Combine(bundleDir, "metadata.json");
+        var metaPath = Path.Combine(bundleDir, BundleLayout.ManifestFile);
         var aggMeta = ReadAggregatorMetadata(metaPath);
         if (aggMeta is null) return null;
 

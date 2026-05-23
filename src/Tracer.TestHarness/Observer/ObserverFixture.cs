@@ -92,7 +92,10 @@ public sealed class ObserverFixture : IAsyncDisposable
         if (options.Clock is not null)
             builder.Services.AddSingleton<Tracer.Core.Time.IClock>(options.Clock);
         else
+        {
+            builder.Services.AddSingleton(TimeProvider.System);
             builder.Services.AddSingleton<Tracer.Core.Time.IClock, Tracer.Agent.Time.SystemClock>();
+        }
         builder.Services.AddSingleton(sp =>
         {
             var obs = sp.GetRequiredService<ObserverConfig>();

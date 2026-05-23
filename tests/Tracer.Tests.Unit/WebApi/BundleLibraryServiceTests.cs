@@ -1,3 +1,4 @@
+using FluentAssertions;
 using Tracer.WebApi.Queries;
 using Xunit;
 
@@ -40,7 +41,7 @@ public sealed class BundleLibraryServiceTests : IDisposable
               "files": []
             }
             """;
-        File.WriteAllText(Path.Combine(dir, "metadata.json"), manifest);
+        File.WriteAllText(Path.Combine(dir, "manifest.json"), manifest);
     }
 
     [Fact]
@@ -120,4 +121,59 @@ public sealed class BundleLibraryServiceTests : IDisposable
         Assert.Equal(300L, size);
         Directory.Delete(dir, recursive: true);
     }
+
+    // ── FIX-C34: manifest.json filename ──────────────────────────────────────
+
+    [Fact]
+    public async Task List_DirectoryWithManifestJson_ReturnsEntry()
+    {
+        // Uses CreateBundle() which now writes manifest.json
+        CreateBundle("bundle-fix-c34");
+        var entries = await _svc.ListAsync();
+        entries.Should().ContainSingle(e => e.BundleId == "bundle-fix-c34",
+            because: "a directory with manifest.json should be included in results");
+    }
+
+    [Fact]
+    public async Task List_DirectoryWithMetadataJsonOnly_IsSkipped()
+    {
+        // Simulate old layout (metadata.json only, no manifest.json)
+        var dir = Path.Combine(_root, "old-layout-bundle");
+        Directory.CreateDirectory(dir);
+        File.WriteAllText(Path.Combine(dir, "metadata.json"), """{"bundleId":"old"}""");
+
+        var entries = await _svc.ListAsync();
+        entries.Should().NotContain(e => e.BundleId == "old-layout-bundle",
+            because: "FIX-C34 changed the expected filename from metadata.json to manifest.json");
+    }
+
+    [Fact]
+    public async Task List_BundleMetadataJsonPresent_DoesNotAffectListResult()
+    {
+        // bundle-metadata.json is for user-editable metadata, should not be used for listing
+        CreateBundle("bundle-with-both");
+        File.WriteAllText(
+            Path.Combine(_root, "bundle-with-both", "bundle-metadata.json"),
+            """{"label":"Custom Label"}""");
+
+        var entries = await _svc.ListAsync();
+        var entry = entries.Should().ContainSingle().Subject;
+        entry.Label.Should().Be("Custom Label",
+            because: "bundle-metadata.json user label should still be merged");
+    }
+
+    [Fact]
+    public async Task UpdateMetadata_StillWritesBundleMetadataJson()
+    {
+        // UpdateMetadataAsync writes to bundle-metadata.json, NOT manifest.json
+        CreateBundle("bundle-update-test");
+        await _svc.UpdateMetadataAsync("bundle-update-test", new BundleMetadataUpdate { Label = "Updated" });
+
+        var userMetaPath = Path.Combine(_root, "bundle-update-test", "bundle-metadata.json");
+        File.Exists(userMetaPath).Should().BeTrue(
+            because: "user metadata is always written to bundle-metadata.json");
+        File.Exists(Path.Combine(_root, "bundle-update-test", "manifest.json")).Should().BeTrue(
+            because: "aggregator-written manifest.json must not be overwritten");
+    }
 }
+

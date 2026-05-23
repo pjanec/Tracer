@@ -186,7 +186,7 @@ public sealed class LiveMultiIntervalReaderTests : IAsyncDisposable
             KeepLastNIntervals = 4,
             DiskWatermarkPercent = 10,
         };
-        var clock = new SystemClock();
+        var clock = new SystemClock(TimeProvider.System);
         var scheduler = new IntervalScheduler(clock, config);
         var upload = new NoOpUploadService();
         var dispatcher = new UploadIntentDispatcher(upload, NullLogger<UploadIntentDispatcher>.Instance);

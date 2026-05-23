@@ -58,6 +58,7 @@ public static class Program
                     sp.GetRequiredService<ILogger<LocalFileSystemUploadService>>()));
 
             // ── Core agent services (mirror of AgentHostBuilder) ──────────────
+            builder.Services.AddSingleton(TimeProvider.System);
             builder.Services.AddSingleton<IClock, SystemClock>();
 
             builder.Services.AddSingleton<IReadOnlyDictionary<string, ParquetTopicSchema>>(

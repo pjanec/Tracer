@@ -80,6 +80,7 @@ public sealed class AgentRecoveryTests
             builder.Services.AddSingleton(agentConfig);
             builder.Services.AddSingleton<IAgentTransport>(transport);
             builder.Services.AddSingleton<ITelemetryUploadService>(uploadService);
+            builder.Services.AddSingleton(TimeProvider.System);
             builder.Services.AddSingleton<IClock, SystemClock>();
             builder.Services.AddSingleton<IReadOnlyDictionary<string, ParquetTopicSchema>>(
                 _ => WellKnownTopicSchemas.ToDictionary());
@@ -94,6 +95,7 @@ public sealed class AgentRecoveryTests
             builder.Services.AddSingleton<StartupRecoveryService>();
             builder.Services.AddSingleton<RetentionManager>();
             builder.Services.AddSingleton<AgentStateReporter>();
+            builder.Services.AddSingleton<TransportMonitor>();
             builder.Services.AddHostedService<AgentHostedService>();
             builder.Logging.ClearProviders();
 
@@ -154,6 +156,7 @@ public sealed class AgentRecoveryTests
             builder.Services.AddSingleton(agentConfig);
             builder.Services.AddSingleton<IAgentTransport>(transport);
             builder.Services.AddSingleton<ITelemetryUploadService>(uploadService);
+            builder.Services.AddSingleton(TimeProvider.System);
             builder.Services.AddSingleton<IClock, SystemClock>();
             builder.Services.AddSingleton<IReadOnlyDictionary<string, ParquetTopicSchema>>(
                 _ => WellKnownTopicSchemas.ToDictionary());
@@ -168,6 +171,7 @@ public sealed class AgentRecoveryTests
             builder.Services.AddSingleton<StartupRecoveryService>();
             builder.Services.AddSingleton<RetentionManager>();
             builder.Services.AddSingleton<AgentStateReporter>();
+            builder.Services.AddSingleton<TransportMonitor>();
             builder.Services.AddHostedService<AgentHostedService>();
             builder.Logging.ClearProviders();
 
