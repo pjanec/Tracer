@@ -20,6 +20,9 @@ public sealed class DdsDiagnosticDataSource : IDiagnosticDataSource
     private readonly ILogger<DdsDiagnosticDataSource> _logger;
 
     private int _dropBurstActive;
+    private long _droppedCount;
+
+    public long GetDroppedCount() => Interlocked.Read(ref _droppedCount);
 
     public DdsDiagnosticDataSource(
         DdsAdapterConfig config,
@@ -60,7 +63,7 @@ public sealed class DdsDiagnosticDataSource : IDiagnosticDataSource
             var sub = _subscriberFactory.Create(
                 topicSub,
                 meta.SampleType,
-                sample => OnSampleReceived(sample, topicSub, channel.Writer));
+                sample => OnSampleReceived(sample, topicSub, channel.Writer, channel.Reader, _config.IngestBufferSize));
             subscribers.Add(sub);
         }
 
@@ -82,24 +85,31 @@ public sealed class DdsDiagnosticDataSource : IDiagnosticDataSource
     private void OnSampleReceived(
         IDdsSample sample,
         DdsTopicSubscription topicSub,
-        ChannelWriter<DiagnosticRecord> writer)
+        ChannelWriter<DiagnosticRecord> writer,
+        ChannelReader<DiagnosticRecord> reader,
+        int capacity)
     {
         try
         {
             var record = _translator.Translate(sample, topicSub);
             if (record is null) return;
 
-            if (!writer.TryWrite(record))
+            // Pre-check: DropOldest means TryWrite always succeeds, so we must
+            // check the count before writing to detect that a drop will occur.
+            if (reader.Count >= capacity)
             {
-                // Throttled warning: log once per drop burst, reset on successful write.
+                Interlocked.Increment(ref _droppedCount);
                 if (Interlocked.Exchange(ref _dropBurstActive, 1) == 0)
                     _logger.LogWarning(
-                        "DDS ingest channel full, dropping samples for topic {Topic}", topicSub.TopicName);
+                        "DDS ingest channel full (capacity={Capacity}), dropping oldest record for topic {Topic}",
+                        capacity, topicSub.TopicName);
             }
             else
             {
                 Interlocked.Exchange(ref _dropBurstActive, 0);
             }
+
+            writer.TryWrite(record);
         }
         catch (Exception ex)
         {

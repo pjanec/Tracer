@@ -3,17 +3,15 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Serilog;
+using Tracer.AdapterSelection;
 using Tracer.Agent.Configuration;
 using Tracer.Agent.Diagnostics;
 using Tracer.Agent.Ingestion;
 using Tracer.Agent.Lifecycle;
 using Tracer.Agent.Logging;
 using Tracer.Agent.Storage;
-using Tracer.Agent.Time;
-using Tracer.Agent.Transport;
 using Tracer.Agent.Upload;
 using Tracer.Core.Abstractions;
-using Tracer.Core.Time;
 
 namespace Tracer.Agent;
 
@@ -33,14 +31,7 @@ public static class AgentHostBuilder
         });
 
         // ── Core services ────────────────────────────────────────────────────
-        builder.Services.AddSingleton<IClock, SystemClock>();
-
-        // ── Transport & upload ───────────────────────────────────────────────
-        builder.Services.AddSingleton<IAgentTransport>(sp =>
-            TransportFactory.Create(sp.GetRequiredService<AgentConfig>()));
-
-        builder.Services.AddSingleton<ITelemetryUploadService>(sp =>
-            UploadServiceFactory.Create(sp.GetRequiredService<AgentConfig>()));
+        builder.Services.AddTracerAdapters(builder.Configuration);
 
         // ── Ingestion pipeline ───────────────────────────────────────────────
         builder.Services.AddSingleton<BackpressureMonitor>();
@@ -61,6 +52,7 @@ public static class AgentHostBuilder
 
         // ── Diagnostics ──────────────────────────────────────────────────────
         builder.Services.AddSingleton<AgentStateReporter>();
+        builder.Services.AddSingleton<TransportMonitor>();
 
         // ── Hosted service ───────────────────────────────────────────────────
         builder.Services.AddHostedService<AgentHostedService>();

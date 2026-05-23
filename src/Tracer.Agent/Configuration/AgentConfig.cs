@@ -26,6 +26,10 @@ public sealed class AgentConfig
     public UploadServiceConfig UploadService { get; set; } = new();
 
     public BackpressureConfig Backpressure { get; set; } = new();
+
+    public int BacklogWarningThreshold { get; set; } = 3;
+
+    public int ShutdownUploadFlushTimeoutSeconds { get; set; } = 60;
 }
 
 public sealed class TransportConfig

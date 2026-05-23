@@ -101,6 +101,7 @@ public sealed class FakeNodeFixture : IAsyncDisposable
         builder.Services.AddSingleton<StartupRecoveryService>();
         builder.Services.AddSingleton<RetentionManager>();
         builder.Services.AddSingleton<AgentStateReporter>();
+        builder.Services.AddSingleton<TransportMonitor>();
 
         builder.Services.AddHostedService<AgentHostedService>();
 

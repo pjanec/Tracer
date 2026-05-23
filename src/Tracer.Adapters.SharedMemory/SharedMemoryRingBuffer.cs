@@ -108,7 +108,7 @@ public sealed unsafe class SharedMemoryRingBuffer : IDisposable
     {
         if (!_isProducer) throw new InvalidOperationException("Cannot write from consumer side.");
         long required = record.Length + 4L;
-        if (required > _capacity) return false;
+        if (required >= _capacity) return false;
 
         var writeOff = ReadAtomicLong(OffsetWriteOffset);
         var readOff = ReadAtomicLong(OffsetReadOffset);
@@ -190,7 +190,7 @@ public sealed unsafe class SharedMemoryRingBuffer : IDisposable
     private long FreeSpace(long write, long read)
     {
         var used = write >= read ? write - read : _capacity - read + write;
-        return _capacity - used;
+        return _capacity - 1 - used;
     }
 
     private long AdvancePastRecord(long readOff)

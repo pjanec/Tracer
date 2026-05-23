@@ -1,5 +1,6 @@
 using System.Threading.Channels;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Tracer.Adapters.DDS;
 using Tracer.Adapters.DDS.Configuration;
@@ -55,7 +56,10 @@ public sealed class DdsDiagnosticDataSourceTests
 
     // ── Helpers ──────────────────────────────────────────────────────────────
 
-    private static DdsDiagnosticDataSource Build(IDdsSubscriberFactory factory)
+    private static DdsDiagnosticDataSource Build(
+        IDdsSubscriberFactory factory,
+        int ingestBufferSize = 100,
+        ILogger<DdsDiagnosticDataSource>? logger = null)
     {
         var config = new DdsAdapterConfig
         {
@@ -65,7 +69,7 @@ public sealed class DdsDiagnosticDataSourceTests
                 new DdsTopicSubscription { TopicName = "topic.event", SampleTypeName = "FakeEventPayload" },
             },
             Participant = new CycloneDdsParticipantConfig { DomainId = 0 },
-            IngestBufferSize = 100,
+            IngestBufferSize = ingestBufferSize,
         };
 
         var registry = new DdsTopicRegistry(new[]
@@ -87,7 +91,7 @@ public sealed class DdsDiagnosticDataSourceTests
 
         return new DdsDiagnosticDataSource(
             config, factory, translator, registry,
-            NullLogger<DdsDiagnosticDataSource>.Instance);
+            logger ?? NullLogger<DdsDiagnosticDataSource>.Instance);
     }
 
     // ── Tests ─────────────────────────────────────────────────────────────────
@@ -148,5 +152,48 @@ public sealed class DdsDiagnosticDataSourceTests
         catch (OperationCanceledException) { }
 
         records.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ReadAsync_OverfilledChannel_DropsRecordsAndLogsWarning()
+    {
+        // Arrange: inject more samples than the buffer capacity.
+        const int bufferSize = 3;
+        var samples = Enumerable.Range(0, 10)
+            .Select(i => (IDdsSample)new FakeSample(new FakeEventPayload { eventId = (ulong)i }, (ulong)i))
+            .ToList();
+        var factory = new FakeSubscriberFactory(samples);
+
+        var logger = new CapturingLogger<DdsDiagnosticDataSource>();
+        var source = Build(factory, ingestBufferSize: bufferSize, logger: logger);
+
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+        var received = new List<DiagnosticRecord>();
+        try
+        {
+            await foreach (var record in source.ReadAsync(cts.Token))
+            {
+                received.Add(record);
+            }
+        }
+        catch (OperationCanceledException) { /* expected */ }
+
+        // At most bufferSize items were queued; the rest were dropped.
+        received.Count.Should().BeLessThanOrEqualTo(bufferSize);
+        source.GetDroppedCount().Should().BeGreaterThan(0);
+        logger.Warnings.Should().Contain(w => w.Contains("channel full"));
+    }
+}
+
+internal sealed class CapturingLogger<T> : ILogger<T>
+{
+    public List<string> Warnings { get; } = new();
+    public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+    public bool IsEnabled(LogLevel logLevel) => true;
+    public void Log<TState>(LogLevel logLevel, EventId eventId, TState state,
+        Exception? exception, Func<TState, Exception?, string> formatter)
+    {
+        if (logLevel >= LogLevel.Warning)
+            Warnings.Add(formatter(state, exception));
     }
 }

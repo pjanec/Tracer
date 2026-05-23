@@ -1,8 +1,10 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Tracer.Agent.Configuration;
+using Tracer.Agent.Diagnostics;
 using Tracer.Agent.Ingestion;
 using Tracer.Agent.Storage;
+using Tracer.Agent.Upload;
 using Tracer.Core.Domain;
 
 namespace Tracer.Agent.Lifecycle;
@@ -14,6 +16,9 @@ public sealed class AgentHostedService : BackgroundService
     private readonly IngestionPipeline _ingestion;
     private readonly RetentionManager _retention;
     private readonly IntervalScheduler _scheduler;
+    private readonly TransportMonitor _transportMonitor;
+    private readonly UploadIntentDispatcher _uploadDispatcher;
+    private readonly AgentConfig _config;
     private readonly ILogger<AgentHostedService> _logger;
 
     public AgentHostedService(
@@ -22,6 +27,9 @@ public sealed class AgentHostedService : BackgroundService
         IngestionPipeline ingestion,
         RetentionManager retention,
         IntervalScheduler scheduler,
+        TransportMonitor transportMonitor,
+        UploadIntentDispatcher uploadDispatcher,
+        AgentConfig config,
         ILogger<AgentHostedService> logger)
     {
         _recovery = recovery;
@@ -29,6 +37,9 @@ public sealed class AgentHostedService : BackgroundService
         _ingestion = ingestion;
         _retention = retention;
         _scheduler = scheduler;
+        _transportMonitor = transportMonitor;
+        _uploadDispatcher = uploadDispatcher;
+        _config = config;
         _logger = logger;
     }
 
@@ -44,10 +55,11 @@ public sealed class AgentHostedService : BackgroundService
         var ingestionTask = Task.Run(() => _ingestion.RunAsync(cts.Token), cts.Token);
         var retentionTask = RunRetentionLoopAsync(cts.Token);
         var rotationTask = RunRotationLoopAsync(cts.Token);
+        var monitorTask = _transportMonitor.MonitorAsync(cts.Token);
 
         try
         {
-            await Task.WhenAll(ingestionTask, retentionTask, rotationTask);
+            await Task.WhenAll(ingestionTask, retentionTask, rotationTask, monitorTask);
         }
         catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { }
         catch (Exception ex)
@@ -56,6 +68,12 @@ public sealed class AgentHostedService : BackgroundService
         }
 
         await _rotator.RotateAsync(ManifestFinalizationReason.GracefulShutdown, CancellationToken.None);
+
+        var flushTimeout = TimeSpan.FromSeconds(_config.ShutdownUploadFlushTimeoutSeconds);
+        _logger.LogInformation("Waiting up to {Timeout}s for in-flight uploads to complete",
+            _config.ShutdownUploadFlushTimeoutSeconds);
+        await _uploadDispatcher.WaitForPendingAsync(flushTimeout);
+
         _logger.LogInformation("TracerAgent stopped");
     }
 

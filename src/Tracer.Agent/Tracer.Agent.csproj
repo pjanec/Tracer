@@ -18,6 +18,7 @@
     <ProjectReference Include="..\Tracer.Core\Tracer.Core.csproj" />
     <ProjectReference Include="..\Tracer.Storage.DuckDB\Tracer.Storage.DuckDB.csproj" />
     <ProjectReference Include="..\Tracer.Adapters.Mock\Tracer.Adapters.Mock.csproj" />
+    <ProjectReference Include="..\Tracer.AdapterSelection\Tracer.AdapterSelection.csproj" />
   </ItemGroup>
 
   <ItemGroup>

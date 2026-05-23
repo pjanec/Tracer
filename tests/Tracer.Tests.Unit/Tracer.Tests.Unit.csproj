@@ -25,6 +25,7 @@
     <ProjectReference Include="..\..\src\Tracer.Adapters.SharedMemory\Tracer.Adapters.SharedMemory.csproj" />
     <ProjectReference Include="..\..\src\Tracer.Adapters.Sync\Tracer.Adapters.Sync.csproj" />
     <ProjectReference Include="..\..\src\Tracer.Adapters.Nas\Tracer.Adapters.Nas.csproj" />
+    <ProjectReference Include="..\..\src\Tracer.AdapterSelection\Tracer.AdapterSelection.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -33,6 +34,10 @@
     <PackageReference Include="xunit.runner.visualstudio" />
     <PackageReference Include="FluentAssertions" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

@@ -74,17 +74,23 @@ public sealed class SyncSystemUploadService : ITelemetryUploadService
     /// Polls with exponential backoff until the upload completes or fails.
     /// Not part of <see cref="ITelemetryUploadService"/>; available on the concrete type.
     /// </summary>
-    public async Task<UploadStatus> WaitForCompletionAsync(UploadIntentId intentId, CancellationToken ct)
+    public Task<UploadStatus> WaitForCompletionAsync(UploadIntentId intentId, CancellationToken ct)
+        => WaitForCompletionAsync(intentId, (int)(TimeSpan.FromSeconds(_config.RetryBaseDelaySeconds).TotalMilliseconds), ct);
+
+    /// <summary>
+    /// Polls at a fixed interval (in milliseconds) until the upload completes or fails.
+    /// Useful for tests where a predictable poll interval is needed.
+    /// </summary>
+    public async Task<UploadStatus> WaitForCompletionAsync(
+        UploadIntentId intentId, int pollIntervalMs, CancellationToken ct)
     {
-        var delaySeconds = _config.RetryBaseDelaySeconds;
         while (!ct.IsCancellationRequested)
         {
             var status = await GetStatusAsync(intentId, ct).ConfigureAwait(false);
             if (status is UploadStatus.Complete or UploadStatus.Failed)
                 return status;
 
-            await Task.Delay(TimeSpan.FromSeconds(delaySeconds), ct).ConfigureAwait(false);
-            delaySeconds = Math.Min(delaySeconds * 2, _config.RetryMaxDelaySeconds);
+            await Task.Delay(pollIntervalMs, ct).ConfigureAwait(false);
         }
 
         ct.ThrowIfCancellationRequested();

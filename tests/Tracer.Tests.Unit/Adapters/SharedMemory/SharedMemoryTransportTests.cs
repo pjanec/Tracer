@@ -64,6 +64,16 @@ public sealed class SharedMemoryTransportTests : IDisposable
 
         // Assert
         received.Should().HaveCount(3);
+
+        // Verify field-level round-trip through encode/decode
+        received[0].Should().BeOfType<EventRecord>().Which.SequenceNumber.Should().Be(1UL);
+        received[1].Should().BeOfType<EventRecord>().Which.SequenceNumber.Should().Be(2UL);
+        received[2].Should().BeOfType<EventRecord>().Which.SequenceNumber.Should().Be(3UL);
+        received.OfType<EventRecord>().Should().AllSatisfy(r =>
+        {
+            r.Topic.Should().Be(new TopicName("topic.event"));
+            r.PublisherNode.Should().Be(new AgentId("pub"));
+        });
     }
 
     [Fact]

@@ -18,25 +18,29 @@ public sealed class SyncSystemUploadServiceTests
 
     private sealed class FakeHttpMessageHandler : HttpMessageHandler
     {
-        private readonly Queue<HttpResponseMessage> _responses = new();
+        private readonly Queue<Func<HttpRequestMessage, HttpResponseMessage>> _responses = new();
+        public List<HttpRequestMessage> CapturedRequests { get; } = new();
 
         public void Enqueue(HttpStatusCode status, object? body = null)
         {
-            var response = new HttpResponseMessage(status);
-            if (body is not null)
-                response.Content = JsonContent.Create(body);
-            _responses.Enqueue(response);
+            _responses.Enqueue(_ => {
+                var r = new HttpResponseMessage(status);
+                if (body is not null) r.Content = JsonContent.Create(body);
+                return r;
+            });
         }
+
+        public void EnqueueFactory(Func<HttpRequestMessage, HttpResponseMessage> factory)
+            => _responses.Enqueue(factory);
 
         protected override Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request, CancellationToken ct)
         {
+            CapturedRequests.Add(request);
             if (_responses.Count == 0)
                 return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = JsonContent.Create(new { intentId = "default-intent" }),
-                });
-            return Task.FromResult(_responses.Dequeue());
+                    { Content = JsonContent.Create(new { intentId = "default-intent" }) });
+            return Task.FromResult(_responses.Dequeue()(request));
         }
     }
 
@@ -179,5 +183,76 @@ public sealed class SyncSystemUploadServiceTests
         var result = await svc.WaitForCompletionAsync(intentId, CancellationToken.None);
 
         result.Should().Be(UploadStatus.Complete);
+    }
+
+    [Fact]
+    public async Task RequestUploadAsync_SendsCorrectBodyToSyncMaster()
+    {
+        var (svc, handler) = Build();
+        string? capturedBody = null;
+        handler.EnqueueFactory(req => {
+            capturedBody = req.Content!.ReadAsStringAsync().GetAwaiter().GetResult();
+            return new HttpResponseMessage(HttpStatusCode.OK)
+                { Content = JsonContent.Create(new { intentId = "i1" }) };
+        });
+
+        await svc.RequestUploadAsync(MakeRequest("blue-cmd-01", "20260519T140000Z"), CancellationToken.None);
+
+        capturedBody.Should().NotBeNull();
+        capturedBody.Should().Contain("blue-cmd-01");
+        capturedBody.Should().Contain("20260519T140000Z");
+    }
+
+    [Fact]
+    public async Task WaitForCompletionAsync_PollingUntilComplete_CallsGetStatusMultipleTimes()
+    {
+        var (svc, handler) = Build();
+        handler.Enqueue(HttpStatusCode.OK, new { intentId = "blue-cmd-01|20260519T140000Z" });
+        var intentId = await svc.RequestUploadAsync(MakeRequest(), CancellationToken.None);
+
+        // Return InProgress twice, then Completed
+        handler.Enqueue(HttpStatusCode.OK, new { status = "InProgress" });
+        handler.Enqueue(HttpStatusCode.OK, new { status = "InProgress" });
+        handler.Enqueue(HttpStatusCode.OK, new { status = "Completed" });
+
+        var finalStatus = await svc.WaitForCompletionAsync(intentId, pollIntervalMs: 1, CancellationToken.None);
+
+        finalStatus.Should().Be(UploadStatus.Complete);
+        // Status polls use GET /api/telemetry/{nodeId}/{interval} — no "status" in the path.
+        // The first request is the POST to register the intent; the rest are GET status polls.
+        handler.CapturedRequests.Count(r => r.Method == HttpMethod.Get)
+            .Should().BeGreaterThanOrEqualTo(3);
+    }
+
+    [Fact]
+    public async Task WaitForCompletionAsync_CancelledDuringPoll_ThrowsOperationCanceledException()
+    {
+        var (svc, handler) = Build();
+        handler.Enqueue(HttpStatusCode.OK, new { intentId = "blue-cmd-01|20260519T140000Z" });
+        var intentId = await svc.RequestUploadAsync(MakeRequest(), CancellationToken.None);
+
+        // Always return InProgress to force polling to continue
+        for (int i = 0; i < 100; i++)
+            handler.Enqueue(HttpStatusCode.OK, new { status = "InProgress" });
+
+        using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(50));
+        Func<Task> act = () => svc.WaitForCompletionAsync(intentId, pollIntervalMs: 10, cts.Token);
+
+        await act.Should().ThrowAsync<OperationCanceledException>();
+    }
+
+    [Fact]
+    public async Task RequestUploadAsync_Returns503Twice_Then201_RetriesAndSucceeds()
+    {
+        var (svc, handler) = Build(retryAttempts: 3);
+        handler.Enqueue(HttpStatusCode.ServiceUnavailable);
+        handler.Enqueue(HttpStatusCode.ServiceUnavailable);
+        handler.Enqueue(HttpStatusCode.OK, new { intentId = "retry-intent" });
+
+        var result = await svc.RequestUploadAsync(MakeRequest(), CancellationToken.None);
+
+        result.Should().NotBeNull();
+        result.Value.Should().NotBeEmpty();
+        handler.CapturedRequests.Should().HaveCount(3);
     }
 }

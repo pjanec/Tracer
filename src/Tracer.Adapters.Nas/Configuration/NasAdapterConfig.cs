@@ -11,6 +11,7 @@ public sealed class NasAdapterConfig
 
     public int FileOperationTimeoutSeconds { get; init; } = 30;
     public int RetryOnTransientError { get; init; } = 3;
+    public int RetryBaseDelaySeconds { get; init; } = 2;
     public int CircuitBreakerThreshold { get; init; } = 5;
     public int CircuitBreakerResetIntervalSeconds { get; init; } = 60;
 }

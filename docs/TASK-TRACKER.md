@@ -273,13 +273,13 @@
 
 **Phase success criteria:** All conditions from [tracer_phase11_design.md §1.3](./tracer_phase11_design.md#13-success-criteria) AND all Phase 1–10 tests pass.
 
-- [ ] **TRC-P11-001** `Tracer.Adapters.DDS` — DDS Diagnostic Data Source [details](./TASK-DETAIL.md#trc-p11-001--traceradaptersdds-assembly--dds-diagnostic-data-source)
-- [ ] **TRC-P11-002** `Tracer.Adapters.SharedMemory` — Ring Buffer IPC Transport [details](./TASK-DETAIL.md#trc-p11-002--traceradapterssharedmemory-assembly--ring-buffer-ipc-transport)
-- [ ] **TRC-P11-003** `Tracer.Adapters.Sync` — Telemetry Upload via Sync System [details](./TASK-DETAIL.md#trc-p11-003--traceradapterssync-assembly--telemetry-upload-via-sync-system)
-- [ ] **TRC-P11-004** `Tracer.Adapters.Nas` — NAS Storage Reader [details](./TASK-DETAIL.md#trc-p11-004--traceradaptersnas-assembly--nas-storage-reader)
-- [ ] **TRC-P11-005** `Tracer.AdapterSelection` — Adapter Registry and DI [details](./TASK-DETAIL.md#trc-p11-005--traceradapterselection-assembly--adapter-registry-and-di)
-- [ ] **TRC-P11-006** Configuration Additions — `appsettings.json` Adapter Sections [details](./TASK-DETAIL.md#trc-p11-006--configuration-additions--appsetingsjson-adapter-sections)
-- [ ] **TRC-P11-007** Hardening — Resource Limits, Back-Pressure, and Error Recovery [details](./TASK-DETAIL.md#trc-p11-007--hardening--resource-limits-back-pressure-and-error-recovery)
+- [x] **TRC-P11-001** `Tracer.Adapters.DDS` — DDS Diagnostic Data Source [details](./TASK-DETAIL.md#trc-p11-001--traceradaptersdds-assembly--dds-diagnostic-data-source)
+- [x] **TRC-P11-002** `Tracer.Adapters.SharedMemory` — Ring Buffer IPC Transport [details](./TASK-DETAIL.md#trc-p11-002--traceradapterssharedmemory-assembly--ring-buffer-ipc-transport)
+- [x] **TRC-P11-003** `Tracer.Adapters.Sync` — Telemetry Upload via Sync System [details](./TASK-DETAIL.md#trc-p11-003--traceradapterssync-assembly--telemetry-upload-via-sync-system)
+- [x] **TRC-P11-004** `Tracer.Adapters.Nas` — NAS Storage Reader [details](./TASK-DETAIL.md#trc-p11-004--traceradaptersnas-assembly--nas-storage-reader)
+- [x] **TRC-P11-005** `Tracer.AdapterSelection` — Adapter Registry and DI [details](./TASK-DETAIL.md#trc-p11-005--traceradapterselection-assembly--adapter-registry-and-di)
+- [x] **TRC-P11-006** Configuration Additions — `appsettings.json` Adapter Sections [details](./TASK-DETAIL.md#trc-p11-006--configuration-additions--appsetingsjson-adapter-sections)
+- [x] **TRC-P11-007** Hardening — Resource Limits, Back-Pressure, and Error Recovery [details](./TASK-DETAIL.md#trc-p11-007--hardening--resource-limits-back-pressure-and-error-recovery)
 - [ ] **TRC-P11-008** Integration Test Infrastructure — `Tracer.Tests.Integration.Real` [details](./TASK-DETAIL.md#trc-p11-008--integration-test-infrastructure--tracertestsintegrationreal)
 - [ ] **TRC-P11-009** Soak Test and Final Validation [details](./TASK-DETAIL.md#trc-p11-009--soak-test-and-final-validation)
 

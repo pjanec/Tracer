@@ -21,19 +21,29 @@ public sealed class NasStorageReader : ITelemetryStorageReader
     private readonly NasAdapterConfig _config;
     private readonly SmbPathResolver _pathResolver;
     private readonly ILogger<NasStorageReader> _logger;
+    private readonly Func<string, ZipArchive> _openZip;
+    private readonly Func<DateTimeOffset> _now;
+
+    // Circuit breaker state — per-instance, not static.
+    private int _consecutiveFailures;
+    private DateTimeOffset? _circuitOpenedAt;
+    private readonly object _circuitLock = new();
 
     private static readonly JsonSerializerOptions _jsonOptions = BuildJsonOptions();
 
     private const string ReadySentinelEntry = "_ready";
     private const string ManifestEntry = "manifest.json";
 
-    public NasStorageReader(NasAdapterConfig config, ILogger<NasStorageReader> logger)
+    public NasStorageReader(NasAdapterConfig config, ILogger<NasStorageReader> logger,
+        Func<string, ZipArchive>? openZip = null, Func<DateTimeOffset>? now = null)
     {
         ArgumentNullException.ThrowIfNull(config);
         ArgumentNullException.ThrowIfNull(logger);
         _config = config;
         _logger = logger;
         _pathResolver = new SmbPathResolver(config.NasRoot);
+        _openZip = openZip ?? ZipFile.OpenRead;
+        _now = now ?? (() => DateTimeOffset.UtcNow);
     }
 
     /// <inheritdoc/>
@@ -154,25 +164,92 @@ public sealed class NasStorageReader : ITelemetryStorageReader
         });
     }
 
-    private static bool IsReady(string zipPath)
+    private T ExecuteFileOp<T>(string zipPath, Func<ZipArchive, T> op)
+    {
+        lock (_circuitLock)
+        {
+            if (_circuitOpenedAt is DateTimeOffset openedAt)
+            {
+                var resetInterval = TimeSpan.FromSeconds(_config.CircuitBreakerResetIntervalSeconds);
+                if (_now() - openedAt < resetInterval)
+                    throw new CircuitBreakerOpenException(
+                        $"NAS circuit breaker is open (tripped at {openedAt:O}). " +
+                        $"Will reset after {resetInterval.TotalSeconds}s.");
+
+                // Reset window has passed — allow a probe attempt.
+                _circuitOpenedAt = null;
+                _consecutiveFailures = 0;
+            }
+        }
+
+        var lastEx = (IOException?)null;
+        for (var attempt = 0; attempt <= _config.RetryOnTransientError; attempt++)
+        {
+            try
+            {
+                using var archive = _openZip(zipPath);
+                var result = op(archive);
+                lock (_circuitLock) { _consecutiveFailures = 0; }
+                return result;
+            }
+            catch (IOException ex)
+            {
+                lastEx = ex;
+                _logger.LogWarning(ex,
+                    "NAS transient I/O error (attempt {Attempt}/{Max}) for {Path}",
+                    attempt + 1, _config.RetryOnTransientError + 1, zipPath);
+                // Small sleep between retries to avoid hammering; skipped on last attempt.
+                if (attempt < _config.RetryOnTransientError)
+                    Thread.Sleep(_config.RetryBaseDelaySeconds * 100); // 10 % of base delay in ms
+            }
+        }
+
+        // All retries exhausted.
+        lock (_circuitLock)
+        {
+            _consecutiveFailures++;
+            if (_consecutiveFailures >= _config.CircuitBreakerThreshold)
+            {
+                _circuitOpenedAt = _now();
+                _logger.LogError(lastEx,
+                    "NAS circuit breaker OPENED after {Failures} consecutive failures",
+                    _consecutiveFailures);
+            }
+        }
+
+        throw lastEx!;
+    }
+
+    private bool IsReady(string zipPath)
     {
         try
         {
-            using var archive = ZipFile.OpenRead(zipPath);
-            return archive.GetEntry(ReadySentinelEntry) is not null;
+            return ExecuteFileOp(zipPath, a => a.GetEntry(ReadySentinelEntry) is not null);
         }
+        catch (CircuitBreakerOpenException) { throw; }
         catch (InvalidDataException) { return false; }
         catch (IOException) { return false; }
     }
 
-    private static async Task<IntervalManifest?> ReadManifestFromZipAsync(
+    private async Task<IntervalManifest?> ReadManifestFromZipAsync(
         string zipPath, CancellationToken ct)
     {
-        using var archive = ZipFile.OpenRead(zipPath);
-        var entry = archive.GetEntry(ManifestEntry);
+        ZipArchiveEntry? entry;
+        try
+        {
+            entry = ExecuteFileOp(zipPath, a => a.GetEntry(ManifestEntry));
+        }
+        catch (CircuitBreakerOpenException) { return null; }
+        catch (IOException) { return null; }
+
         if (entry is null) return null;
 
-        await using var stream = entry.Open();
+        // Re-open outside ExecuteFileOp so the archive stays alive for async read.
+        using var archive = _openZip(zipPath);
+        var liveEntry = archive.GetEntry(ManifestEntry);
+        if (liveEntry is null) return null;
+
+        await using var stream = liveEntry.Open();
         try
         {
             return await JsonSerializer.DeserializeAsync<IntervalManifest>(stream, _jsonOptions, ct)

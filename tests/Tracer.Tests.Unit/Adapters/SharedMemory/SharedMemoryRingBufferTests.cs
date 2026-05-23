@@ -106,7 +106,7 @@ public sealed class SharedMemoryRingBufferTests : IDisposable
         for (var i = 0; i < 20; i++)
             buffer.TryWrite(payload);
 
-        buffer.GetDroppedCount().Should().BeGreaterThanOrEqualTo(0);
+        buffer.GetDroppedCount().Should().BeGreaterThan(0);
     }
 
     [Fact]
