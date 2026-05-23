@@ -1,3 +1,0 @@
-﻿<Project>
-  <Import Project="..\build\tracer-viewer.props" />
-</Project>
